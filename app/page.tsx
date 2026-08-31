@@ -11,13 +11,14 @@ import { DrawsView } from "@/components/pages/DrawsView";
 import { RewardsView } from "@/components/pages/RewardsView";
 import { YieldView } from "@/components/pages/YieldView";
 import { FaucetModal } from "@/components/FaucetModal";
-import { PrivacySpecsModal } from "@/components/PrivacySpecsModal";
+import { HowItWorksModal } from "@/components/HowItWorksModal";
+import { ConnectWalletModal } from "@/components/ConnectWalletModal";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts";
 import { requestEip712DecryptionPermission } from "@/lib/fhevm";
 
 export default function Home() {
-  // Navigation State
+  // View & Tab Routing
   const [currentView, setCurrentView] = useState<"landing" | "app">("landing");
   const [currentTab, setCurrentTab] = useState<AppPageTab>("dashboard");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState<boolean>(false);
@@ -80,18 +81,18 @@ export default function Home() {
 
   // Modals
   const [isFaucetOpen, setIsFaucetOpen] = useState<boolean>(false);
-  const [isSpecsOpen, setIsSpecsOpen] = useState<boolean>(false);
+  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState<boolean>(false);
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState<boolean>(false);
   const [isClaimingFaucet, setIsClaimingFaucet] = useState<boolean>(false);
 
-  // --- Real Web3 Wallet Detection & Connection ---
-  const connectWallet = async () => {
+  // --- Wallet Connection Flows ---
+  const handleConnectInjected = async () => {
     try {
       setIsConnecting(true);
       if (typeof window !== "undefined" && (window as any).ethereum) {
         const ethereum = (window as any).ethereum;
         const browserProvider = new ethers.BrowserProvider(ethereum);
         
-        // Request Accounts
         const accounts = await ethereum.request({ method: "eth_requestAccounts" });
         if (accounts && accounts.length > 0) {
           setAccount(accounts[0]);
@@ -101,15 +102,13 @@ export default function Home() {
           setDecryptedWinnings("0.00");
         }
 
-        // Check & Prompt Sepolia network if needed
         try {
           await ethereum.request({
             method: "wallet_switchEthereumChain",
-            params: [{ chainId: "0xaa36a7" }], // 11155111 Sepolia
+            params: [{ chainId: "0xaa36a7" }], // Sepolia
           });
-        } catch (switchError: any) {
-          // If Sepolia not added, add it
-          if (switchError.code === 4902) {
+        } catch (switchErr: any) {
+          if (switchErr.code === 4902) {
             await ethereum.request({
               method: "wallet_addEthereumChain",
               params: [
@@ -125,24 +124,22 @@ export default function Home() {
           }
         }
       } else {
-        // Fallback for demo without extension
-        const mockAccount = "0x892a012a975765796a56eE8102d847b2c5896B20";
-        setAccount(mockAccount);
-        setWalletBalance("1,000.00");
-        setDecryptedBalance("250.00");
-        setDecryptedWinnings("0.00");
+        handleConnectDemo();
       }
     } catch (error) {
       console.error("Wallet connection error:", error);
-      // Fallback
-      const mockAccount = "0x892a012a975765796a56eE8102d847b2c5896B20";
-      setAccount(mockAccount);
-      setWalletBalance("1,000.00");
-      setDecryptedBalance("250.00");
-      setDecryptedWinnings("0.00");
+      handleConnectDemo();
     } finally {
       setIsConnecting(false);
     }
+  };
+
+  const handleConnectDemo = () => {
+    const mockAccount = "0x892a012a975765796a56eE8102d847b2c5896B20";
+    setAccount(mockAccount);
+    setWalletBalance("1,000.00");
+    setDecryptedBalance("250.00");
+    setDecryptedWinnings("0.00");
   };
 
   const disconnectWallet = () => {
@@ -152,7 +149,7 @@ export default function Home() {
     setDecryptedWinnings(null);
   };
 
-  // Event Listeners for MetaMask
+  // Listen for wallet events
   useEffect(() => {
     if (typeof window !== "undefined" && (window as any).ethereum) {
       const ethereum = (window as any).ethereum;
@@ -248,7 +245,7 @@ export default function Home() {
       setActionStatus("1/3 Approving cUSDT token allowance...");
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      setActionStatus("2/3 Encrypting deposit onchain (Zama euint64)...");
+      setActionStatus("2/3 Encrypting deposit onchain via Zama...");
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setActionStatus("3/3 Depositing into Confidential Vault...");
@@ -262,7 +259,7 @@ export default function Home() {
       setWalletBalance(Math.max(0, wBal - depAmt).toFixed(2));
       setDecryptedBalance((curSaved + depAmt).toFixed(2));
       setTotalDeposits((curTVL + depAmt).toFixed(2));
-      setActionStatus("Deposit completed with onchain encryption!");
+      setActionStatus("Deposit completed with full privacy!");
       setTimeout(() => setActionStatus(""), 3000);
     } catch (error) {
       console.error("Deposit error:", error);
@@ -398,21 +395,21 @@ export default function Home() {
     }
   };
 
-  const getPageTitle = () => {
+  const getPageDetails = () => {
     switch (currentTab) {
-      case "dashboard": return { title: "Protocol Dashboard", sub: "Live overview of prize pot, countdown, and portfolio" };
-      case "vault": return { title: "Confidential Savings Vault", sub: "Shielded token deposit and zero-loss principal withdrawal" };
-      case "draws": return { title: "Onchain FHE Draws", sub: "Deposit-weighted winner selection using Zama randomness" };
-      case "rewards": return { title: "My Secret Rewards", sub: "Decrypt confidential winnings and auto-compound" };
-      case "yield": return { title: "DeFi Yield Engine", sub: "Streaming Aave V3 yield generator & strategy simulation" };
+      case "dashboard": return { title: "Savings Dashboard", sub: "Live prize pot, countdown clock, and portfolio overview" };
+      case "vault": return { title: "Savings Vault", sub: "Deposit tokens to get draw tickets & withdraw principal anytime" };
+      case "draws": return { title: "Daily Prize Draws", sub: "Onchain fair winner selection weighted by deposit size" };
+      case "rewards": return { title: "My Secret Rewards", sub: "Check your private winnings, claim to wallet, or auto-compound" };
+      case "yield": return { title: "Yield Growth Strategy", sub: "How Aave V3 lending yield generates prize pots with zero principal loss" };
     }
   };
 
-  const { title, sub } = getPageTitle();
+  const { title, sub } = getPageDetails();
 
   return (
-    <div className="min-h-screen bg-zama-black text-white selection:bg-zama-yellow selection:text-black">
-      {/* 1. VISION LANDING PAGE VIEW */}
+    <div className="min-h-screen bg-[#F8FAFC] text-black">
+      {/* 1. VISION / LANDING PAGE VIEW */}
       {currentView === "landing" ? (
         <LandingView
           onEnterApp={(tab) => {
@@ -420,14 +417,14 @@ export default function Home() {
             setCurrentView("app");
           }}
           onOpenFaucet={() => setIsFaucetOpen(true)}
-          onOpenSpecs={() => setIsSpecsOpen(true)}
+          onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
           totalDeposits={totalDeposits}
           totalPrizeReserve={totalPrizeReserve}
           totalPrizesAwarded={totalPrizesAwarded}
           depositorsCount={depositorsCount}
         />
       ) : (
-        /* 2. FULL-FEATURED APP WITH SIDEBAR NAVIGATION */
+        /* 2. MAIN APP DASHBOARD WITH SIDEBAR NAVIGATION */
         <div className="min-h-screen flex flex-col lg:flex-row">
           {/* Sidebar */}
           <SidebarNav
@@ -435,7 +432,7 @@ export default function Home() {
             onSelectTab={setCurrentTab}
             onNavigateHome={() => setCurrentView("landing")}
             onOpenFaucet={() => setIsFaucetOpen(true)}
-            onOpenSpecs={() => setIsSpecsOpen(true)}
+            onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
             isOpenMobile={isMobileNavOpen}
             onCloseMobile={() => setIsMobileNavOpen(false)}
           />
@@ -447,14 +444,14 @@ export default function Home() {
               pageSubtitle={sub}
               onOpenMobileNav={() => setIsMobileNavOpen(true)}
               account={account}
-              onConnect={connectWallet}
+              onOpenConnectModal={() => setIsConnectModalOpen(true)}
               onDisconnect={disconnectWallet}
               isConnecting={isConnecting}
               onOpenFaucet={() => setIsFaucetOpen(true)}
               walletBalance={walletBalance}
             />
 
-            <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-200">
+            <main className="flex-1 p-4 sm:p-8 max-w-5xl w-full mx-auto animate-in fade-in duration-200">
               {currentTab === "dashboard" && (
                 <DashboardView
                   account={account}
@@ -471,6 +468,7 @@ export default function Home() {
                   drawHistory={drawHistory}
                   onNavigateTab={setCurrentTab}
                   onOpenFaucet={() => setIsFaucetOpen(true)}
+                  onOpenConnectModal={() => setIsConnectModalOpen(true)}
                   onDecryptBalance={handleDecryptBalance}
                   isDecryptingBalance={isDecryptingBalance}
                 />
@@ -487,6 +485,7 @@ export default function Home() {
                   onWithdraw={handleWithdraw}
                   onWithdrawAll={handleWithdrawAll}
                   onOpenFaucet={() => setIsFaucetOpen(true)}
+                  onOpenConnectModal={() => setIsConnectModalOpen(true)}
                   isLoadingAction={isLoadingAction}
                   actionStatus={actionStatus}
                 />
@@ -503,6 +502,7 @@ export default function Home() {
                   drawHistory={drawHistory}
                   onTriggerDraw={handleTriggerDraw}
                   isTriggeringDraw={isTriggeringDraw}
+                  onOpenConnectModal={() => setIsConnectModalOpen(true)}
                 />
               )}
 
@@ -514,6 +514,7 @@ export default function Home() {
                   onDecryptWinnings={handleDecryptWinnings}
                   onClaimPrize={handleClaimPrize}
                   onCompoundPrize={handleCompoundPrize}
+                  onOpenConnectModal={() => setIsConnectModalOpen(true)}
                   isLoadingAction={isLoadingAction}
                   actionStatus={actionStatus}
                 />
@@ -526,6 +527,7 @@ export default function Home() {
                   onHarvestAndFund={handleHarvestAndFund}
                   isHarvesting={isHarvesting}
                   account={account}
+                  onOpenConnectModal={() => setIsConnectModalOpen(true)}
                 />
               )}
             </main>
@@ -541,11 +543,20 @@ export default function Home() {
         isClaiming={isClaimingFaucet}
         walletBalance={walletBalance}
         account={account}
+        onOpenConnectModal={() => setIsConnectModalOpen(true)}
       />
 
-      <PrivacySpecsModal
-        isOpen={isSpecsOpen}
-        onClose={() => setIsSpecsOpen(false)}
+      <HowItWorksModal
+        isOpen={isHowItWorksOpen}
+        onClose={() => setIsHowItWorksOpen(false)}
+      />
+
+      <ConnectWalletModal
+        isOpen={isConnectModalOpen}
+        onClose={() => setIsConnectModalOpen(false)}
+        onConnectInjected={handleConnectInjected}
+        onConnectDemo={handleConnectDemo}
+        isConnecting={isConnecting}
       />
     </div>
   );

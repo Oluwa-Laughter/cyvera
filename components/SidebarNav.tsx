@@ -1,20 +1,18 @@
 "use client";
 
 import React from "react";
-import { ZamaLogo } from "@/components/ZamaLogo";
+import { AuraLogo } from "@/components/AuraLogo";
 import { 
   LayoutDashboard, 
-  Shield, 
+  PiggyBank, 
   Dices, 
   Trophy, 
-  Sprout, 
+  TrendingUp, 
   Droplets, 
-  Cpu, 
-  ExternalLink, 
-  ChevronRight, 
+  HelpCircle, 
   X, 
   Home,
-  Lock
+  ShieldCheck
 } from "lucide-react";
 
 export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "yield";
@@ -24,7 +22,7 @@ interface SidebarNavProps {
   onSelectTab: (tab: AppPageTab) => void;
   onNavigateHome: () => void;
   onOpenFaucet: () => void;
-  onOpenSpecs: () => void;
+  onOpenHowItWorks: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
 }
@@ -34,49 +32,49 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   onSelectTab,
   onNavigateHome,
   onOpenFaucet,
-  onOpenSpecs,
+  onOpenHowItWorks,
   isOpenMobile,
   onCloseMobile,
 }) => {
   const navItems: { id: AppPageTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: "vault", label: "Savings Vault", icon: <Shield className="w-4 h-4" />, badge: "Zero Loss" },
-    { id: "draws", label: "Prize Draws", icon: <Dices className="w-4 h-4" />, badge: "FHE RNG" },
+    { id: "vault", label: "Savings Vault", icon: <PiggyBank className="w-4 h-4" />, badge: "Zero Loss" },
+    { id: "draws", label: "Prize Draws", icon: <Dices className="w-4 h-4" />, badge: "Daily" },
     { id: "rewards", label: "My Rewards", icon: <Trophy className="w-4 h-4" /> },
-    { id: "yield", label: "Yield Engine", icon: <Sprout className="w-4 h-4" />, badge: "8.5%" },
+    { id: "yield", label: "Yield Growth", icon: <TrendingUp className="w-4 h-4" />, badge: "8.5%" },
   ];
 
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
+      {/* Mobile Backdrop */}
       {isOpenMobile && (
         <div 
           onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden animate-in fade-in"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden animate-in fade-in"
         />
       )}
 
-      {/* Sidebar Container */}
+      {/* Sidebar Navigation */}
       <aside className={`
-        fixed top-0 bottom-0 left-0 z-50 w-72 bg-zama-dark border-r border-zama-border flex flex-col justify-between p-6 transition-transform duration-300 ease-in-out
+        fixed top-0 bottom-0 left-0 z-50 w-72 bg-white border-r border-slate-200 flex flex-col justify-between p-6 transition-transform duration-300 ease-in-out shadow-sm
         ${isOpenMobile ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
-        {/* Top Logo & Close for Mobile */}
         <div>
-          <div className="flex items-center justify-between pb-6 border-b border-white/5">
+          {/* Brand Header */}
+          <div className="flex items-center justify-between pb-6 border-b border-slate-100">
             <div onClick={onNavigateHome} className="cursor-pointer">
-              <ZamaLogo size="md" />
+              <AuraLogo size="md" />
             </div>
             <button 
               onClick={onCloseMobile}
-              className="lg:hidden p-1.5 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white"
+              className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-600 hover:text-black"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Main Navigation Links */}
-          <nav className="mt-6 space-y-1.5 font-mono text-xs">
+          {/* Navigation Links */}
+          <nav className="mt-6 space-y-1.5 font-medium text-xs">
             {navItems.map((item) => {
               const isActive = currentTab === item.id;
               return (
@@ -87,10 +85,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                     onCloseMobile();
                   }}
                   className={`
-                    w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 font-medium
+                    w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-200
                     ${isActive 
-                      ? "bg-zama-yellow text-black font-bold shadow-zama-glow-sm" 
-                      : "text-zinc-400 hover:text-white hover:bg-zinc-900"}
+                      ? "bg-aura-yellow text-black font-extrabold shadow-aura-yellow" 
+                      : "text-slate-600 hover:text-black hover:bg-slate-100"}
                   `}
                 >
                   <div className="flex items-center gap-3">
@@ -99,8 +97,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   </div>
 
                   {item.badge && (
-                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
-                      isActive ? "bg-black/20 text-black" : "bg-zinc-800 text-zama-yellow"
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                      isActive ? "bg-black text-white" : "bg-amber-100 text-amber-900"
                     }`}>
                       {item.badge}
                     </span>
@@ -112,44 +110,44 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         </div>
 
         {/* Bottom Actions */}
-        <div className="space-y-3 pt-6 border-t border-white/5 font-mono text-xs">
-          {/* Faucet Trigger */}
+        <div className="space-y-2.5 pt-6 border-t border-slate-100 text-xs">
+          {/* Testnet Faucet Trigger */}
           <button
             onClick={() => {
               onOpenFaucet();
               onCloseMobile();
             }}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-zama-yellow/10 hover:bg-zama-yellow/20 border border-zama-yellow/30 text-zama-yellow font-bold transition-all"
+            className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold transition-all"
           >
-            <div className="flex items-center gap-2.5">
-              <Droplets className="w-4 h-4" />
-              <span>Get Testnet cUSDT</span>
+            <div className="flex items-center gap-2">
+              <Droplets className="w-4 h-4 text-amber-600" />
+              <span>Get Free cUSDT</span>
             </div>
-            <span className="text-[10px] bg-zama-yellow text-black px-1.5 py-0.5 rounded font-bold">+1000</span>
+            <span className="text-[10px] bg-aura-yellow text-black px-1.5 py-0.5 rounded-full font-extrabold">+1000</span>
           </button>
 
-          {/* Technical Specs Modal */}
+          {/* How it Works Modal */}
           <button
             onClick={() => {
-              onOpenSpecs();
+              onOpenHowItWorks();
               onCloseMobile();
             }}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 transition-all border border-white/5"
+            className="w-full flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium transition-all border border-slate-200"
           >
-            <Cpu className="w-4 h-4 text-zama-yellow" />
-            <span>Privacy & FHE Specs</span>
+            <HelpCircle className="w-4 h-4 text-slate-500" />
+            <span>How AuraPool Works</span>
           </button>
 
-          {/* Back to Landing / Vision */}
+          {/* Back to Home / Vision */}
           <button
             onClick={() => {
               onNavigateHome();
               onCloseMobile();
             }}
-            className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-zinc-500 hover:text-zinc-300 transition-all text-[11px]"
+            className="w-full flex items-center gap-2 px-4 py-2 rounded-2xl text-slate-400 hover:text-slate-700 transition-all text-[11px]"
           >
             <Home className="w-3.5 h-3.5" />
-            <span>Back to Vision Page</span>
+            <span>Back to Home</span>
           </button>
         </div>
       </aside>

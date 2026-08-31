@@ -3,15 +3,15 @@
 import React from "react";
 import { 
   Trophy, 
-  Gift, 
+  Sparkles, 
   ArrowDownToLine, 
   Repeat, 
-  Sparkles, 
   RefreshCw, 
-  KeyRound, 
+  Eye, 
   EyeOff, 
-  CheckCircle2, 
-  ShieldCheck 
+  ShieldCheck,
+  CheckCircle2,
+  Gift
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -22,6 +22,7 @@ interface RewardsViewProps {
   onDecryptWinnings: () => void;
   onClaimPrize: () => Promise<void>;
   onCompoundPrize: () => Promise<void>;
+  onOpenConnectModal: () => void;
   isLoadingAction: boolean;
   actionStatus: string;
 }
@@ -33,6 +34,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
   onDecryptWinnings,
   onClaimPrize,
   onCompoundPrize,
+  onOpenConnectModal,
   isLoadingAction,
   actionStatus,
 }) => {
@@ -57,28 +59,32 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
   };
 
   return (
-    <div className="space-y-8 w-full max-w-5xl mx-auto">
+    <div className="space-y-8 w-full max-w-4xl mx-auto text-black">
       {/* 1. Header Rewards Card */}
-      <div className="zama-card p-8 bg-gradient-to-br from-zama-card to-zama-black">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-white/5">
+      <div className="aura-card p-8 bg-gradient-to-br from-white via-slate-50 to-amber-50/40">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-slate-200">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase text-zinc-400">Secret Prize Rewards</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zama-yellow text-black font-bold">
-                Winner-Only Decrypt
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Your Secret Rewards</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold border border-amber-200">
+                Private Winnings
               </span>
             </div>
 
-            <div className="flex items-baseline gap-3 mt-2">
-              <div className="text-4xl font-black font-mono text-white">
-                {decryptedWinnings !== null ? (
-                  <span className="text-zama-yellow glow-text-yellow">
-                    {decryptedWinnings} <span className="text-base text-zama-yellow">cUSDT</span>
-                  </span>
+            <div className="flex items-baseline gap-3 mt-1">
+              <div className="text-4xl font-black text-black">
+                {account ? (
+                  decryptedWinnings !== null ? (
+                    <span className="text-black">
+                      ${decryptedWinnings} <span className="text-base text-slate-500 font-medium">cUSDT</span>
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 tracking-widest text-3xl">
+                      •••••••• <span className="text-base text-slate-400">cUSDT</span>
+                    </span>
+                  )
                 ) : (
-                  <span className="text-zinc-500 tracking-widest">
-                    •••••••• <span className="text-base text-zinc-600">cUSDT</span>
-                  </span>
+                  <span className="text-slate-400 text-2xl font-bold">Connect Wallet</span>
                 )}
               </div>
 
@@ -86,19 +92,19 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
                 <button
                   onClick={onDecryptWinnings}
                   disabled={isDecryptingWinnings}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-mono text-zinc-200 transition-all shadow-sm"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 transition-all shadow-sm"
                 >
                   {isDecryptingWinnings ? (
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   ) : decryptedWinnings !== null ? (
                     <>
-                      <EyeOff className="w-3.5 h-3.5 text-zinc-400" />
+                      <EyeOff className="w-3.5 h-3.5 text-slate-400" />
                       <span>Hide</span>
                     </>
                   ) : (
                     <>
-                      <KeyRound className="w-3.5 h-3.5 text-zama-yellow" />
-                      <span>Decrypt (EIP-712)</span>
+                      <Eye className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Reveal Winnings</span>
                     </>
                   )}
                 </button>
@@ -106,34 +112,49 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
             </div>
           </div>
 
-          <div className="text-right font-mono text-xs text-zinc-400 hidden sm:block">
-            <div>Settlement:</div>
-            <div className="text-sm font-bold text-emerald-400 mt-0.5">Instant Onchain</div>
+          <div className="text-right text-xs text-slate-500 hidden sm:block">
+            <div>Payout Settlement:</div>
+            <div className="text-base font-extrabold text-emerald-700 mt-0.5">Instant Onchain</div>
           </div>
         </div>
 
-        <div className="pt-4 flex flex-wrap items-center justify-between text-xs font-mono text-zinc-400 gap-2">
-          <span>Only you hold the private key to decrypt your winnings</span>
-          <span>Zero public payout broadcast</span>
+        <div className="pt-4 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2 font-medium">
+          <span>🔒 Only you hold the key to claim your winnings</span>
+          <span>Zero public broadcast of winner payout</span>
         </div>
       </div>
 
       {/* 2. Claim / Compound Action Box */}
-      <div className="zama-card p-8">
-        {hasWinnings ? (
+      <div className="aura-card p-8">
+        {!account ? (
+          <div className="text-center py-8 space-y-4">
+            <Trophy className="w-12 h-12 text-amber-500 mx-auto" />
+            <div>
+              <h4 className="text-lg font-bold text-black">Connect Wallet to Check Winnings</h4>
+              <p className="text-xs text-slate-500 mt-1">Verify if your wallet won the latest prize draw!</p>
+            </div>
+            <button
+              onClick={onOpenConnectModal}
+              className="px-8 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs shadow-aura-yellow"
+            >
+              Connect Wallet
+            </button>
+          </div>
+        ) : hasWinnings ? (
           <div className="space-y-6">
-            <div className="p-5 rounded-2xl bg-zama-yellow/10 border border-zama-yellow/30 flex items-center gap-3 text-xs font-mono text-zama-yellow">
-              <Sparkles className="w-5 h-5 text-zama-yellow shrink-0" />
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 flex items-center gap-3 text-xs text-amber-950 font-medium">
+              <Sparkles className="w-6 h-6 text-amber-600 shrink-0" />
               <span>
-                <strong className="text-white">Congratulations!</strong> Your wallet was selected as the secret winner. Claim tokens to your wallet or auto-compound to boost your future tickets.
+                <strong className="text-black text-sm block mb-0.5">Congratulations! You Won!</strong>
+                You have ${decryptedWinnings} cUSDT in secret prize winnings. You can claim them directly to your wallet or auto-compound into your principal for more tickets.
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-extrabold">
               <button
                 onClick={handleClaim}
                 disabled={isLoadingAction}
-                className="py-4 px-6 rounded-xl bg-zama-yellow hover:bg-zama-yellowHover text-black font-extrabold text-xs transition-all shadow-zama-glow flex items-center justify-center gap-2"
+                className="py-4 px-6 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black transition-all shadow-aura-yellow flex items-center justify-center gap-2"
               >
                 <ArrowDownToLine className="w-4 h-4" />
                 <span>Claim Prize to Wallet</span>
@@ -142,19 +163,19 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
               <button
                 onClick={handleCompound}
                 disabled={isLoadingAction}
-                className="py-4 px-6 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-2"
+                className="py-4 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 transition-all flex items-center justify-center gap-2"
               >
-                <Repeat className="w-4 h-4 text-zama-yellow" />
-                <span>Auto-Compound to Principal</span>
+                <Repeat className="w-4 h-4 text-amber-600" />
+                <span>Auto-Compound into Savings</span>
               </button>
             </div>
           </div>
         ) : (
-          <div className="py-12 text-center rounded-2xl bg-zama-dark border border-white/5 space-y-2 font-mono text-xs">
-            <Trophy className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-            <p className="text-white font-bold">No Unclaimed Winnings Detected</p>
-            <p className="text-zinc-400">
-              Click &quot;Decrypt (EIP-712)&quot; above to verify your secret winning status onchain!
+          <div className="py-12 text-center rounded-2xl bg-slate-50 border border-slate-100 space-y-2 text-xs">
+            <Trophy className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+            <p className="text-black font-bold text-sm">No Unclaimed Winnings</p>
+            <p className="text-slate-500 max-w-sm mx-auto">
+              Your principal is currently active in the savings vault. Click &quot;Reveal Winnings&quot; above after each draw to verify your secret winning status!
             </p>
           </div>
         )}

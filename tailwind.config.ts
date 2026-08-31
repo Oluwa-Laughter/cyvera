@@ -10,18 +10,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#080808",
-        foreground: "#FFFFFF",
-        zama: {
-          yellow: "#FFE600",
-          yellowHover: "#F5DC00",
-          yellowMuted: "rgba(255, 230, 0, 0.12)",
-          black: "#050505",
-          dark: "#0C0C0C",
-          card: "#121212",
-          cardHover: "#181818",
-          border: "rgba(255, 255, 255, 0.08)",
-          borderHover: "rgba(255, 230, 0, 0.35)",
+        background: "#F8FAFC",
+        foreground: "#0A0A0A",
+        aura: {
+          yellow: "#FFD200",
+          yellowHover: "#F5C800",
+          yellowLight: "#FFFBEA",
+          black: "#0A0A0A",
+          dark: "#18181B",
+          card: "#FFFFFF",
+          cardHover: "#FAFAFA",
+          border: "#E2E8F0",
+          borderHover: "#CBD5E1",
+          muted: "#64748B",
+          emerald: "#10B981",
         },
       },
       fontFamily: {
@@ -29,9 +31,10 @@ const config: Config = {
         mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
       },
       boxShadow: {
-        "zama-glow": "0 0 30px -5px rgba(255, 230, 0, 0.35)",
-        "zama-glow-sm": "0 0 15px -3px rgba(255, 230, 0, 0.25)",
-        "card-soft": "0 20px 40px -15px rgba(0, 0, 0, 0.8)",
+        "aura-sm": "0 2px 8px -2px rgba(0, 0, 0, 0.05), 0 1px 4px -1px rgba(0, 0, 0, 0.03)",
+        "aura-md": "0 12px 24px -6px rgba(0, 0, 0, 0.06), 0 4px 12px -2px rgba(0, 0, 0, 0.03)",
+        "aura-lg": "0 20px 40px -12px rgba(0, 0, 0, 0.08), 0 8px 16px -4px rgba(0, 0, 0, 0.04)",
+        "aura-yellow": "0 8px 24px -4px rgba(255, 210, 0, 0.4)",
       },
     },
   },
