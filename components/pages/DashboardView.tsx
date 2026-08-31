@@ -31,7 +31,7 @@ interface DashboardViewProps {
   drawHistory: DrawRecordView[];
   onNavigateTab: (tab: "vault" | "draws" | "rewards" | "yield") => void;
   onOpenFaucet: () => void;
-  onOpenConnectModal: () => void;
+  onConnect: () => void;
   onDecryptBalance: () => void;
   isDecryptingBalance: boolean;
 }
@@ -51,7 +51,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   drawHistory,
   onNavigateTab,
   onOpenFaucet,
-  onOpenConnectModal,
+  onConnect,
   onDecryptBalance,
   isDecryptingBalance,
 }) => {
@@ -179,7 +179,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </span>
                   )
                 ) : (
-                  <span className="text-slate-400 text-2xl font-bold">Connect Wallet</span>
+                  <span className="text-slate-400 text-2xl font-bold">Not Connected</span>
                 )}
               </div>
 
@@ -187,7 +187,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <button
                   onClick={onDecryptBalance}
                   disabled={isDecryptingBalance}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 transition-all shadow-sm"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 transition-all shadow-sm active:scale-95"
                 >
                   {isDecryptingBalance ? (
                     <span>Verifying...</span>
@@ -215,21 +215,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <>
                 <button
                   onClick={() => onNavigateTab("vault")}
-                  className="flex-1 md:flex-none px-6 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold shadow-aura-yellow transition-all hover:scale-105"
+                  className="flex-1 md:flex-none px-6 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold shadow-aura-yellow transition-all hover:scale-105 active:scale-95"
                 >
                   Deposit & Save
                 </button>
                 <button
                   onClick={() => onNavigateTab("rewards")}
-                  className="flex-1 md:flex-none px-5 py-3.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold transition-all shadow-sm"
+                  className="flex-1 md:flex-none px-5 py-3.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold transition-all shadow-sm active:scale-95"
                 >
                   Check Winnings
                 </button>
               </>
             ) : (
               <button
-                onClick={onOpenConnectModal}
-                className="w-full md:w-auto px-8 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold shadow-aura-yellow transition-all"
+                onClick={onConnect}
+                className="w-full md:w-auto px-8 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold shadow-aura-yellow transition-all active:scale-95"
               >
                 Connect Wallet to Save
               </button>

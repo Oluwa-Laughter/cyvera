@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   PiggyBank, 
   ArrowDownRight, 
@@ -25,9 +25,10 @@ interface VaultViewProps {
   onWithdraw: (amount: string) => Promise<void>;
   onWithdrawAll: () => Promise<void>;
   onOpenFaucet: () => void;
-  onOpenConnectModal: () => void;
+  onConnect: () => void;
   isLoadingAction: boolean;
   actionStatus: string;
+  initialDepositAmount?: string;
 }
 
 export const VaultView: React.FC<VaultViewProps> = ({
@@ -40,12 +41,19 @@ export const VaultView: React.FC<VaultViewProps> = ({
   onWithdraw,
   onWithdrawAll,
   onOpenFaucet,
-  onOpenConnectModal,
+  onConnect,
   isLoadingAction,
   actionStatus,
+  initialDepositAmount,
 }) => {
   const [activeTab, setActiveTab] = useState<"deposit" | "withdraw">("deposit");
-  const [amount, setAmount] = useState<string>("");
+  const [amount, setAmount] = useState<string>(initialDepositAmount || "");
+
+  useEffect(() => {
+    if (initialDepositAmount) {
+      setAmount(initialDepositAmount);
+    }
+  }, [initialDepositAmount]);
 
   const handleDepositSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +77,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
     if (activeTab === "deposit") {
       setAmount(walletBalance.replace(/,/g, ""));
     } else {
-      setAmount(decryptedBalance ? decryptedBalance.replace(/,/g, "") : "250.00");
+      setAmount(decryptedBalance ? decryptedBalance.replace(/,/g, "") : "0.00");
     }
   };
 
@@ -99,7 +107,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                     </span>
                   )
                 ) : (
-                  <span className="text-slate-400 text-2xl font-bold">Connect Wallet</span>
+                  <span className="text-slate-400 text-2xl font-bold">Not Connected</span>
                 )}
               </div>
 
@@ -107,7 +115,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                 <button
                   onClick={onDecryptBalance}
                   disabled={isDecryptingBalance}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 transition-all shadow-sm"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 transition-all shadow-sm active:scale-95"
                 >
                   {isDecryptingBalance ? (
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -214,7 +222,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                 key={preset}
                 type="button"
                 onClick={() => handleSetPreset(preset)}
-                className="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-black transition-all"
+                className="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-black transition-all active:scale-95"
               >
                 +${preset}
               </button>
@@ -222,7 +230,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
             <button
               type="button"
               onClick={handleSetMax}
-              className="py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 transition-all font-extrabold"
+              className="py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 transition-all font-extrabold active:scale-95"
             >
               MAX
             </button>
@@ -240,8 +248,8 @@ export const VaultView: React.FC<VaultViewProps> = ({
           {!account ? (
             <button
               type="button"
-              onClick={onOpenConnectModal}
-              className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-sm transition-all shadow-aura-yellow"
+              onClick={onConnect}
+              className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-sm transition-all shadow-aura-yellow active:scale-95"
             >
               Connect Wallet to Continue
             </button>
@@ -249,7 +257,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
             <button
               type="submit"
               disabled={isLoadingAction || !amount}
-              className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-sm tracking-tight transition-all shadow-aura-yellow disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-sm tracking-tight transition-all shadow-aura-yellow disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
             >
               {isLoadingAction ? (
                 <>
@@ -268,7 +276,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
               <button
                 type="submit"
                 disabled={isLoadingAction || !amount}
-                className="py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-extrabold text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-extrabold text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
               >
                 <ArrowUpRight className="w-4 h-4" />
                 <span>Withdraw Amount</span>
@@ -278,7 +286,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                 type="button"
                 onClick={onWithdrawAll}
                 disabled={isLoadingAction}
-                className="py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow flex items-center justify-center gap-2 disabled:opacity-50"
+                className="py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
               >
                 <span>Instant 100% Exit</span>
               </button>

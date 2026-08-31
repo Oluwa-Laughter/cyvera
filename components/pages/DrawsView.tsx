@@ -24,7 +24,7 @@ interface DrawsViewProps {
   drawHistory: DrawRecordView[];
   onTriggerDraw: () => Promise<void>;
   isTriggeringDraw: boolean;
-  onOpenConnectModal: () => void;
+  onConnect: () => void;
 }
 
 export const DrawsView: React.FC<DrawsViewProps> = ({
@@ -37,7 +37,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   drawHistory,
   onTriggerDraw,
   isTriggeringDraw,
-  onOpenConnectModal,
+  onConnect,
 }) => {
   const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number }>({ h: 0, m: 0, s: 0 });
 
@@ -90,8 +90,8 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
           <div className="w-full md:w-auto">
             {!account ? (
               <button
-                onClick={onOpenConnectModal}
-                className="w-full md:w-auto px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs tracking-wider uppercase transition-all shadow-aura-yellow"
+                onClick={onConnect}
+                className="w-full md:w-auto px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs tracking-wider uppercase transition-all shadow-aura-yellow active:scale-95"
               >
                 Connect Wallet to Draw
               </button>
@@ -99,7 +99,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
               <button
                 onClick={onTriggerDraw}
                 disabled={isTriggeringDraw || totalDepositors === 0}
-                className="w-full md:w-auto px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs tracking-wider uppercase transition-all shadow-aura-yellow disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full md:w-auto px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs tracking-wider uppercase transition-all shadow-aura-yellow disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
               >
                 {isTriggeringDraw ? (
                   <>

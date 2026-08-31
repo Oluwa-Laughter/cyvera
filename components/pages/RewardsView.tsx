@@ -22,7 +22,7 @@ interface RewardsViewProps {
   onDecryptWinnings: () => void;
   onClaimPrize: () => Promise<void>;
   onCompoundPrize: () => Promise<void>;
-  onOpenConnectModal: () => void;
+  onConnect: () => void;
   isLoadingAction: boolean;
   actionStatus: string;
 }
@@ -34,7 +34,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
   onDecryptWinnings,
   onClaimPrize,
   onCompoundPrize,
-  onOpenConnectModal,
+  onConnect,
   isLoadingAction,
   actionStatus,
 }) => {
@@ -84,7 +84,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
                     </span>
                   )
                 ) : (
-                  <span className="text-slate-400 text-2xl font-bold">Connect Wallet</span>
+                  <span className="text-slate-400 text-2xl font-bold">Not Connected</span>
                 )}
               </div>
 
@@ -92,7 +92,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
                 <button
                   onClick={onDecryptWinnings}
                   disabled={isDecryptingWinnings}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 transition-all shadow-sm"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 transition-all shadow-sm active:scale-95"
                 >
                   {isDecryptingWinnings ? (
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -134,8 +134,8 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
               <p className="text-xs text-slate-500 mt-1">Verify if your wallet won the latest prize draw!</p>
             </div>
             <button
-              onClick={onOpenConnectModal}
-              className="px-8 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs shadow-aura-yellow"
+              onClick={onConnect}
+              className="px-8 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs shadow-aura-yellow active:scale-95"
             >
               Connect Wallet
             </button>
@@ -154,7 +154,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
               <button
                 onClick={handleClaim}
                 disabled={isLoadingAction}
-                className="py-4 px-6 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black transition-all shadow-aura-yellow flex items-center justify-center gap-2"
+                className="py-4 px-6 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black transition-all shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95"
               >
                 <ArrowDownToLine className="w-4 h-4" />
                 <span>Claim Prize to Wallet</span>
@@ -163,7 +163,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
               <button
                 onClick={handleCompound}
                 disabled={isLoadingAction}
-                className="py-4 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 transition-all flex items-center justify-center gap-2"
+                className="py-4 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 transition-all flex items-center justify-center gap-2 active:scale-95"
               >
                 <Repeat className="w-4 h-4 text-amber-600" />
                 <span>Auto-Compound into Savings</span>

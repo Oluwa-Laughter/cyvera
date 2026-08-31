@@ -2,7 +2,6 @@
 
 import React from "react";
 import { X, Droplets, Sparkles, RefreshCw, CheckCircle2 } from "lucide-react";
-import { CONTRACT_ADDRESSES } from "@/lib/contracts";
 
 interface FaucetModalProps {
   isOpen: boolean;
@@ -11,7 +10,7 @@ interface FaucetModalProps {
   isClaiming: boolean;
   walletBalance: string;
   account: string | null;
-  onOpenConnectModal: () => void;
+  onConnect: () => void;
 }
 
 export const FaucetModal: React.FC<FaucetModalProps> = ({
@@ -21,7 +20,7 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
   isClaiming,
   walletBalance,
   account,
-  onOpenConnectModal,
+  onConnect,
 }) => {
   if (!isOpen) return null;
 
@@ -51,7 +50,7 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-6 flex items-center justify-between text-xs font-medium">
           <span className="text-slate-500">Current Wallet Balance:</span>
           <span className="font-extrabold text-black text-sm">
-            {walletBalance} cUSDT
+            {account ? `${walletBalance} cUSDT` : "Not Connected"}
           </span>
         </div>
 
@@ -72,9 +71,9 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
             <button
               onClick={() => {
                 onClose();
-                onOpenConnectModal();
+                onConnect();
               }}
-              className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold shadow-aura-yellow"
+              className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold shadow-aura-yellow active:scale-95 transition-all"
             >
               Connect Wallet to Mint
             </button>
@@ -82,16 +81,16 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
             <button
               onClick={onClaimFaucet}
               disabled={isClaiming}
-              className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold tracking-tight transition-all shadow-aura-yellow flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold tracking-tight transition-all shadow-aura-yellow flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
             >
               {isClaiming ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-4 h-4 animate-spin text-black" />
                   <span>Minting 1,000 cUSDT Tokens...</span>
                 </>
               ) : (
                 <>
-                  <Droplets className="w-4 h-4" />
+                  <Droplets className="w-4 h-4 text-black" />
                   <span>Mint 1,000 cUSDT Now</span>
                 </>
               )}

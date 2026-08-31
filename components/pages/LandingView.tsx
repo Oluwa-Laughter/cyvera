@@ -15,12 +15,11 @@ import {
   TrendingUp, 
   Users, 
   HelpCircle,
-  Zap,
-  Coins
+  Wallet
 } from "lucide-react";
 
 interface LandingViewProps {
-  onEnterApp: (tab?: "dashboard" | "vault" | "draws" | "rewards" | "yield") => void;
+  onEnterApp: (tab?: "dashboard" | "vault" | "draws" | "rewards" | "yield", initialAmount?: string) => void;
   onOpenFaucet: () => void;
   onOpenHowItWorks: () => void;
   totalDeposits: string;
@@ -50,7 +49,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   const faqs = [
     {
       q: "What is a 'No-Loss' Prize Savings protocol?",
-      a: "Unlike traditional lotteries where your ticket purchase is gone forever, AuraPool works like a high-yield savings account. Your deposit is pooled with other savers to earn DeFi yield (8.5% APY). The accrued interest is awarded in daily prize draws. You can withdraw 100% of your deposit at any time — you never lose a single cent of your principal.",
+      a: "Unlike traditional lotteries where your ticket purchase is spent forever, AuraPool works like a high-yield savings vault. Your deposit is pooled with other savers to earn DeFi yield (8.50% APY). The accrued interest is awarded in daily prize draws. You can withdraw 100% of your deposit at any time — you never lose a single cent of your principal.",
     },
     {
       q: "Why does privacy matter for PoolTogether?",
@@ -91,7 +90,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
           <button
             onClick={() => onEnterApp("dashboard")}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold shadow-aura-yellow transition-all hover:scale-105"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold shadow-aura-yellow transition-all hover:scale-105 active:scale-95"
           >
             <span>Launch App</span>
             <ArrowRight className="w-4 h-4" />
@@ -123,7 +122,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-16">
           <button
             onClick={() => onEnterApp("vault")}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-sm tracking-tight transition-all shadow-aura-yellow hover:scale-105"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-sm tracking-tight transition-all shadow-aura-yellow hover:scale-105 active:scale-95"
           >
             <span>Start Saving with $0 Risk</span>
             <ArrowRight className="w-4 h-4" />
@@ -131,7 +130,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
           <button
             onClick={onOpenHowItWorks}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold shadow-aura-sm transition-all"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold shadow-aura-sm transition-all active:scale-95"
           >
             <HelpCircle className="w-4 h-4 text-slate-500" />
             <span>How Does No-Loss Work?</span>
@@ -143,7 +142,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
           <div className="aura-card p-5">
             <span className="text-xs font-semibold text-slate-500">Current Prize Pot</span>
             <div className="text-2xl font-black text-black mt-1">
-              ${totalPrizeReserve} <span className="text-xs text-amber-600 font-bold">cUSDT</span>
+              ${totalPrizeReserve} <span className="text-xs text-amber-700 font-bold">cUSDT</span>
             </div>
           </div>
 
@@ -225,8 +224,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
               </div>
 
               <button
-                onClick={() => onEnterApp("vault")}
-                className="w-full py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow"
+                onClick={() => onEnterApp("vault", calcDeposit)}
+                className="w-full py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow active:scale-95"
               >
                 Deposit & Save Now
               </button>
@@ -235,7 +234,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         </div>
       </section>
 
-      {/* 4. Comparison Cards */}
+      {/* 4. Core Comparison Cards */}
       <section className="py-16 px-4 sm:px-8 max-w-5xl mx-auto w-full">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
           <h2 className="text-3xl font-black text-black tracking-tight">

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Menu, Wallet, Droplets, RefreshCw, CheckCircle2, ChevronDown } from "lucide-react";
+import { Menu, Wallet, Droplets, RefreshCw, CheckCircle2 } from "lucide-react";
 import { AuraLogo } from "@/components/AuraLogo";
 
 interface TopHeaderProps {
@@ -9,7 +9,7 @@ interface TopHeaderProps {
   pageSubtitle: string;
   onOpenMobileNav: () => void;
   account: string | null;
-  onOpenConnectModal: () => void;
+  onConnect: () => void;
   onDisconnect: () => void;
   isConnecting: boolean;
   onOpenFaucet: () => void;
@@ -21,7 +21,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   pageSubtitle,
   onOpenMobileNav,
   account,
-  onOpenConnectModal,
+  onConnect,
   onDisconnect,
   isConnecting,
   onOpenFaucet,
@@ -37,7 +37,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       <div className="flex items-center gap-4">
         <button
           onClick={onOpenMobileNav}
-          className="lg:hidden p-2.5 rounded-2xl bg-slate-100 text-slate-700 hover:text-black border border-slate-200"
+          className="lg:hidden p-2.5 rounded-2xl bg-slate-100 text-slate-700 hover:text-black border border-slate-200 transition-colors"
+          aria-label="Open menu"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -71,23 +72,33 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           </button>
         )}
 
-        {/* Wallet Connect */}
+        {/* Direct Wallet Connect Button */}
         {account ? (
           <button
             onClick={onDisconnect}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 hover:bg-red-50 hover:border-red-200 hover:text-red-600 border border-slate-200 text-slate-800 transition-all font-mono"
+            title="Click to disconnect"
           >
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
             <span>{formatAddress(account)}</span>
           </button>
         ) : (
           <button
-            onClick={onOpenConnectModal}
+            onClick={onConnect}
             disabled={isConnecting}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold transition-all shadow-aura-yellow"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold transition-all shadow-aura-yellow disabled:opacity-50 active:scale-95"
           >
-            <Wallet className="w-4 h-4" />
-            <span>Connect Wallet</span>
+            {isConnecting ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                <span>Connecting...</span>
+              </>
+            ) : (
+              <>
+                <Wallet className="w-4 h-4 text-black" />
+                <span>Connect Wallet</span>
+              </>
+            )}
           </button>
         )}
       </div>

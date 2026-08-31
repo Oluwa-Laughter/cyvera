@@ -1,7 +1,7 @@
 {
-  "name": "veilpool",
+  "name": "aurapool",
   "version": "1.0.0",
-  "description": "VeilPrize: Confidential No-Loss Prize Savings Protocol powered by Zama FHE",
+  "description": "AuraPool: Confidential No-Loss Prize Savings Protocol powered by Zama FHE",
   "private": true,
   "scripts": {
     "dev": "next dev",

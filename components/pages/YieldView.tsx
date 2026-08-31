@@ -18,7 +18,7 @@ interface YieldViewProps {
   onHarvestAndFund: (customAmount?: string) => Promise<void>;
   isHarvesting: boolean;
   account: string | null;
-  onOpenConnectModal: () => void;
+  onConnect: () => void;
 }
 
 export const YieldView: React.FC<YieldViewProps> = ({
@@ -27,7 +27,7 @@ export const YieldView: React.FC<YieldViewProps> = ({
   onHarvestAndFund,
   isHarvesting,
   account,
-  onOpenConnectModal,
+  onConnect,
 }) => {
   const [injectAmount, setInjectAmount] = useState<string>("50");
 
@@ -85,8 +85,8 @@ export const YieldView: React.FC<YieldViewProps> = ({
 
             {!account ? (
               <button
-                onClick={onOpenConnectModal}
-                className="w-full py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold transition-all shadow-aura-yellow"
+                onClick={onConnect}
+                className="w-full py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold transition-all shadow-aura-yellow active:scale-95"
               >
                 Connect Wallet
               </button>
@@ -94,7 +94,7 @@ export const YieldView: React.FC<YieldViewProps> = ({
               <button
                 onClick={() => onHarvestAndFund()}
                 disabled={isHarvesting}
-                className="w-full py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold transition-all shadow-aura-yellow flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold transition-all shadow-aura-yellow flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
               >
                 {isHarvesting ? (
                   <RefreshCw className="w-4 h-4 animate-spin text-black" />
@@ -118,8 +118,8 @@ export const YieldView: React.FC<YieldViewProps> = ({
 
             {!account ? (
               <button
-                onClick={onOpenConnectModal}
-                className="w-full py-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold transition-all"
+                onClick={onConnect}
+                className="w-full py-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold transition-all active:scale-95"
               >
                 Connect Wallet
               </button>
@@ -136,7 +136,7 @@ export const YieldView: React.FC<YieldViewProps> = ({
                 <button
                   onClick={() => onHarvestAndFund(injectAmount)}
                   disabled={isHarvesting || !injectAmount}
-                  className="flex-1 py-3.5 rounded-xl bg-slate-800 hover:bg-black text-white font-extrabold transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 py-3.5 rounded-xl bg-slate-800 hover:bg-black text-white font-extrabold transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 active:scale-95"
                 >
                   <span>Inject ${injectAmount}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-aura-yellow" />
