@@ -2,34 +2,33 @@
 
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { FloatingNav } from "@/components/FloatingNav";
-import { LandingHero } from "@/components/LandingHero";
-import { ComparisonSection } from "@/components/ComparisonSection";
-import { HowItWorksJourney } from "@/components/HowItWorksJourney";
-import { FHEInteractiveLab } from "@/components/FHEInteractiveLab";
-import { FAQSection } from "@/components/FAQSection";
-import { StatsOverview } from "@/components/StatsOverview";
-import { ConfidentialVaultCard } from "@/components/ConfidentialVaultCard";
-import { PrizeDrawCard, DrawRecordView } from "@/components/PrizeDrawCard";
-import { MyWinningsCard } from "@/components/MyWinningsCard";
-import { YieldReserveSimulator } from "@/components/YieldReserveSimulator";
+import { SidebarNav, AppPageTab } from "@/components/SidebarNav";
+import { TopHeader } from "@/components/TopHeader";
+import { LandingView } from "@/components/pages/LandingView";
+import { DashboardView } from "@/components/pages/DashboardView";
+import { VaultView } from "@/components/pages/VaultView";
+import { DrawsView } from "@/components/pages/DrawsView";
+import { RewardsView } from "@/components/pages/RewardsView";
+import { YieldView } from "@/components/pages/YieldView";
 import { FaucetModal } from "@/components/FaucetModal";
-import { ConfidentialityArchitectureModal } from "@/components/ConfidentialityArchitectureModal";
-import { CONTRACT_ADDRESSES, MOCK_ERC20_ABI, VEIL_PRIZE_POOL_ABI, MOCK_YIELD_SOURCE_ABI } from "@/lib/contracts";
-import { requestEip712DecryptionPermission, decryptHandleWithToken } from "@/lib/fhevm";
-import { Shield, Sparkles, AlertCircle, Info, Lock, ExternalLink, HelpCircle, ArrowLeft, ArrowRight, Dices, Cpu } from "lucide-react";
+import { PrivacySpecsModal } from "@/components/PrivacySpecsModal";
+import { DrawRecordView } from "@/components/PrizeDrawCard";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts";
+import { requestEip712DecryptionPermission } from "@/lib/fhevm";
 
 export default function Home() {
-  // Navigation View: "landing" | "app"
+  // Navigation State
   const [currentView, setCurrentView] = useState<"landing" | "app">("landing");
+  const [currentTab, setCurrentTab] = useState<AppPageTab>("dashboard");
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState<boolean>(false);
 
-  // Wallet & Web3 State
+  // Web3 & Wallet State
   const [account, setAccount] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
+  const [walletBalance, setWalletBalance] = useState<string>("1,000.00");
 
-  // Balances & Cryptographic State
-  const [walletBalance, setWalletBalance] = useState<string>("0.00");
+  // Confidential Balances (FHE euint64)
   const [decryptedBalance, setDecryptedBalance] = useState<string | null>(null);
   const [isDecryptingBalance, setIsDecryptingBalance] = useState<boolean>(false);
 
@@ -81,24 +80,52 @@ export default function Home() {
 
   // Modals
   const [isFaucetOpen, setIsFaucetOpen] = useState<boolean>(false);
-  const [isArchitectureOpen, setIsArchitectureOpen] = useState<boolean>(false);
+  const [isSpecsOpen, setIsSpecsOpen] = useState<boolean>(false);
   const [isClaimingFaucet, setIsClaimingFaucet] = useState<boolean>(false);
 
-  // --- Wallet Connection ---
+  // --- Real Web3 Wallet Detection & Connection ---
   const connectWallet = async () => {
     try {
       setIsConnecting(true);
       if (typeof window !== "undefined" && (window as any).ethereum) {
-        const browserProvider = new ethers.BrowserProvider((window as any).ethereum);
-        const accounts = await browserProvider.send("eth_requestAccounts", []);
-        if (accounts.length > 0) {
+        const ethereum = (window as any).ethereum;
+        const browserProvider = new ethers.BrowserProvider(ethereum);
+        
+        // Request Accounts
+        const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+        if (accounts && accounts.length > 0) {
           setAccount(accounts[0]);
           setProvider(browserProvider);
           setWalletBalance("1,000.00");
           setDecryptedBalance("250.00");
           setDecryptedWinnings("0.00");
         }
+
+        // Check & Prompt Sepolia network if needed
+        try {
+          await ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0xaa36a7" }], // 11155111 Sepolia
+          });
+        } catch (switchError: any) {
+          // If Sepolia not added, add it
+          if (switchError.code === 4902) {
+            await ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: "0xaa36a7",
+                  chainName: "Ethereum Sepolia",
+                  nativeCurrency: { name: "Sepolia ETH", symbol: "ETH", decimals: 18 },
+                  rpcUrls: ["https://rpc.sepolia.org"],
+                  blockExplorerUrls: ["https://sepolia.etherscan.io"],
+                },
+              ],
+            });
+          }
+        }
       } else {
+        // Fallback for demo without extension
         const mockAccount = "0x892a012a975765796a56eE8102d847b2c5896B20";
         setAccount(mockAccount);
         setWalletBalance("1,000.00");
@@ -107,6 +134,12 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Wallet connection error:", error);
+      // Fallback
+      const mockAccount = "0x892a012a975765796a56eE8102d847b2c5896B20";
+      setAccount(mockAccount);
+      setWalletBalance("1,000.00");
+      setDecryptedBalance("250.00");
+      setDecryptedWinnings("0.00");
     } finally {
       setIsConnecting(false);
     }
@@ -118,6 +151,24 @@ export default function Home() {
     setDecryptedBalance(null);
     setDecryptedWinnings(null);
   };
+
+  // Event Listeners for MetaMask
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).ethereum) {
+      const ethereum = (window as any).ethereum;
+      const handleAccountsChanged = (accounts: string[]) => {
+        if (accounts.length > 0) {
+          setAccount(accounts[0]);
+        } else {
+          disconnectWallet();
+        }
+      };
+      ethereum.on("accountsChanged", handleAccountsChanged);
+      return () => {
+        ethereum.removeListener("accountsChanged", handleAccountsChanged);
+      };
+    }
+  }, []);
 
   // --- EIP-712 Decryption ---
   const handleDecryptBalance = async () => {
@@ -174,7 +225,7 @@ export default function Home() {
     }
   };
 
-  // --- Actions ---
+  // --- Core Protocol Actions ---
   const handleClaimFaucet = async () => {
     if (!account) return;
     try {
@@ -197,7 +248,7 @@ export default function Home() {
       setActionStatus("1/3 Approving cUSDT token allowance...");
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      setActionStatus("2/3 Encrypting amount onchain (FHE.asEuint64)...");
+      setActionStatus("2/3 Encrypting deposit onchain (Zama euint64)...");
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setActionStatus("3/3 Depositing into Confidential Vault...");
@@ -225,7 +276,7 @@ export default function Home() {
     if (!account) return;
     try {
       setIsLoadingAction(true);
-      setActionStatus("1/2 Verifying encrypted balance (FHE.ge)...");
+      setActionStatus("1/2 Verifying encrypted balance invariant...");
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       setActionStatus("2/2 Transferring principal back with zero loss...");
@@ -347,136 +398,142 @@ export default function Home() {
     }
   };
 
+  const getPageTitle = () => {
+    switch (currentTab) {
+      case "dashboard": return { title: "Protocol Dashboard", sub: "Live overview of prize pot, countdown, and portfolio" };
+      case "vault": return { title: "Confidential Savings Vault", sub: "Shielded token deposit and zero-loss principal withdrawal" };
+      case "draws": return { title: "Onchain FHE Draws", sub: "Deposit-weighted winner selection using Zama randomness" };
+      case "rewards": return { title: "My Secret Rewards", sub: "Decrypt confidential winnings and auto-compound" };
+      case "yield": return { title: "DeFi Yield Engine", sub: "Streaming Aave V3 yield generator & strategy simulation" };
+    }
+  };
+
+  const { title, sub } = getPageTitle();
+
   return (
-    <div className="min-h-screen flex flex-col justify-between relative bg-grid-pattern">
-      {/* Detached Floating Island Navbar */}
-      <FloatingNav
-        currentView={currentView}
-        onSelectView={setCurrentView}
-        account={account}
-        onConnect={connectWallet}
-        onDisconnect={disconnectWallet}
-        onOpenFaucet={() => setIsFaucetOpen(true)}
-        onOpenArchitecture={() => setIsArchitectureOpen(true)}
-        isConnecting={isConnecting}
-      />
-
-      {/* VIEW 1: LANDING PAGE & VISION */}
+    <div className="min-h-screen bg-zama-black text-white selection:bg-zama-yellow selection:text-black">
+      {/* 1. VISION LANDING PAGE VIEW */}
       {currentView === "landing" ? (
-        <main className="w-full space-y-12">
-          {/* Hero Section */}
-          <LandingHero
-            onLaunchApp={() => setCurrentView("app")}
-            onOpenArchitecture={() => setIsArchitectureOpen(true)}
-            onOpenFaucet={() => setIsFaucetOpen(true)}
-            totalDeposits={totalDeposits}
-            totalPrizeReserve={totalPrizeReserve}
-          />
-
-          {/* Comparison Matrix */}
-          <ComparisonSection />
-
-          {/* 4-Step Architectural Pipeline */}
-          <HowItWorksJourney />
-
-          {/* Interactive Zama FHE Developer Lab */}
-          <FHEInteractiveLab />
-
-          {/* FAQ Knowledge Base */}
-          <FAQSection />
-        </main>
+        <LandingView
+          onEnterApp={(tab) => {
+            if (tab) setCurrentTab(tab);
+            setCurrentView("app");
+          }}
+          onOpenFaucet={() => setIsFaucetOpen(true)}
+          onOpenSpecs={() => setIsSpecsOpen(true)}
+          totalDeposits={totalDeposits}
+          totalPrizeReserve={totalPrizeReserve}
+          totalPrizesAwarded={totalPrizesAwarded}
+          depositorsCount={depositorsCount}
+        />
       ) : (
-        /* VIEW 2: FULL-FEATURED APP DASHBOARD */
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 w-full space-y-8 flex-1">
-          {/* App Header Breadcrumb */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 font-mono text-xs">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setCurrentView("landing")}
-                className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Overview</span>
-              </button>
-              <span className="text-slate-600">/</span>
-              <span className="text-zama-cyan font-bold flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5" />
-                <span>VeilPrize Vault Dashboard</span>
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-zama-emerald animate-pulse" />
-              <span className="text-slate-400">Sepolia Network Active</span>
-            </div>
-          </div>
-
-          {/* Top Analytics Overview */}
-          <StatsOverview
-            totalDeposits={totalDeposits}
-            totalPrizeReserve={totalPrizeReserve}
-            lastDrawTime={lastDrawTime}
-            drawInterval={drawInterval}
-            depositorsCount={depositorsCount}
-            totalPrizesAwarded={totalPrizesAwarded}
+        /* 2. FULL-FEATURED APP WITH SIDEBAR NAVIGATION */
+        <div className="min-h-screen flex flex-col lg:flex-row">
+          {/* Sidebar */}
+          <SidebarNav
+            currentTab={currentTab}
+            onSelectTab={setCurrentTab}
+            onNavigateHome={() => setCurrentView("landing")}
+            onOpenFaucet={() => setIsFaucetOpen(true)}
+            onOpenSpecs={() => setIsSpecsOpen(true)}
+            isOpenMobile={isMobileNavOpen}
+            onCloseMobile={() => setIsMobileNavOpen(false)}
           />
 
-          {/* Primary Cards Grid: Vault & FHE Draw Engine */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <ConfidentialVaultCard
+          {/* Main App Content Area */}
+          <div className="flex-1 flex flex-col lg:pl-72 min-h-screen">
+            <TopHeader
+              pageTitle={title}
+              pageSubtitle={sub}
+              onOpenMobileNav={() => setIsMobileNavOpen(true)}
               account={account}
-              walletBalance={walletBalance}
-              isDepositor={parseFloat(decryptedBalance || "0") > 0}
-              decryptedBalance={decryptedBalance}
-              isDecrypting={isDecryptingBalance}
-              onDecryptBalance={handleDecryptBalance}
-              onDeposit={handleDeposit}
-              onWithdraw={handleWithdraw}
-              onWithdrawAll={handleWithdrawAll}
+              onConnect={connectWallet}
+              onDisconnect={disconnectWallet}
+              isConnecting={isConnecting}
               onOpenFaucet={() => setIsFaucetOpen(true)}
-              isLoadingAction={isLoadingAction}
-              actionStatus={actionStatus}
+              walletBalance={walletBalance}
             />
 
-            <PrizeDrawCard
-              currentDrawId={currentDrawId}
-              currentPrizePot={totalPrizeReserve}
-              totalDepositors={depositorsCount}
-              lastDrawTime={lastDrawTime}
-              drawInterval={drawInterval}
-              drawHistory={drawHistory}
-              onTriggerDraw={handleTriggerDraw}
-              isTriggeringDraw={isTriggeringDraw}
-              canTrigger={true}
-              account={account}
-            />
+            <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-200">
+              {currentTab === "dashboard" && (
+                <DashboardView
+                  account={account}
+                  walletBalance={walletBalance}
+                  decryptedBalance={decryptedBalance}
+                  decryptedWinnings={decryptedWinnings}
+                  totalDeposits={totalDeposits}
+                  totalPrizeReserve={totalPrizeReserve}
+                  totalPrizesAwarded={totalPrizesAwarded}
+                  depositorsCount={depositorsCount}
+                  lastDrawTime={lastDrawTime}
+                  drawInterval={drawInterval}
+                  currentDrawId={currentDrawId}
+                  drawHistory={drawHistory}
+                  onNavigateTab={setCurrentTab}
+                  onOpenFaucet={() => setIsFaucetOpen(true)}
+                  onDecryptBalance={handleDecryptBalance}
+                  isDecryptingBalance={isDecryptingBalance}
+                />
+              )}
+
+              {currentTab === "vault" && (
+                <VaultView
+                  account={account}
+                  walletBalance={walletBalance}
+                  decryptedBalance={decryptedBalance}
+                  isDecryptingBalance={isDecryptingBalance}
+                  onDecryptBalance={handleDecryptBalance}
+                  onDeposit={handleDeposit}
+                  onWithdraw={handleWithdraw}
+                  onWithdrawAll={handleWithdrawAll}
+                  onOpenFaucet={() => setIsFaucetOpen(true)}
+                  isLoadingAction={isLoadingAction}
+                  actionStatus={actionStatus}
+                />
+              )}
+
+              {currentTab === "draws" && (
+                <DrawsView
+                  account={account}
+                  currentDrawId={currentDrawId}
+                  currentPrizePot={totalPrizeReserve}
+                  totalDepositors={depositorsCount}
+                  lastDrawTime={lastDrawTime}
+                  drawInterval={drawInterval}
+                  drawHistory={drawHistory}
+                  onTriggerDraw={handleTriggerDraw}
+                  isTriggeringDraw={isTriggeringDraw}
+                />
+              )}
+
+              {currentTab === "rewards" && (
+                <RewardsView
+                  account={account}
+                  decryptedWinnings={decryptedWinnings}
+                  isDecryptingWinnings={isDecryptingWinnings}
+                  onDecryptWinnings={handleDecryptWinnings}
+                  onClaimPrize={handleClaimPrize}
+                  onCompoundPrize={handleCompoundPrize}
+                  isLoadingAction={isLoadingAction}
+                  actionStatus={actionStatus}
+                />
+              )}
+
+              {currentTab === "yield" && (
+                <YieldView
+                  totalDeposits={totalDeposits}
+                  totalYieldHarvested={totalYieldHarvested}
+                  onHarvestAndFund={handleHarvestAndFund}
+                  isHarvesting={isHarvesting}
+                  account={account}
+                />
+              )}
+            </main>
           </div>
-
-          {/* Secondary Grid: My Secret Rewards & DeFi Yield Strategy */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <MyWinningsCard
-              account={account}
-              decryptedWinnings={decryptedWinnings}
-              isDecryptingWinnings={isDecryptingWinnings}
-              onDecryptWinnings={handleDecryptWinnings}
-              onClaimPrize={handleClaimPrize}
-              onCompoundPrize={handleCompoundPrize}
-              isLoadingAction={isLoadingAction}
-              actionStatus={actionStatus}
-            />
-
-            <YieldReserveSimulator
-              totalDeposits={totalDeposits}
-              totalYieldHarvested={totalYieldHarvested}
-              onHarvestAndFund={handleHarvestAndFund}
-              isHarvesting={isHarvesting}
-              account={account}
-            />
-          </div>
-        </main>
+        </div>
       )}
 
-      {/* Modals */}
+      {/* Global Modals */}
       <FaucetModal
         isOpen={isFaucetOpen}
         onClose={() => setIsFaucetOpen(false)}
@@ -486,34 +543,10 @@ export default function Home() {
         account={account}
       />
 
-      <ConfidentialityArchitectureModal
-        isOpen={isArchitectureOpen}
-        onClose={() => setIsArchitectureOpen(false)}
+      <PrivacySpecsModal
+        isOpen={isSpecsOpen}
+        onClose={() => setIsSpecsOpen(false)}
       />
-
-      {/* Global Footer */}
-      <footer className="w-full border-t border-white/5 bg-void-950/80 backdrop-blur-xl py-8 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-zama-cyan" />
-            <span className="text-slate-400 font-bold">VeilPrize Protocol</span>
-            <span>&bull; Confidential No-Loss Prize Savings</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <span className="text-slate-400">Powered by Zama fhEVM</span>
-            <span className="text-slate-400">Ethereum Sepolia</span>
-            <a
-              href="https://docs.zama.org/homepage"
-              target="_blank"
-              rel="noreferrer"
-              className="text-zama-cyan hover:text-white transition-colors flex items-center gap-1"
-            >
-              <span>Zama Docs</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
