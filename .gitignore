@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+cache
+artifacts
+broadcast
+.env
+.env.local
+*.tsbuildinfo
+.DS_Store
