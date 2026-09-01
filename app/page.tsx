@@ -733,6 +733,7 @@ export default function Home() {
           isConnecting={isConnecting}
           onOpenFaucet={() => setIsFaucetOpen(true)}
           walletBalance={snap?.userWalletBalance ?? "0.00"}
+          nativeEthBalance={snap?.userNativeEthBalance ?? "0.0000"}
           isWrongNetwork={chainId !== null && chainId !== SEPOLIA_CHAIN_ID}
         />
 

@@ -14,6 +14,7 @@ interface TopHeaderProps {
   isConnecting: boolean;
   onOpenFaucet: () => void;
   walletBalance: string;
+  nativeEthBalance?: string;
   isWrongNetwork?: boolean;
 }
 
@@ -27,6 +28,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   isConnecting,
   onOpenFaucet,
   walletBalance,
+  nativeEthBalance,
   isWrongNetwork = false,
 }) => {
   const formatAddress = (addr: string) => {
@@ -69,14 +71,22 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 
         {/* Balance Capsule */}
         {account && (
-          <button
-            onClick={onOpenFaucet}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200"
-            title="Click to get testnet tokens"
-          >
-            <span className="text-slate-500">Wallet:</span>
-            <span className="font-extrabold text-black">{walletBalance} cUSDT</span>
-          </button>
+          <div className="flex items-center gap-1.5">
+            {nativeEthBalance && (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-mono text-[11px] font-bold">
+                <span className="text-slate-400">Sepolia:</span>
+                <span className="font-extrabold text-black">{nativeEthBalance} ETH</span>
+              </div>
+            )}
+            <button
+              onClick={onOpenFaucet}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 transition-all border border-amber-200 active:scale-95 font-bold"
+              title="Click to get free testnet tokens"
+            >
+              <span className="text-amber-600">cUSDT:</span>
+              <span className="font-black text-black">${walletBalance}</span>
+            </button>
+          </div>
         )}
 
         {/* Connected Wallet Pill + Explicit Disconnect Button */}

@@ -1,7 +1,7 @@
 /**
  * Live on-chain protocol state reader & state engine.
  * Connects to Ethereum Sepolia RPC, tracks live contract deployment,
- * and maintains accurate user balances, savings, and 1-minute test draws.
+ * and maintains accurate user balances, real Sepolia ETH balance, savings, and 1-minute test draws.
  */
 import { ethers } from "ethers";
 import {
@@ -55,6 +55,7 @@ export interface ProtocolSnapshot {
   totalYieldHarvested: string;
   apyBasisPoints: number;
   userWalletBalance: string;
+  userNativeEthBalance: string;
   userShieldedBalanceHandle: string;
   userUnclaimedWinnings: string;
   userEncryptedWinningsHandle: string;
@@ -80,15 +81,25 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
     isContractDeployed = false;
   }
 
-  // Fetch real onchain wallet token balance
+  // Fetch real onchain wallet token balance & real Sepolia ETH balance
   let onchainWalletBal: bigint = 0n;
+  let onchainNativeEthBal: bigint = 0n;
+
   if (userAccount) {
     try {
-      onchainWalletBal = await token.balanceOf(userAccount);
+      const [tokBal, ethBal] = await Promise.all([
+        token.balanceOf(userAccount).catch(() => 0n),
+        provider.getBalance(userAccount).catch(() => 0n),
+      ]);
+      onchainWalletBal = tokBal;
+      onchainNativeEthBal = ethBal;
     } catch {
       onchainWalletBal = 0n;
+      onchainNativeEthBal = 0n;
     }
   }
+
+  const userNativeEthBalance = (parseFloat(ethers.formatEther(onchainNativeEthBal))).toFixed(4);
 
   const storedSaved = getStoredSavings(userAccount || null);
   const storedWin = getStoredWinnings(userAccount || null);
@@ -176,6 +187,7 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
           totalYieldHarvested: ethers.formatUnits(totalYieldHarvestedRaw, 6),
           apyBasisPoints: Number(apyBasisPointsRaw) || 850,
           userWalletBalance,
+          userNativeEthBalance,
           userShieldedBalanceHandle,
           userEncryptedWinningsHandle,
           userUnclaimedWinnings,
@@ -212,6 +224,7 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
     totalYieldHarvested: "0.00",
     apyBasisPoints: 850,
     userWalletBalance: effectiveWalletBal,
+    userNativeEthBalance,
     userShieldedBalanceHandle: userSavedNum > 0 ? "0x" + "aa".repeat(32) : ZERO,
     userEncryptedWinningsHandle: parseFloat(storedWin) > 0 ? "0x" + "bb".repeat(32) : ZERO,
     userUnclaimedWinnings: storedWin,
