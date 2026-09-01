@@ -65,30 +65,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onDecryptBalance,
   isDecryptingBalance,
 }) => {
-  const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number }>({ h: 0, m: 0, s: 0 });
-
-  const snapFetchedAt = React.useRef(0);
-  React.useEffect(() => {
-    snapFetchedAt.current = Math.floor(Date.now() / 1000);
-  }, [timeToNextDraw, lastDrawTime]);
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(60);
 
   useEffect(() => {
     const updateCountdown = () => {
-      const baseDiff = Math.max(0, timeToNextDraw);
-      const elapsed = Math.floor(Date.now() / 1000) - snapFetchedAt.current;
-      const diff = Math.max(0, baseDiff - elapsed);
-      setTimeLeft({
-        h: Math.floor(diff / 3600),
-        m: Math.floor((diff % 3600) / 60),
-        s: diff % 60,
-      });
+      const baseTime = lastDrawTime > 0 ? lastDrawTime : Math.floor(Date.now() / 1000) - 10;
+      const targetTime = baseTime + (drawInterval || 60);
+      const now = Math.floor(Date.now() / 1000);
+      const diff = Math.max(0, targetTime - now);
+      setSecondsRemaining(diff);
     };
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [timeToNextDraw, lastDrawTime]);
+  }, [lastDrawTime, drawInterval]);
 
   const pad = (n: number) => n.toString().padStart(2, "0");
+  const minutes = Math.floor(secondsRemaining / 60);
+  const seconds = secondsRemaining % 60;
+  const formattedCountdown = `00:${pad(minutes)}:${pad(seconds)}`;
 
   const hasWinnings = parseFloat(decryptedWinnings || "0") > 0;
 
@@ -185,7 +180,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <span className="text-slate-400 text-[11px] block">Next Draw:</span>
-            <strong className="text-black text-sm font-mono">{pad(timeLeft.h)}:{pad(timeLeft.m)}:{pad(timeLeft.s)}</strong>
+            <strong className="text-black text-sm font-mono">{formattedCountdown}</strong>
           </div>
         </div>
       </div>

@@ -62,7 +62,7 @@ contract AuraPrizePool {
     address public immutable deployer;
     address public owner;
     address public yieldSource;
-    uint256 public drawInterval = 1 hours;
+    uint256 public drawInterval = 60 seconds; // 1-minute automated draw cycle for testing
     uint256 public winnersPerDraw = 1;
     uint256 public lastDrawTime;
     uint256 public currentDrawId;

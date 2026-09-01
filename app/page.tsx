@@ -749,12 +749,12 @@ export default function Home() {
                 walletBalance={snap?.userWalletBalance ?? "0.00"}
                 decryptedBalance={decryptedBalance}
                 decryptedWinnings={decryptedWinnings}
-                totalDeposits={snap?.totalDeposits ?? "12500.00"}
-                totalPrizeReserve={snap?.totalPrizeReserve ?? "85.00"}
-                totalPrizesAwarded={snap?.totalPrizesAwarded ?? "350.00"}
-                depositorsCount={snap?.depositorsCount ?? 12}
+                totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
+                totalPrizeReserve={snap?.totalPrizeReserve ?? "15.00"}
+                totalPrizesAwarded={snap?.totalPrizesAwarded ?? "0.00"}
+                depositorsCount={snap?.depositorsCount ?? (account && parseFloat(decryptedBalance || "0") > 0 ? 1 : 0)}
                 lastDrawTime={snap?.lastDrawTime ?? 0}
-                drawInterval={snap?.drawInterval ?? 3600}
+                drawInterval={snap?.drawInterval ?? 60}
                 currentDrawId={snap?.currentDrawId ?? 1}
                 winnersPerDraw={snap?.winnersPerDraw ?? 1}
                 drawHistory={snap?.drawHistory ?? []}
@@ -784,8 +784,8 @@ export default function Home() {
               onConnect={handleConnectWallet}
               isLoadingAction={isLoadingAction}
               initialDepositAmount={initialDepositAmount}
-              totalDeposits={snap?.totalDeposits ?? "12500.00"}
-              totalPrizeReserve={snap?.totalPrizeReserve ?? "85.00"}
+              totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
+              totalPrizeReserve={snap?.totalPrizeReserve ?? "15.00"}
             />
           )}
 
@@ -794,10 +794,10 @@ export default function Home() {
               account={account}
               currentDrawId={snap?.currentDrawId ?? 1}
               winnersPerDraw={snap?.winnersPerDraw ?? 1}
-              currentPrizePot={snap?.totalPrizeReserve ?? "85.00"}
-              totalDepositors={snap?.depositorsCount ?? 12}
+              currentPrizePot={snap?.totalPrizeReserve ?? "15.00"}
+              totalDepositors={snap?.depositorsCount ?? (account && parseFloat(decryptedBalance || "0") > 0 ? 1 : 0)}
               lastDrawTime={snap?.lastDrawTime ?? 0}
-              drawInterval={snap?.drawInterval ?? 3600}
+              drawInterval={snap?.drawInterval ?? 60}
               timeToNextDraw={snap?.timeToNextDraw ?? 0}
               drawHistory={snap?.drawHistory ?? []}
               onCheckWinnings={handleDecryptWinnings}

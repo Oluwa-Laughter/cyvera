@@ -1,7 +1,7 @@
 /**
- * Live on-chain protocol state reader & seamless state engine.
- * Connects to Ethereum Sepolia RPC, detects live contract deployment,
- * and maintains accurate user balances, savings, and draw history.
+ * Live on-chain protocol state reader & state engine.
+ * Connects to Ethereum Sepolia RPC, tracks live contract deployment,
+ * and maintains accurate user balances, savings, and 1-minute test draws.
  */
 import { ethers } from "ethers";
 import {
@@ -80,7 +80,7 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
     isContractDeployed = false;
   }
 
-  // Fetch real onchain wallet token balance (from deployed Zama Sepolia token)
+  // Fetch real onchain wallet token balance
   let onchainWalletBal: bigint = 0n;
   if (userAccount) {
     try {
@@ -169,7 +169,7 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
           totalPrizesAwarded: ethers.formatUnits(totalPrizesAwardedRaw, 6),
           totalWithdrawn: ethers.formatUnits(totalWithdrawnRaw, 6),
           lastDrawTime: Number(lastDrawTimeRaw),
-          drawInterval: Number(drawIntervalRaw) || 3600,
+          drawInterval: Number(drawIntervalRaw) || 60,
           currentDrawId: Number(currentDrawIdRaw),
           winnersPerDraw: Number(winnersPerDrawRaw) || 1,
           depositorsCount: Number(depositorsCountRaw),
@@ -181,7 +181,7 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
           userUnclaimedWinnings,
           userIsDepositor,
           drawHistory: drawHistory.length > 0 ? drawHistory : storedDraws,
-          timeToNextDraw: Number(timeToNextDrawRaw) || 3600,
+          timeToNextDraw: Number(timeToNextDrawRaw) || 60,
         };
       }
     } catch (e) {
@@ -189,25 +189,27 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
     }
   }
 
-  // Fallback / Responsive Store Engine
+  // Fallback / Responsive Store Engine without phantom data
   const effectiveWalletBal = onchainWalletBal > 0n ? ethers.formatUnits(onchainWalletBal, 6) : storedWallet;
   const userSavedNum = parseFloat(storedSaved);
   const now = Math.floor(Date.now() / 1000);
-  const drawInterval = 3600;
+  const drawInterval = 60; // 1-minute test cycle
   const nextDrawTime = storedLastDraw + drawInterval;
   const timeToNext = Math.max(0, nextDrawTime - now);
 
+  const effectiveTVL = parseFloat(storedTVL) > 0 ? storedTVL : (userSavedNum > 0 ? storedSaved : "0.00");
+
   return {
-    totalDeposits: storedTVL,
+    totalDeposits: effectiveTVL,
     totalPrizeReserve: storedPot,
-    totalPrizesAwarded: "350.00",
-    totalWithdrawn: "1200.00",
+    totalPrizesAwarded: "0.00",
+    totalWithdrawn: "0.00",
     lastDrawTime: storedLastDraw,
-    drawInterval: 3600,
+    drawInterval: 60,
     currentDrawId: storedDrawId,
     winnersPerDraw: 1,
-    depositorsCount: userSavedNum > 0 ? 12 : 11,
-    totalYieldHarvested: "420.00",
+    depositorsCount: userSavedNum > 0 ? 1 : 0,
+    totalYieldHarvested: "0.00",
     apyBasisPoints: 850,
     userWalletBalance: effectiveWalletBal,
     userShieldedBalanceHandle: userSavedNum > 0 ? "0x" + "aa".repeat(32) : ZERO,

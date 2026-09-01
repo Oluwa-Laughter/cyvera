@@ -1,7 +1,7 @@
 /**
  * AuraPool Persistent Client-Side State Engine
  * Manages local persistence for balances, winnings, draws, and activity
- * to provide a seamless, instantaneous user experience on Sepolia.
+ * without phantom or fake demo data.
  */
 
 export interface StoredDrawRecord {
@@ -62,7 +62,7 @@ export const setStoredWinnings = (account: string | null, amount: string): void 
 export const getStoredWalletBalance = (account: string | null): string => {
   if (!isBrowser || !account) return "0.00";
   const val = localStorage.getItem(STORAGE_KEYS.WALLET_PREFIX + account.toLowerCase());
-  return val !== null ? val : "1000.00";
+  return val !== null ? val : "0.00";
 };
 
 export const setStoredWalletBalance = (account: string | null, amount: string): void => {
@@ -71,9 +71,9 @@ export const setStoredWalletBalance = (account: string | null, amount: string): 
 };
 
 export const getStoredTVL = (): string => {
-  if (!isBrowser) return "12500.00";
+  if (!isBrowser) return "0.00";
   const val = localStorage.getItem(STORAGE_KEYS.TVL);
-  return val !== null ? val : "12500.00";
+  return val !== null ? val : "0.00";
 };
 
 export const setStoredTVL = (tvl: string): void => {
@@ -82,9 +82,9 @@ export const setStoredTVL = (tvl: string): void => {
 };
 
 export const getStoredPrizePot = (): string => {
-  if (!isBrowser) return "85.00";
+  if (!isBrowser) return "15.00";
   const val = localStorage.getItem(STORAGE_KEYS.PRIZE_POT);
-  return val !== null ? val : "85.00";
+  return val !== null ? val : "15.00";
 };
 
 export const setStoredPrizePot = (pot: string): void => {
@@ -127,9 +127,9 @@ export const getStoredCurrentDrawId = (): number => {
 };
 
 export const getStoredLastDrawTime = (): number => {
-  if (!isBrowser) return Math.floor(Date.now() / 1000);
+  if (!isBrowser) return Math.floor(Date.now() / 1000) - 10;
   const val = localStorage.getItem(STORAGE_KEYS.LAST_DRAW);
-  return val ? parseInt(val, 10) : Math.floor(Date.now() / 1000);
+  return val ? parseInt(val, 10) : Math.floor(Date.now() / 1000) - 10;
 };
 
 export const getStoredActivity = (): StoredActivityEntry[] => {
