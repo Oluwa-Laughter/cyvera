@@ -13,7 +13,7 @@ import { HowItWorksView } from "@/components/pages/HowItWorksView";
 import { FaucetModal } from "@/components/FaucetModal";
 import { HowItWorksModal } from "@/components/HowItWorksModal";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
-import { CONTRACT_ADDRESSES, MOCK_ERC20_ABI, VEIL_PRIZE_POOL_ABI } from "@/lib/contracts";
+import { CONTRACT_ADDRESSES, MOCK_ERC20_ABI, AURA_PRIZE_POOL_ABI } from "@/lib/contracts";
 import { fetchLiveProtocolState } from "@/lib/web3";
 import { connectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
 import { requestEip712DecryptionPermission } from "@/lib/fhevm";
@@ -155,10 +155,16 @@ export default function Home() {
         account,
         CONTRACT_ADDRESSES.sepolia.prizePool
       );
-      setDecryptedBalance("250.00");
+      
+      // Read real onchain balance for connected account
+      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, provider);
+      const realBal = await poolContract.getUserPlaintextBalance(account).catch(() => 0n);
+      setDecryptedBalance(ethers.formatUnits(realBal, 6));
     } catch (error) {
       console.error("Balance decryption error:", error);
-      setDecryptedBalance("250.00");
+      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, provider);
+      const realBal = await poolContract.getUserPlaintextBalance(account).catch(() => 0n);
+      setDecryptedBalance(ethers.formatUnits(realBal, 6));
     } finally {
       setIsDecryptingBalance(false);
     }
@@ -181,7 +187,11 @@ export default function Home() {
         account,
         CONTRACT_ADDRESSES.sepolia.prizePool
       );
-      setDecryptedWinnings(parseFloat(totalPrizeReserve) > 0 ? totalPrizeReserve : "85.00");
+      
+      // Read real onchain winnings for connected account
+      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, provider);
+      const realWin = await poolContract.getUserPlaintextWinnings(account).catch(() => 0n);
+      setDecryptedWinnings(ethers.formatUnits(realWin, 6));
     } catch (error) {
       console.error("Winnings decryption error:", error);
       setDecryptedWinnings("0.00");
@@ -200,8 +210,18 @@ export default function Home() {
     try {
       setIsClaimingFaucet(true);
       const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, signer);
-      const tx = await tokenContract.faucet();
-      await tx.wait();
+      
+      // Try official Zama token mint(account, amount) first
+      try {
+        const mintAmount = ethers.parseUnits("1000", 6);
+        const tx = await tokenContract.mint(account, mintAmount);
+        await tx.wait();
+      } catch (mintErr) {
+        // Fallback to faucet()
+        const tx = await tokenContract.faucet();
+        await tx.wait();
+      }
+
       await refreshOnchainState();
       setIsFaucetOpen(false);
     } catch (error: any) {
@@ -224,7 +244,7 @@ export default function Home() {
       setIsLoadingAction(true);
       const amountUnits = ethers.parseUnits(amountStr, 6);
       const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, signer);
-      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, VEIL_PRIZE_POOL_ABI, signer);
+      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
 
       setActionStatus("1/2 Approving cUSDT token allowance onchain...");
       const approveTx = await tokenContract.approve(CONTRACT_ADDRESSES.sepolia.prizePool, amountUnits);
@@ -260,7 +280,7 @@ export default function Home() {
     try {
       setIsLoadingAction(true);
       const amountUnits = ethers.parseUnits(amountStr, 6);
-      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, VEIL_PRIZE_POOL_ABI, signer);
+      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
 
       setActionStatus("Withdrawing principal with zero loss...");
       const tx = await poolContract.withdraw(amountUnits);
@@ -287,8 +307,24 @@ export default function Home() {
   };
 
   const handleWithdrawAll = async () => {
-    const curSaved = decryptedBalance || "250.00";
-    await handleWithdraw(curSaved);
+    if (!signer || !account) return;
+    try {
+      setIsLoadingAction(true);
+      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+      setActionStatus("Withdrawing all savings principal...");
+      const tx = await poolContract.withdrawAll();
+      await tx.wait();
+      setActionStatus("All funds withdrawn!");
+      await refreshOnchainState();
+      setDecryptedBalance("0.00");
+      setTimeout(() => setActionStatus(""), 3000);
+    } catch (error: any) {
+      console.error("Withdraw all error:", error);
+      const curSaved = decryptedBalance || "0.00";
+      await handleWithdraw(curSaved);
+    } finally {
+      setIsLoadingAction(false);
+    }
   };
 
   const handleClaimPrize = async () => {
@@ -296,7 +332,7 @@ export default function Home() {
 
     try {
       setIsLoadingAction(true);
-      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, VEIL_PRIZE_POOL_ABI, signer);
+      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
       const tx = await poolContract.claimPrize();
       await tx.wait();
 
@@ -318,7 +354,7 @@ export default function Home() {
 
     try {
       setIsLoadingAction(true);
-      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, VEIL_PRIZE_POOL_ABI, signer);
+      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
       const tx = await poolContract.compoundPrize();
       await tx.wait();
 

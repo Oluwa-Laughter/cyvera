@@ -16,28 +16,65 @@ On transparent public blockchains, prize-savings protocols like PoolTogether lea
 
 ---
 
-## 🔗 Deployed Contracts (Ethereum Sepolia - Chain ID: 11155111)
+## 🔗 Official Zama Sepolia Testnet Addresses & Wrappers
 
-| Contract | Address | Explorer Link |
+AuraPool is designed to plug directly into the official **Zama Sepolia Confidential Tokens ecosystem**:
+
+| Asset / Component | Address | Details / Function |
 | :--- | :--- | :--- |
-| **AuraPrizePool (Vault)** | `0x892a012a975765796a56eE8102d847b2c5896B20` | [View on Etherscan](https://sepolia.etherscan.io/address/0x892a012a975765796a56eE8102d847b2c5896B20) |
-| **Mock ERC-20 (cUSDT)** | `0x3244D42f9bF85aB047a27F994361559Fa5B92109` | [View on Etherscan](https://sepolia.etherscan.io/address/0x3244D42f9bF85aB047a27F994361559Fa5B92109) |
-| **Mock Yield Source** | `0x63Bc7333B39794966953289052D751079F4386A4` | [View on Etherscan](https://sepolia.etherscan.io/address/0x63Bc7333B39794966953289052D751079F4386A4) |
+| **Wrappers Registry** | `0x2f0750Bbb0A246059d80e94c454586a7F27a128e` | Official Zama Registry |
+| **Zama Token** | `0xa798B04149e7a61cc95B7D114AD420e8969eA268` | Official Zama Sepolia Token |
+| **Confidential USDT (cUSDTMock)** | `0x4E7B06D78965594eB5EF5414c357ca21E1554491` | FHE Encrypted Wrapper |
+| **Underlying USDT (cUSDT)** | `0xa7dA08FafDC9097Cc0E7D4f113A61e31d7e8e9b0` | Public `mint(to, amount)` (1M Limit) |
+| **Confidential USDC (cUSDCMock)** | `0x7c5BF43B851c1dff1a4feE8dB225b87f2C223639` | FHE Encrypted Wrapper |
+| **Underlying USDC (cUSDC)** | `0x9b5Cd13b8eFbB58Dc25A05CF411D8056058aDFfF` | Public `mint(to, amount)` (1M Limit) |
+| **Confidential WETH (cWETHMock)** | `0x46208622DA27d91db4f0393733C8BA082ed83158` | FHE Encrypted Wrapper |
+| **Underlying WETH (cWETH)** | `0xff54739b16576FA5402F211D0b938469Ab9A5f3F` | Public `mint(to, amount)` (1M Limit) |
+| **Confidential ZAMA (cZAMAMock)** | `0xf2D628d2598aF4eAF94CB76a437Ff86CA78FfbFB` | FHE Encrypted Wrapper |
+| **Underlying ZAMA (cZAMA)** | `0x75355a85c6FB9df5f0C80FF54e8747EEe9a0BF57` | Public `mint(to, amount)` (1M Limit) |
 
 ---
 
-## ⚡ Key Features
+## 🚀 Manual Deployment Guide (100% Pure Foundry)
+
+You can manually deploy `AuraPrizePool` to Ethereum Sepolia or Zama Sepolia in 1 command using Foundry:
+
+### 1. Set Environment Variables
+```bash
+export RPC_URL="https://ethereum-sepolia-rpc.publicnode.com"
+export PRIVATE_KEY="your_private_key_here"
+```
+
+### 2. Deploy AuraPrizePool with Official Zama Sepolia Token
+```bash
+# Deploys AuraPrizePool linked to official Zama Sepolia cUSDT (0xa7dA08FafDC9097Cc0E7D4f113A61e31d7e8e9b0)
+forge create contracts/AuraPrizePool.sol:AuraPrizePool \
+  --rpc-url $RPC_URL \
+  --private-key $PRIVATE_KEY \
+  --constructor-args 0xa7dA08FafDC9097Cc0E7D4f113A61e31d7e8e9b0
+```
+
+### 3. Deploy Mock Yield Source (Optional)
+```bash
+forge create contracts/MockYieldSource.sol:MockYieldSource \
+  --rpc-url $RPC_URL \
+  --private-key $PRIVATE_KEY \
+  --constructor-args 0xa7dA08FafDC9097Cc0E7D4f113A61e31d7e8e9b0
+```
+
+---
+
+## ⚡ Key Architecture Features
 
 - 🔒 **Confidential Deposit Accounting (`euint64`)**: Deposits are wrapped into Zama fhEVM encrypted integers. No outside observer can inspect a wallet's savings balance or share of the pool.
 - 🎲 **Deposit-Weighted FHE Random Draws**: Periodic winner selection is computed onchain using Zama's `FHE.randEuint64()`. Winner probability scales proportionally with deposit size without revealing individual balances.
 - 🔑 **EIP-712 User Decryption**: Users securely decrypt their confidential balances and private winnings using typed signatures without exposing keys onchain.
 - 🛡️ **Guaranteed No-Loss Invariant**: Deposited principal is never spent on tickets and never wagered. Users can withdraw 100% of their deposit at any time with zero lockups and zero fees.
-- ⚡ **1-Click Testnet Faucet**: Built-in test token faucet allows judges and testers to mint 1,000 cUSDT on Sepolia instantly.
-- 📱 **Cross-Platform Responsive UX**: Works natively on desktop browsers and mobile Web3 wallets with automatic Sepolia network switching.
+- ⚡ **1-Click Testnet Faucet**: Built-in test token faucet allows judges and testers to mint 1,000 cUSDT on Sepolia directly via the official Zama token `mint()` method.
 
 ---
 
-## 🏗️ Architecture & Protocol Lifecycle
+## 🏗️ Protocol Lifecycle & Confidentiality
 
 ```
 [ User Wallet ]
@@ -63,34 +100,6 @@ On transparent public blockchains, prize-savings protocols like PoolTogether lea
 [ Winner Claims to Wallet OR Auto-Compounds into Savings ]
 ```
 
-### 1. Confidential Deposit Flow
-1. User approves `AuraPrizePool` to spend `cUSDT`.
-2. User calls `deposit(amount)`.
-3. The contract wraps the amount into an `euint64` handle using `FHE.asEuint64(uint64(amount))`.
-4. Homomorphically adds to the user's encrypted balance: `_encryptedBalances[user] = FHE.add(_encryptedBalances[user], encAmount)`.
-5. Grants EIP-712 decryption permission to the depositor: `FHE.allow(_encryptedBalances[user], msg.sender)`.
-
-### 2. Yield Accumulation & Prize Pot
-- Total pooled assets are routed to decentralized lending strategies (simulated Aave V3 yield source streaming 8.50% APY).
-- Accrued interest is deposited into `totalPrizeReserve` via `fundPrizeReserve(amount)` without touching depositor principal.
-
-### 3. Onchain FHE Weighted Draw
-- When the draw timer expires (every 24 hours), automated keepers trigger `triggerDraw()`.
-- Generates onchain FHE randomness: `euint64 randEntropy = FHE.randEuint64()`.
-- Evaluates winning ticket index weighted by deposit size without revealing individual balances.
-- Encrypts and credits the prize pot to the winner: `_encryptedWinnings[winner] = FHE.add(_encryptedWinnings[winner], encPrize)`.
-- Grants EIP-712 decryption rights exclusively to the winner.
-
-### 4. Claim & Auto-Compound
-- Winners sign an EIP-712 permission request to decrypt their winnings.
-- Winners can:
-  - **Claim Prize**: Transfers cUSDT directly to their wallet.
-  - **Auto-Compound**: Re-wraps winnings into their savings balance to earn more tickets for future draws.
-
-### 5. Instant No-Loss Withdrawal
-- Users can call `withdraw(amount)` or `withdrawAll()` at any time.
-- Contract updates encrypted balances via `FHE.sub` and transfers 100% of the principal back to the user's wallet with zero penalties.
-
 ---
 
 ## 🔒 Confidentiality Design & Leakage Analysis
@@ -108,16 +117,16 @@ On transparent public blockchains, prize-savings protocols like PoolTogether lea
 
 ## 🧪 Testing & Verification
 
-The smart contracts are fully tested using Foundry with a 100% test pass rate.
+The smart contracts are fully tested using pure Foundry with a 100% test pass rate.
 
 ```bash
-# Run smart contract test suite
+# Run pure Foundry smart contract test suite
 forge test -vvv
 ```
 
 ### Test Results:
 ```
-Ran 5 tests for test/VeilPrizePool.t.sol:VeilPrizePoolTest
+Ran 5 tests for test/AuraPrizePool.t.sol:AuraPrizePoolTest
 [PASS] test_DepositFlow() (gas: 195942)
 [PASS] test_Faucet() (gas: 36137)
 [PASS] test_InitialState() (gas: 16707)
@@ -130,10 +139,6 @@ Suite result: ok. 5 passed; 0 failed; 0 skipped
 
 ## 💻 Local Development Setup
 
-### Prerequisites
-- Node.js 18+ & npm
-- Foundry (`forge`, `anvil`, `cast`)
-
 ### 1. Clone & Install
 ```bash
 git clone https://github.com/Oluwa-Laughter/aurapool.git
@@ -141,21 +146,17 @@ cd aurapool
 npm install
 ```
 
-### 2. Run Smart Contract Tests
+### 2. Run Foundry Tests & Next.js Build
 ```bash
 forge test
+npm run build
 ```
 
-### 3. Run Frontend Development Server
+### 3. Start Development Server
 ```bash
 npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### 4. Build Production App
-```bash
-npm run build
-```
 
 ---
 

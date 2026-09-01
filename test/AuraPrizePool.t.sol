@@ -3,9 +3,8 @@ pragma solidity ^0.8.20;
 
 import "../contracts/MockERC20.sol";
 import "../contracts/MockYieldSource.sol";
-import "../contracts/VeilPrizePool.sol";
+import "../contracts/AuraPrizePool.sol";
 
-// Minimal self-contained Foundry test interface
 abstract contract SimpleTest {
     function assertTrue(bool condition, string memory message) internal pure {
         require(condition, message);
@@ -20,10 +19,10 @@ abstract contract SimpleTest {
     }
 }
 
-contract VeilPrizePoolTest is SimpleTest {
+contract AuraPrizePoolTest is SimpleTest {
     MockERC20 public token;
     MockYieldSource public yieldSource;
-    VeilPrizePool public pool;
+    AuraPrizePool public pool;
 
     address public alice = address(0xA11CE);
     address public bob = address(0xB0B);
@@ -32,7 +31,7 @@ contract VeilPrizePoolTest is SimpleTest {
     function setUp() public {
         token = new MockERC20("Confidential Prize Token", "cUSDT", 6);
         yieldSource = new MockYieldSource(address(token));
-        pool = new VeilPrizePool(address(token));
+        pool = new AuraPrizePool(address(token));
         
         yieldSource.setPrizePool(address(pool));
         pool.setYieldSource(address(yieldSource));
@@ -52,7 +51,6 @@ contract VeilPrizePoolTest is SimpleTest {
 
     function test_Faucet() public {
         address newUser = address(0x1234);
-        // Simulate calling faucet
         token.mint(newUser, 1_000 * 10**6);
         assertEq(token.balanceOf(newUser), 1_000 * 10**6, "Faucet balance mismatch");
     }
@@ -60,7 +58,6 @@ contract VeilPrizePoolTest is SimpleTest {
     function test_DepositFlow() public {
         uint256 depositAmt = 500 * 10**6;
         
-        // Alice deposits
         token.mint(address(this), depositAmt);
         token.approve(address(pool), depositAmt);
         pool.deposit(depositAmt);

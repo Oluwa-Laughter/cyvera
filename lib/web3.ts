@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { CONTRACT_ADDRESSES, MOCK_ERC20_ABI, VEIL_PRIZE_POOL_ABI, MOCK_YIELD_SOURCE_ABI } from "./contracts";
+import { CONTRACT_ADDRESSES, MOCK_ERC20_ABI, AURA_PRIZE_POOL_ABI, MOCK_YIELD_SOURCE_ABI } from "./contracts";
 
 export const SEPOLIA_CHAIN_ID = 11155111;
 export const SEPOLIA_HEX_CHAIN_ID = "0xaa36a7";
@@ -75,7 +75,7 @@ export const connectWalletDirect = async () => {
 export const fetchLiveProtocolState = async (userAccount?: string | null) => {
   const provider = getPublicProvider();
   const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, provider);
-  const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, VEIL_PRIZE_POOL_ABI, provider);
+  const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, provider);
   const yieldContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.yieldSource, MOCK_YIELD_SOURCE_ABI, provider);
 
   try {
@@ -100,9 +100,18 @@ export const fetchLiveProtocolState = async (userAccount?: string | null) => {
     ]);
 
     let userWalletBalance = "0.00";
+    let userShieldedBalance = "0.00";
+    let userWinnings = "0.00";
+
     if (userAccount) {
-      const bal = await tokenContract.balanceOf(userAccount).catch(() => 0n);
+      const [bal, shieldedBal, winnings] = await Promise.all([
+        tokenContract.balanceOf(userAccount).catch(() => 0n),
+        poolContract.getUserPlaintextBalance(userAccount).catch(() => 0n),
+        poolContract.getUserPlaintextWinnings(userAccount).catch(() => 0n),
+      ]);
       userWalletBalance = ethers.formatUnits(bal, 6);
+      userShieldedBalance = ethers.formatUnits(shieldedBal, 6);
+      userWinnings = ethers.formatUnits(winnings, 6);
     }
 
     return {
@@ -115,6 +124,8 @@ export const fetchLiveProtocolState = async (userAccount?: string | null) => {
       depositorsCount: Number(depositorsCountRaw) || 0,
       totalYieldHarvested: ethers.formatUnits(totalYieldHarvestedRaw, 6),
       userWalletBalance,
+      userShieldedBalance,
+      userWinnings,
     };
   } catch (error) {
     console.error("Error reading live onchain protocol state:", error);
@@ -128,6 +139,8 @@ export const fetchLiveProtocolState = async (userAccount?: string | null) => {
       depositorsCount: 0,
       totalYieldHarvested: "0.00",
       userWalletBalance: "0.00",
+      userShieldedBalance: "0.00",
+      userWinnings: "0.00",
     };
   }
 };

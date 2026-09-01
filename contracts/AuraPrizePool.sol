@@ -5,13 +5,13 @@ import "./MockERC20.sol";
 import "./fhevm/FHE.sol";
 
 /**
- * @title VeilPrizePool
+ * @title AuraPrizePool
  * @notice Confidential No-Loss Prize Savings Protocol powered by Zama fhEVM.
  * Users deposit tokens to save with zero loss, individual balances & pool shares remain encrypted,
  * and periodic draws distribute accrued yield to randomly chosen depositors weighted by their
  * encrypted deposit size using onchain FHE randomness.
  */
-contract VeilPrizePool {
+contract AuraPrizePool {
     // --- State Variables ---
     MockERC20 public immutable depositToken;
     address public owner;
@@ -248,7 +248,6 @@ contract VeilPrizePool {
         euint64 randEntropy = FHE.randEuint64();
 
         // 2. Deposit-Weighted Winner Selection Algorithm
-        // Selects winner index proportionally to deposit weight
         address chosenWinner = _selectWeightedWinner(randEntropy);
 
         // 3. Encrypted Prize Allocation
@@ -380,6 +379,14 @@ contract VeilPrizePool {
 
     function getUserEncryptedWinnings(address user) external view returns (euint64) {
         return _encryptedWinnings[user];
+    }
+
+    function getUserPlaintextBalance(address user) external view returns (uint256) {
+        return _plaintextBalanceMirror[user];
+    }
+
+    function getUserPlaintextWinnings(address user) external view returns (uint256) {
+        return _plaintextWinningsMirror[user];
     }
 
     function getDepositorCount() external view returns (uint256) {

@@ -69,9 +69,9 @@ export const VaultView: React.FC<VaultViewProps> = ({
 
   const handleMax = () => {
     if (activeTab === "deposit") {
-      setAmount(parsedWallet > 0 ? parsedWallet.toString() : "1000");
+      setAmount(parsedWallet > 0 ? parsedWallet.toString() : "0");
     } else {
-      setAmount(parsedSaved > 0 ? parsedSaved.toString() : "250");
+      setAmount(parsedSaved > 0 ? parsedSaved.toString() : "0");
     }
   };
 
