@@ -806,6 +806,7 @@ export default function Home() {
               onOpenFaucet={() => setIsFaucetOpen(true)}
               onFundPrize={handleFundPrize}
               isFundingPrize={isLoadingAction}
+              onNavigateVault={() => setCurrentTab("vault")}
             />
           )}
 

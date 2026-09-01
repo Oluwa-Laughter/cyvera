@@ -39,6 +39,7 @@ interface DrawsViewProps {
   onOpenFaucet: () => void;
   onFundPrize: () => Promise<void>;
   isFundingPrize: boolean;
+  onNavigateVault?: () => void;
 }
 
 export const DrawsView: React.FC<DrawsViewProps> = ({
@@ -60,6 +61,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   onOpenFaucet,
   onFundPrize,
   isFundingPrize,
+  onNavigateVault,
 }) => {
   const [secondsRemaining, setSecondsRemaining] = useState<number>(60);
 
@@ -122,6 +124,13 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
                 className="w-full md:w-auto px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs tracking-wider uppercase transition-all shadow-aura-yellow active:scale-95"
               >
                 Connect Wallet
+              </button>
+            ) : totalDepositors === 0 ? (
+              <button
+                onClick={onNavigateVault}
+                className="w-full md:w-auto px-6 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs tracking-wider uppercase transition-all shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95"
+              >
+                <span>Deposit to Enter Draw #{currentDrawId + 1}</span>
               </button>
             ) : (
               <>
