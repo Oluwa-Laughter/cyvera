@@ -9,12 +9,11 @@ import { DashboardView } from "@/components/pages/DashboardView";
 import { VaultView } from "@/components/pages/VaultView";
 import { DrawsView } from "@/components/pages/DrawsView";
 import { RewardsView } from "@/components/pages/RewardsView";
-import { YieldView } from "@/components/pages/YieldView";
 import { HowItWorksView } from "@/components/pages/HowItWorksView";
 import { FaucetModal } from "@/components/FaucetModal";
 import { HowItWorksModal } from "@/components/HowItWorksModal";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
-import { CONTRACT_ADDRESSES, MOCK_ERC20_ABI, VEIL_PRIZE_POOL_ABI, MOCK_YIELD_SOURCE_ABI } from "@/lib/contracts";
+import { CONTRACT_ADDRESSES, MOCK_ERC20_ABI, VEIL_PRIZE_POOL_ABI } from "@/lib/contracts";
 import { fetchLiveProtocolState } from "@/lib/web3";
 import { connectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
 import { requestEip712DecryptionPermission } from "@/lib/fhevm";
@@ -48,15 +47,12 @@ export default function Home() {
   const [currentDrawId, setCurrentDrawId] = useState<number>(0);
   const [depositorsCount, setDepositorsCount] = useState<number>(0);
   const [totalPrizesAwarded, setTotalPrizesAwarded] = useState<string>("0.00");
-  const [totalYieldHarvested, setTotalYieldHarvested] = useState<string>("0.00");
 
   const [drawHistory, setDrawHistory] = useState<DrawRecordView[]>([]);
 
   // Action Status
   const [isLoadingAction, setIsLoadingAction] = useState<boolean>(false);
   const [actionStatus, setActionStatus] = useState<string>("");
-  const [isTriggeringDraw, setIsTriggeringDraw] = useState<boolean>(false);
-  const [isHarvesting, setIsHarvesting] = useState<boolean>(false);
 
   // Modals
   const [isFaucetOpen, setIsFaucetOpen] = useState<boolean>(false);
@@ -74,7 +70,6 @@ export default function Home() {
     setDrawInterval(state.drawInterval);
     setCurrentDrawId(state.currentDrawId);
     setDepositorsCount(state.depositorsCount);
-    setTotalYieldHarvested(state.totalYieldHarvested);
     if (acc) {
       setWalletBalance(state.userWalletBalance);
     } else {
@@ -235,7 +230,7 @@ export default function Home() {
       const approveTx = await tokenContract.approve(CONTRACT_ADDRESSES.sepolia.prizePool, amountUnits);
       await approveTx.wait();
 
-      setActionStatus("2/2 Depositing into Confidential Vault...");
+      setActionStatus("2/2 Depositing into Savings Vault...");
       const depositTx = await poolContract.deposit(amountUnits);
       await depositTx.wait();
 
@@ -297,88 +292,6 @@ export default function Home() {
     await handleWithdraw(curSaved);
   };
 
-  const handleTriggerDraw = async () => {
-    if (!signer || !account) {
-      await handleConnectWallet();
-      return;
-    }
-
-    try {
-      setIsTriggeringDraw(true);
-      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, VEIL_PRIZE_POOL_ABI, signer);
-      const tx = await poolContract.triggerDraw();
-      await tx.wait();
-
-      await refreshOnchainState();
-      setDecryptedWinnings(totalPrizeReserve);
-
-      const nextId = currentDrawId + 1;
-      const newRecord: DrawRecordView = {
-        drawId: nextId,
-        timestamp: Math.floor(Date.now() / 1000),
-        totalParticipants: Math.max(1, depositorsCount),
-        prizeAmount: totalPrizeReserve,
-        winner: account,
-        isMyWin: true,
-      };
-      setDrawHistory([newRecord, ...drawHistory]);
-    } catch (error: any) {
-      console.error("Draw trigger error:", error);
-      const prize = totalPrizeReserve;
-      const nextId = currentDrawId + 1;
-      setCurrentDrawId(nextId);
-      setTotalPrizeReserve("0.00");
-      setLastDrawTime(Math.floor(Date.now() / 1000));
-      setDecryptedWinnings(prize);
-
-      const newRecord: DrawRecordView = {
-        drawId: nextId,
-        timestamp: Math.floor(Date.now() / 1000),
-        totalParticipants: Math.max(1, depositorsCount),
-        prizeAmount: prize,
-        winner: account,
-        isMyWin: true,
-      };
-      setDrawHistory([newRecord, ...drawHistory]);
-    } finally {
-      setIsTriggeringDraw(false);
-    }
-  };
-
-  const handleHarvestAndFund = async (customAmount?: string) => {
-    if (!signer || !account) {
-      await handleConnectWallet();
-      return;
-    }
-
-    try {
-      setIsHarvesting(true);
-      const yieldContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.yieldSource, MOCK_YIELD_SOURCE_ABI, signer);
-      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, VEIL_PRIZE_POOL_ABI, signer);
-
-      if (customAmount) {
-        const amtUnits = ethers.parseUnits(customAmount, 6);
-        const tx = await poolContract.fundPrizeReserve(amtUnits);
-        await tx.wait();
-      } else {
-        const tx = await yieldContract.harvestAndFund(ethers.parseUnits(totalDeposits || "1000", 6));
-        await tx.wait();
-      }
-
-      await refreshOnchainState();
-    } catch (error: any) {
-      console.error("Harvest error:", error);
-      const amountToAdd = customAmount ? parseFloat(customAmount) : 45.0;
-      const curReserve = parseFloat(totalPrizeReserve.replace(/,/g, "")) || 0;
-      const curHarvested = parseFloat(totalYieldHarvested.replace(/,/g, "")) || 0;
-
-      setTotalPrizeReserve((curReserve + amountToAdd).toFixed(2));
-      setTotalYieldHarvested((curHarvested + amountToAdd).toFixed(2));
-    } finally {
-      setIsHarvesting(false);
-    }
-  };
-
   const handleClaimPrize = async () => {
     if (!signer || !account) return;
 
@@ -429,11 +342,10 @@ export default function Home() {
   const getPageDetails = () => {
     switch (currentTab) {
       case "dashboard": return { title: "Savings Dashboard", sub: "Live prize pot, countdown clock, and portfolio overview" };
-      case "vault": return { title: "Savings Vault", sub: "Deposit tokens to get draw tickets & withdraw principal anytime" };
-      case "draws": return { title: "Daily Prize Draws", sub: "Onchain fair winner selection weighted by deposit size" };
-      case "rewards": return { title: "My Secret Rewards", sub: "Check your private winnings, claim to wallet, or auto-compound" };
-      case "yield": return { title: "Yield Growth Strategy", sub: "How Aave V3 lending yield generates prize pots with zero principal loss" };
-      case "how-it-works": return { title: "Protocol Architecture", sub: "4-phase cryptographic lifecycle, FHE math, and confidentiality matrix" };
+      case "vault": return { title: "Prize Savings Vaults", sub: "Save tokens, get automatic prize tickets & withdraw principal anytime" };
+      case "draws": return { title: "Daily Prize Draws", sub: "Automated daily winner distributions and prize history" };
+      case "rewards": return { title: "My Prize Winnings", sub: "Check your winnings, claim directly to wallet, or auto-compound" };
+      case "how-it-works": return { title: "How It Works", sub: "The No-Loss prize savings model in 4 simple steps" };
     }
   };
 
@@ -445,7 +357,7 @@ export default function Home() {
       {currentView === "landing" ? (
         <LandingView
           onEnterApp={(tab, initialAmount) => {
-            if (tab) setCurrentTab(tab);
+            if (tab) setCurrentTab(tab as AppPageTab);
             if (initialAmount) setInitialDepositAmount(initialAmount);
             setCurrentView("app");
           }}
@@ -520,6 +432,8 @@ export default function Home() {
                   isLoadingAction={isLoadingAction}
                   actionStatus={actionStatus}
                   initialDepositAmount={initialDepositAmount}
+                  totalDeposits={totalDeposits}
+                  totalPrizeReserve={totalPrizeReserve}
                 />
               )}
 
@@ -532,8 +446,9 @@ export default function Home() {
                   lastDrawTime={lastDrawTime}
                   drawInterval={drawInterval}
                   drawHistory={drawHistory}
-                  onTriggerDraw={handleTriggerDraw}
-                  isTriggeringDraw={isTriggeringDraw}
+                  onCheckWinnings={handleDecryptWinnings}
+                  isCheckingWinnings={isDecryptingWinnings}
+                  decryptedWinnings={decryptedWinnings}
                   onConnect={handleConnectWallet}
                 />
               )}
@@ -549,17 +464,6 @@ export default function Home() {
                   onConnect={handleConnectWallet}
                   isLoadingAction={isLoadingAction}
                   actionStatus={actionStatus}
-                />
-              )}
-
-              {currentTab === "yield" && (
-                <YieldView
-                  totalDeposits={totalDeposits}
-                  totalYieldHarvested={totalYieldHarvested}
-                  onHarvestAndFund={handleHarvestAndFund}
-                  isHarvesting={isHarvesting}
-                  account={account}
-                  onConnect={handleConnectWallet}
                 />
               )}
 

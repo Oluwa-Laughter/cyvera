@@ -8,16 +8,14 @@ import {
   PiggyBank, 
   Dices, 
   Trophy, 
-  TrendingUp, 
   Droplets, 
-  HelpCircle, 
+  BookOpen, 
   X, 
   Home,
-  ShieldCheck,
-  BookOpen
+  ShieldCheck
 } from "lucide-react";
 
-export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "yield" | "how-it-works";
+export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "how-it-works";
 
 interface SidebarNavProps {
   currentTab: AppPageTab;
@@ -38,10 +36,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 }) => {
   const navItems: { id: AppPageTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: "vault", label: "Savings Vault", icon: <PiggyBank className="w-4 h-4" />, badge: "Zero Loss" },
+    { id: "vault", label: "Prize Vaults", icon: <PiggyBank className="w-4 h-4" />, badge: "8.5%" },
     { id: "draws", label: "Prize Draws", icon: <Dices className="w-4 h-4" />, badge: "Daily" },
-    { id: "rewards", label: "My Rewards", icon: <Trophy className="w-4 h-4" /> },
-    { id: "yield", label: "Yield Growth", icon: <TrendingUp className="w-4 h-4" />, badge: "8.5%" },
+    { id: "rewards", label: "My Winnings", icon: <Trophy className="w-4 h-4" /> },
     { id: "how-it-works", label: "How It Works", icon: <BookOpen className="w-4 h-4" /> },
   ];
 
@@ -112,7 +109,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
         {/* Bottom Actions */}
         <div className="space-y-2.5 pt-6 border-t border-slate-100 text-xs">
-          {/* Testnet Faucet Trigger */}
+          {/* Free Test Tokens */}
           <button
             onClick={() => {
               onOpenFaucet();
@@ -122,12 +119,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           >
             <div className="flex items-center gap-2">
               <Droplets className="w-4 h-4 text-amber-600" />
-              <span>Get Free cUSDT</span>
+              <span>Get Test Tokens</span>
             </div>
             <span className="text-[10px] bg-aura-yellow text-black px-1.5 py-0.5 rounded-full font-extrabold">+1000</span>
           </button>
 
-          {/* Back to Home / Vision */}
+          {/* Back to Landing */}
           <button
             onClick={() => {
               onNavigateHome();
@@ -136,7 +133,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             className="w-full flex items-center gap-2 px-4 py-2 rounded-2xl text-slate-400 hover:text-slate-700 transition-all text-[11px]"
           >
             <Home className="w-3.5 h-3.5" />
-            <span>Back to Home</span>
+            <span>Landing Page</span>
           </button>
         </div>
       </aside>

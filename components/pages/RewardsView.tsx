@@ -61,18 +61,18 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
   return (
     <div className="space-y-8 w-full max-w-4xl mx-auto text-black">
       {/* 1. Header Rewards Card */}
-      <div className="aura-card p-8 bg-gradient-to-br from-white via-slate-50 to-amber-50/40">
+      <div className="aura-card p-8 sm:p-10 bg-gradient-to-br from-white via-slate-50 to-amber-50/40">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-slate-200">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Your Secret Rewards</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Your Prize Winnings</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold border border-amber-200">
-                Private Winnings
+                100% Confidential
               </span>
             </div>
 
             <div className="flex items-baseline gap-3 mt-1">
-              <div className="text-4xl font-black text-black">
+              <div className="text-4xl sm:text-5xl font-black text-black">
                 {account ? (
                   decryptedWinnings !== null ? (
                     <span className="text-black">
@@ -114,13 +114,13 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
 
           <div className="text-right text-xs text-slate-500 hidden sm:block">
             <div>Payout Settlement:</div>
-            <div className="text-base font-extrabold text-emerald-700 mt-0.5">Instant Onchain</div>
+            <div className="text-base font-extrabold text-emerald-700 mt-0.5">Instant Onchain Transfer</div>
           </div>
         </div>
 
         <div className="pt-4 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2 font-medium">
-          <span>🔒 Only you hold the key to claim your winnings</span>
-          <span>Zero public broadcast of winner payout</span>
+          <span>🔒 Only your wallet can decrypt and claim your prizes</span>
+          <span>Zero public broadcast of winner net worth</span>
         </div>
       </div>
 
