@@ -1,25 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../contracts/MockERC20.sol";
-import "../contracts/MockYieldSource.sol";
-import "../contracts/AuraPrizePool.sol";
+import "forge-std/Test.sol";
 
-abstract contract SimpleTest {
-    function assertTrue(bool condition, string memory message) internal pure {
-        require(condition, message);
-    }
+import { MockERC20 } from "../contracts/MockERC20.sol";
+import { MockYieldSource } from "../contracts/MockYieldSource.sol";
+import { AuraPrizePool } from "../contracts/AuraPrizePool.sol";
 
-    function assertEq(uint256 a, uint256 b, string memory message) internal pure {
-        require(a == b, message);
-    }
-
-    function assertEq(address a, address b, string memory message) internal pure {
-        require(a == b, message);
-    }
-}
-
-contract AuraPrizePoolTest is SimpleTest {
+contract AuraPrizePoolTest is Test {
     MockERC20 public token;
     MockYieldSource public yieldSource;
     AuraPrizePool public pool;
@@ -32,78 +20,130 @@ contract AuraPrizePoolTest is SimpleTest {
         token = new MockERC20("Confidential Prize Token", "cUSDT", 6);
         yieldSource = new MockYieldSource(address(token));
         pool = new AuraPrizePool(address(token));
-        
+
         yieldSource.setPrizePool(address(pool));
         pool.setYieldSource(address(yieldSource));
 
-        // Fund test users
-        token.mint(alice, 10_000 * 10**6);
-        token.mint(bob, 10_000 * 10**6);
-        token.mint(charlie, 10_000 * 10**6);
+        token.mint(alice, 10_000 * 10 ** 6);
+        token.mint(bob, 10_000 * 10 ** 6);
+        token.mint(charlie, 10_000 * 10 ** 6);
+    }
+
+    function _deposit(address user, uint256 amount) internal {
+        vm.prank(user);
+        token.approve(address(pool), amount);
+        vm.prank(user);
+        pool.deposit(amount);
+        // Sync the off-chain entropy cache used by the draw winner
+        // selection. In production this value is supplied by the relayer
+        // which re-encrypts every user's balance through EIP-712.
+        pool.setPublicSafeBalance(user, amount);
+    }
+
+    function _warpToNextDraw() internal {
+        vm.warp(block.timestamp + pool.drawInterval() + 1);
     }
 
     function test_InitialState() public view {
-        assertEq(address(pool.depositToken()), address(token), "Deposit token mismatch");
-        assertEq(pool.getDepositorCount(), 0, "Initial depositors must be 0");
-        assertEq(pool.totalPrizeReserve(), 0, "Initial prize reserve must be 0");
-        assertEq(pool.totalDeposits(), 0, "Initial deposits must be 0");
+        require(address(pool.depositToken()) == address(token), "Deposit token mismatch");
+        require(pool.getDepositorCount() == 0, "Initial depositors");
+        require(pool.totalPrizeReserve() == 0, "Initial prize reserve");
+        require(pool.totalDeposits() == 0, "Initial deposits");
     }
 
     function test_Faucet() public {
         address newUser = address(0x1234);
-        token.mint(newUser, 1_000 * 10**6);
-        assertEq(token.balanceOf(newUser), 1_000 * 10**6, "Faucet balance mismatch");
+        token.mint(newUser, 1_000 * 10 ** 6);
+        require(token.balanceOf(newUser) == 1_000 * 10 ** 6, "Faucet balance mismatch");
     }
 
     function test_DepositFlow() public {
-        uint256 depositAmt = 500 * 10**6;
-        
-        token.mint(address(this), depositAmt);
-        token.approve(address(pool), depositAmt);
-        pool.deposit(depositAmt);
-
-        assertEq(pool.getDepositorCount(), 1, "Depositor count should be 1");
-        assertEq(pool.totalDeposits(), depositAmt, "Total deposits mismatch");
-        assertTrue(pool.isUserDepositor(address(this)), "Should be marked as depositor");
+        uint256 amt = 500 * 10 ** 6;
+        _deposit(alice, amt);
+        require(pool.getDepositorCount() == 1, "Depositor count");
+        require(pool.totalDeposits() == amt, "Total deposits");
+        require(pool.isUserDepositor(alice), "Should be depositor");
     }
 
     function test_WithdrawNoLoss() public {
-        uint256 depositAmt = 1_000 * 10**6;
-        
-        token.mint(address(this), depositAmt);
-        token.approve(address(pool), depositAmt);
-        pool.deposit(depositAmt);
+        uint256 amt = 1_000 * 10 ** 6;
+        _deposit(alice, amt);
 
-        assertEq(pool.totalDeposits(), depositAmt, "Total deposits should match");
+        vm.prank(alice);
+        pool.withdraw(500 * 10 ** 6);
+        require(pool.totalDeposits() == 500 * 10 ** 6, "Remaining deposits");
+        require(pool.getDepositorCount() == 1, "Still a depositor");
 
-        // Withdraw half
-        pool.withdraw(500 * 10**6);
-        assertEq(pool.totalDeposits(), 500 * 10**6, "Remaining deposits should match");
-        assertEq(pool.getDepositorCount(), 1, "Should still be depositor");
-
-        // Withdraw remainder
+        vm.prank(alice);
         pool.withdrawAll();
-        assertEq(pool.totalDeposits(), 0, "Total deposits should be 0");
-        assertEq(pool.getDepositorCount(), 0, "Depositor count should be 0");
+        require(pool.totalDeposits() == 0, "Deposits after withdrawAll");
+        require(pool.getDepositorCount() == 0, "Depositor count after withdrawAll");
+        require(token.balanceOf(alice) == 10_000 * 10 ** 6, "Refund total");
     }
 
-    function test_YieldAccrualAndDraw() public {
-        uint256 depositAmt = 1_000 * 10**6;
-        
-        // Deposit
-        token.mint(address(this), depositAmt);
-        token.approve(address(pool), depositAmt);
-        pool.deposit(depositAmt);
+    function test_ZeroSum_NoLoss() public {
+        uint256 amt = 1_000 * 10 ** 6;
+        _deposit(alice, amt);
+        _deposit(bob, amt);
+        _deposit(charlie, amt);
 
-        // Inject simulated yield into prize reserve
-        yieldSource.manualInjectYield(100 * 10**6);
-        assertEq(pool.totalPrizeReserve(), 100 * 10**6, "Prize reserve should be 100 cUSDT");
+        yieldSource.manualInjectYield(150 * 10 ** 6);
+        _warpToNextDraw();
+        pool.triggerDraw();
+        require(pool.totalPrizeReserve() == 0, "Prize reserve drained");
+        require(pool.totalPrizesAwarded() == 150 * 10 ** 6, "Prizes awarded");
+        require(pool.totalDeposits() == 3_000 * 10 ** 6, "Principal untouched");
+    }
 
-        // Trigger draw
+    function test_MultiWinnerDraw() public {
+        for (uint256 i = 0; i < 5; i++) {
+            address u = address(uint160(0x1000 + i));
+            token.mint(u, 1_000 * 10 ** 6);
+            _deposit(u, 500 * 10 ** 6);
+        }
+        pool.setWinnersPerDraw(3);
+        yieldSource.manualInjectYield(300 * 10 ** 6);
+        _warpToNextDraw();
+        pool.triggerDraw();
+        require(pool.totalPrizesAwarded() == 300 * 10 ** 6, "All prizes awarded");
+    }
+
+    function test_ClaimPrize() public {
+        _deposit(alice, 1_000 * 10 ** 6);
+        yieldSource.manualInjectYield(50 * 10 ** 6);
+        _warpToNextDraw();
         pool.triggerDraw();
 
-        assertEq(pool.currentDrawId(), 1, "Draw ID should be 1");
-        assertEq(pool.totalPrizeReserve(), 0, "Prize reserve should reset after draw");
-        assertEq(pool.totalPrizesAwarded(), 100 * 10**6, "Total prizes awarded should match");
+        AuraPrizePool.DrawRecord memory rec = pool.getDrawHistory(1);
+        require(rec.executed, "Draw executed");
+        require(rec.prizeAmount == 50 * 10 ** 6, "Prize amount");
+        require(rec.winner != address(0), "Winner set");
+        require(pool.getUnclaimedWinnings(rec.winner) == 50 * 10 ** 6, "Unclaimed balance");
+
+        vm.prank(rec.winner);
+        pool.claimPrize();
+        require(pool.getUnclaimedWinnings(rec.winner) == 0, "Unclaimed zero after claim");
+    }
+
+    function test_RevertWhenDrawTooEarly() public {
+        _deposit(alice, 100 * 10 ** 6);
+        yieldSource.manualInjectYield(10 * 10 ** 6);
+        vm.expectRevert(abi.encodeWithSelector(AuraPrizePool.DrawTooEarly.selector, uint256(block.timestamp + pool.drawInterval())));
+        pool.triggerDraw();
+    }
+
+    function test_RevertWhenInsufficientBalance() public {
+        // Alice has 10k tokens. Approve max, then try to deposit 20k.
+        vm.prank(alice);
+        token.approve(address(pool), type(uint256).max);
+        vm.expectRevert(abi.encodeWithSelector(AuraPrizePool.InsufficientBalance.selector, 20_000 * 10 ** 6, 10_000 * 10 ** 6));
+        vm.prank(alice);
+        pool.deposit(20_000 * 10 ** 6);
+    }
+
+    function test_RevertWhenInsufficientAllowance() public {
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(AuraPrizePool.InsufficientAllowance.selector, 100 * 10 ** 6, 0));
+        pool.deposit(100 * 10 ** 6);
     }
 }

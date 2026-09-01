@@ -14,6 +14,7 @@ interface TopHeaderProps {
   isConnecting: boolean;
   onOpenFaucet: () => void;
   walletBalance: string;
+  isWrongNetwork?: boolean;
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({
@@ -26,6 +27,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   isConnecting,
   onOpenFaucet,
   walletBalance,
+  isWrongNetwork = false,
 }) => {
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -56,9 +58,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       {/* Right: Network, Balance, Wallet / Disconnect */}
       <div className="flex items-center gap-2.5 font-medium text-xs">
         {/* Network Badge */}
-        <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Sepolia</span>
+        <div className={`hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full border ${
+          isWrongNetwork
+            ? "bg-rose-50 border-rose-300 text-rose-800"
+            : "bg-emerald-50 border-emerald-200 text-emerald-800"
+        }`}>
+          <div className={`w-2 h-2 rounded-full animate-pulse ${isWrongNetwork ? "bg-rose-500" : "bg-emerald-500"}`} />
+          <span>{isWrongNetwork ? "Wrong Network" : "Sepolia"}</span>
         </div>
 
         {/* Balance Capsule */}

@@ -32,6 +32,9 @@ interface DashboardViewProps {
   lastDrawTime: number;
   drawInterval: number;
   currentDrawId: number;
+  winnersPerDraw: number;
+  timeToNextDraw: number;
+  apyBasisPoints: number;
   drawHistory: DrawRecordView[];
   onNavigateTab: (tab: AppPageTab) => void;
   onOpenFaucet: () => void;
@@ -52,6 +55,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   lastDrawTime,
   drawInterval,
   currentDrawId,
+  winnersPerDraw,
+  timeToNextDraw,
+  apyBasisPoints,
   drawHistory,
   onNavigateTab,
   onOpenFaucet,
@@ -61,11 +67,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number }>({ h: 0, m: 0, s: 0 });
 
+  const snapFetchedAt = React.useRef(0);
+  React.useEffect(() => {
+    snapFetchedAt.current = Math.floor(Date.now() / 1000);
+  }, [timeToNextDraw, lastDrawTime]);
+
   useEffect(() => {
     const updateCountdown = () => {
-      const now = Math.floor(Date.now() / 1000);
-      const next = lastDrawTime + drawInterval;
-      const diff = Math.max(0, next - now);
+      const baseDiff = Math.max(0, timeToNextDraw);
+      const elapsed = Math.floor(Date.now() / 1000) - snapFetchedAt.current;
+      const diff = Math.max(0, baseDiff - elapsed);
       setTimeLeft({
         h: Math.floor(diff / 3600),
         m: Math.floor((diff % 3600) / 60),
@@ -75,7 +86,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [lastDrawTime, drawInterval]);
+  }, [timeToNextDraw, lastDrawTime]);
 
   const pad = (n: number) => n.toString().padStart(2, "0");
 
@@ -170,7 +181,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <span className="text-slate-400 text-[11px] block">Yield APY:</span>
-            <strong className="text-emerald-700 text-sm">8.50% APY</strong>
+            <strong className="text-emerald-700 text-sm">{(apyBasisPoints / 100).toFixed(2)}% APY</strong>
           </div>
           <div>
             <span className="text-slate-400 text-[11px] block">Next Draw:</span>
@@ -218,7 +229,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="text-right">
-            <span className="text-3xl font-black text-emerald-700">8.50%</span>
+            <span className="text-3xl font-black text-emerald-700">{(apyBasisPoints / 100).toFixed(2)}%</span>
             <span className="text-xs text-slate-500 block font-medium">APY Lending Yield</span>
           </div>
         </div>

@@ -24,7 +24,6 @@ interface RewardsViewProps {
   onCompoundPrize: () => Promise<void>;
   onConnect: () => void;
   isLoadingAction: boolean;
-  actionStatus: string;
 }
 
 export const RewardsView: React.FC<RewardsViewProps> = ({
@@ -35,9 +34,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
   onClaimPrize,
   onCompoundPrize,
   onConnect,
-  isLoadingAction,
-  actionStatus,
-}) => {
+  isLoadingAction}) => {
   const hasWinnings = parseFloat(decryptedWinnings || "0") > 0;
 
   const triggerCelebration = () => {

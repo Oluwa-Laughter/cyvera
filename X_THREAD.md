@@ -1,67 +1,60 @@
-# 🧵 AuraPool: Official X (Twitter) Announcement Thread
+# X / Twitter launch thread (7 tweets)
 
-> **Zama Developer Program Mainnet Season 4 Bounty Track Submission**  
-> *Ready-to-post 7-tweet thread introducing AuraPool.*
-
----
-
-### 🧵 Tweet 1: The Hook & Announcement
-🚨 Introducing **AuraPool** — The Confidential No-Loss Prize Savings Protocol, powered by @zama_fhe on Ethereum Sepolia! 🌟
-
-Save tokens with $0 risk of loss, earn daily prize tickets, and keep your financial wealth 100% confidential.
-
-Here's how we built the confidential future of @PoolTogether_ 🧵👇
+> **AuraPool** — Confidential No-Loss Prize Savings, built on Zama FHE for the Mainnet Season 4 bounty.
+> Replace the bracketed placeholders with the live URL when posting.
 
 ---
 
-### 🧵 Tweet 2: The Transparency Problem in DeFi
-1/ On transparent public blockchains, prize savings protocols leak everything:
-❌ Your individual deposit size is visible on Etherscan
-❌ Anyone can calculate your exact winning odds
-❌ Big winners are publicly broadcast, turning them into targets for phishing & hacks
+### 1/7
+🧵 Today I'm shipping **AuraPool** for the @zama_fhe Season 4 bounty — a no-loss prize-savings protocol where every deposit, balance, and winning ticket is encrypted end-to-end with Fully Homomorphic Encryption.
 
-Privacy is essential for financial freedom. 🛡️
+Imagine PoolTogether, but nobody can see your savings or your odds. 👇
 
----
+### 2/7
+On transparent chains, prize-savings leaks *everything*:
+• Your deposit is public on Etherscan
+• Big winners become instant phishing targets
+• Whales get tracked → exit the pool → yield dries up
 
-### 🧵 Tweet 3: The AuraPool Solution with Zama FHE
-2/ AuraPool removes the privacy trade-off using Fully Homomorphic Encryption (FHE):
-🔒 Deposits are wrapped into encrypted `euint64` handles onchain
-🎲 Draws select winners using `FHE.randEuint64()` entropy weighted by deposit size
-🔑 Only the winner can decrypt & claim winnings via EIP-712 typed signing!
+AuraPool fixes this with Zama's fhEVM. Balances live as `euint64` ciphertexts; only the wallet holder can decrypt via EIP-712.
 
----
+### 3/7
+How the deposit flow works:
+1. Approve cUSDT spend on the prize pool
+2. `deposit(amount)` — the contract encrypts the amount homomorphically and increments your private ticket balance
+3. ACL is set so **only your wallet** can request a re-encryption of the handle from the Zama relayer
 
-### 🧵 Tweet 4: The 100% No-Loss Invariant
-3/ How does "No-Loss" work?
-💰 Your deposit is pooled into decentralized lending strategies generating 8.50% APY.
-🏆 The lending interest creates the daily prize pot.
-🛡️ Your deposited principal is never spent on tickets and can be withdrawn 100% at any time with ZERO fees.
+You can audit every step on Sepolia: [etherscan link]
 
----
+### 4/7
+Draws run **onchain** with `FHE.randEuint64`. The randomness is bound to `block.prevrandao + block.timestamp` and committed via the `DrawExecuted` event so the outcome is verifiable after the fact.
 
-### 🧵 Tweet 5: Consumer-Grade UX
-4/ Built for real human savers, not just node operators:
-✨ Instant 1-click testnet faucet (1,000 cUSDT on Sepolia)
-⚡ Direct wallet connection across desktop and iOS/Android mobile
-🔄 1-click auto-compounding to re-invest prizes into your savings principal
-📊 Dynamic real-time onchain state polling
+Winners are picked with a salted sub-ticket per slot — the pool walks the cumulative encrypted balances (via the relayer) and credits the winner's encrypted winnings handle. Multi-winner draws are configurable.
 
----
+### 5/7
+User experience:
+• 1-click faucet for the test cUSDT
+• EIP-712 "Reveal Balance" — wallet signs, relayer re-encrypts, frontend decrypts locally
+• "Check if you won" on the draws page
+• "Claim" or "Compound" winnings
+• "Withdraw All" — exit with 100% of your principal. Zero loss, zero lockups.
 
-### 🧵 Tweet 6: Tested & Verified
-5/ 🧪 Architecture & Security:
-✅ 5/5 Foundry smart contract tests passing
-✅ 100% non-custodial and provably fair
-✅ Built strictly for the @zama_fhe Mainnet Season 4 Bounty Track
+### 6/7
+Confidentiality, in one table:
 
----
+| What | Visibility |
+| --- | --- |
+| Your deposit / balance | 🔒 Encrypted euint64 |
+| Your winnings | 🔒 Encrypted until you claim |
+| Winner address | 🌐 Public (needed for claim) |
+| Prize amount per draw | 🌐 Public (PoolTogether does this too) |
+| Total pool TVL | 🌐 Public aggregate |
 
-### 🧵 Tweet 7: Links & Try It Live
-6/ Try the live dApp, read the code, and join the confidential DeFi revolution! 🚀
+No offchain RNG. No plaintext mirrors. The only public aggregate is the total pool size, which is required for routing yield strategies.
 
-🌐 Live dApp: [YOUR_DEPLOYED_URL]
-💻 GitHub Repo: https://github.com/Oluwa-Laughter/aurapool
-📖 Protocol Docs: In repository README
+### 7/7
+Live demo: [aurapool.vercel.app]
+Code: github.com/Oluwa-Laughter/aurapool
+Built with @zama_fhe fhEVM, Solidity 0.8.20, Next.js 15, Foundry, wagmi/viem.
 
-Let us know your thoughts below! 👇 #Zama #FHE #PoolTogether #DeFi #Ethereum
+If you think privacy-preserving DeFi is the next unlock for consumer crypto, try the app and let me know what you'd add next. 🏆

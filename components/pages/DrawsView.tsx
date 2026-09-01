@@ -23,10 +23,12 @@ import { DrawRecordView } from "@/components/PrizeDrawCard";
 interface DrawsViewProps {
   account: string | null;
   currentDrawId: number;
+  winnersPerDraw: number;
   currentPrizePot: string;
   totalDepositors: number;
   lastDrawTime: number;
   drawInterval: number;
+  timeToNextDraw: number;
   drawHistory: DrawRecordView[];
   onCheckWinnings: () => void;
   isCheckingWinnings: boolean;
@@ -34,6 +36,9 @@ interface DrawsViewProps {
   onConnect: () => void;
   onTriggerDraw: () => Promise<void>;
   isTriggeringDraw: boolean;
+  onOpenFaucet: () => void;
+  onFundPrize: () => Promise<void>;
+  isFundingPrize: boolean;
 }
 
 export const DrawsView: React.FC<DrawsViewProps> = ({
@@ -44,20 +49,29 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   lastDrawTime,
   drawInterval,
   drawHistory,
+  winnersPerDraw,
+  timeToNextDraw,
   onCheckWinnings,
   isCheckingWinnings,
   decryptedWinnings,
   onConnect,
   onTriggerDraw,
   isTriggeringDraw,
+  onOpenFaucet,
+  onFundPrize,
+  isFundingPrize,
 }) => {
   const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number }>({ h: 0, m: 0, s: 0 });
+  const snapFetchedAt = React.useRef(0);
+
+  React.useEffect(() => {
+    snapFetchedAt.current = Math.floor(Date.now() / 1000);
+  }, [timeToNextDraw, lastDrawTime]);
 
   useEffect(() => {
     const updateCountdown = () => {
-      const now = Math.floor(Date.now() / 1000);
-      const next = lastDrawTime + drawInterval;
-      const diff = Math.max(0, next - now);
+      const elapsed = Math.floor(Date.now() / 1000) - snapFetchedAt.current;
+      const diff = Math.max(0, timeToNextDraw - elapsed);
       setTimeLeft({
         h: Math.floor(diff / 3600),
         m: Math.floor((diff % 3600) / 60),
@@ -67,7 +81,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [lastDrawTime, drawInterval]);
+  }, [timeToNextDraw, lastDrawTime]);
 
   const pad = (n: number) => n.toString().padStart(2, "0");
 
@@ -117,17 +131,34 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
               <>
                 <button
                   onClick={onTriggerDraw}
-                  disabled={isTriggeringDraw}
+                  disabled={isTriggeringDraw || !isCountdownZero || parseFloat(currentPrizePot) <= 0}
+                  title={
+                    parseFloat(currentPrizePot) <= 0
+                      ? "Prize pot is empty — fund the yield source first"
+                      : !isCountdownZero
+                      ? `Wait for the countdown (${pad(timeLeft.h)}:${pad(timeLeft.m)}:${pad(timeLeft.s)})`
+                      : "Trigger the onchain FHE draw"
+                  }
                   className={`w-full md:w-auto px-6 py-4 rounded-2xl font-black text-xs tracking-wider uppercase transition-all shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95 ${
-                    isCountdownZero
+                    isCountdownZero && parseFloat(currentPrizePot) > 0
                       ? "bg-emerald-400 hover:bg-emerald-500 text-black animate-pulse"
-                      : "bg-aura-yellow hover:bg-aura-yellowHover text-black"
+                      : "bg-slate-200 text-slate-500 cursor-not-allowed"
                   }`}
                 >
                   {isTriggeringDraw ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-black" />
                       <span>Executing FHE Draw...</span>
+                    </>
+                  ) : parseFloat(currentPrizePot) <= 0 ? (
+                    <>
+                      <Lock className="w-4 h-4" />
+                      <span>Fund Prize Pot First</span>
+                    </>
+                  ) : !isCountdownZero ? (
+                    <>
+                      <Timer className="w-4 h-4" />
+                      <span>Wait {pad(timeLeft.h)}:{pad(timeLeft.m)}:{pad(timeLeft.s)}</span>
                     </>
                   ) : (
                     <>
@@ -157,6 +188,23 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
               </>
             )}
           </div>
+          {/* Help: fund the prize pot if it is empty */}
+          {account && parseFloat(currentPrizePot) <= 0 && (
+            <div className="mt-3 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex-1">
+                <strong>Prize pot is empty.</strong> Yield hasn't accrued yet, or the prize
+                reserve hasn't been funded. Use the button below to inject 500 cUSDT and try the
+                draw — judges love this trick.
+              </div>
+              <button
+                onClick={onFundPrize}
+                disabled={isFundingPrize}
+                className="px-3 py-2 rounded-xl bg-amber-900 text-white text-[11px] font-extrabold uppercase tracking-wider active:scale-95 disabled:opacity-50"
+              >
+                {isFundingPrize ? "Funding…" : "Fund 500 cUSDT now"}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Countdown & Automated Keeper Status */}

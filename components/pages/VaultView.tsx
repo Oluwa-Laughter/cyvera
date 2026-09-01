@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { 
   PiggyBank, 
   ArrowUpRight, 
-  ArrowDownLeft, 
+  ArrowDownLeft, ArrowDownToLine, 
   ShieldCheck, 
   Sparkles, 
   Eye, 
@@ -35,7 +35,6 @@ interface VaultViewProps {
   onOpenFaucet: () => void;
   onConnect: () => void;
   isLoadingAction: boolean;
-  actionStatus: string;
   initialDepositAmount?: string;
   totalDeposits: string;
   totalPrizeReserve: string;
@@ -53,7 +52,6 @@ export const VaultView: React.FC<VaultViewProps> = ({
   onOpenFaucet,
   onConnect,
   isLoadingAction,
-  actionStatus,
   initialDepositAmount = "",
   totalDeposits,
   totalPrizeReserve,
@@ -262,18 +260,6 @@ export const VaultView: React.FC<VaultViewProps> = ({
             </div>
           </div>
 
-          {/* Action Status Notice */}
-          {actionStatus && (
-            <motion.div
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-950 font-bold flex items-center gap-2"
-            >
-              <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
-              <span>{actionStatus}</span>
-            </motion.div>
-          )}
-
           {/* Action Button */}
           {!account ? (
             <button
@@ -310,7 +296,20 @@ export const VaultView: React.FC<VaultViewProps> = ({
             </button>
           )}
 
-          {/* Zero Loss Guarantee Footer */}
+          {/* Quick exit - Withdraw All */}
+          {account && activeTab === "withdraw" && (
+            <button
+              type="button"
+              onClick={onWithdrawAll}
+              disabled={isLoadingAction || parsedSaved <= 0}
+              className="w-full py-3 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs transition-all border border-rose-200 flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+            >
+              <ArrowDownToLine className="w-3.5 h-3.5" />
+              <span>Exit Pool &amp; Withdraw All Principal (Zero-Loss)</span>
+            </button>
+          )}
+
+                    {/* Zero Loss Guarantee Footer */}
           <div className="pt-2 flex flex-wrap items-center justify-between text-xs text-slate-500 font-medium">
             <span className="flex items-center gap-1 text-emerald-700 font-bold">
               <CheckCircle2 className="w-3.5 h-3.5" />

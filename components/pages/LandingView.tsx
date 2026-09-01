@@ -26,20 +26,20 @@ import {
 
 interface LandingViewProps {
   onEnterApp: (tab?: "dashboard" | "vault" | "draws" | "rewards" | "how-it-works", initialAmount?: string) => void;
-  onOpenFaucet: () => void;
-  totalDeposits: string;
-  totalPrizeReserve: string;
-  totalPrizesAwarded: string;
-  depositorsCount: number;
+  onOpenFaucet?: () => void;
+  totalDeposits?: string;
+  totalPrizeReserve?: string;
+  totalPrizesAwarded?: string;
+  depositorsCount?: number;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({
   onEnterApp,
-  onOpenFaucet,
-  totalDeposits,
-  totalPrizeReserve,
-  totalPrizesAwarded,
-  depositorsCount,
+  onOpenFaucet = () => {},
+  totalDeposits = "0",
+  totalPrizeReserve = "0",
+  totalPrizesAwarded = "0",
+  depositorsCount = 0,
 }) => {
   // Savings Calculator
   const [calcDeposit, setCalcDeposit] = useState<string>("500");
