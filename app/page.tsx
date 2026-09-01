@@ -15,7 +15,7 @@ import { HowItWorksModal } from "@/components/HowItWorksModal";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
 import { CONTRACT_ADDRESSES, MOCK_ERC20_ABI, AURA_PRIZE_POOL_ABI } from "@/lib/contracts";
 import { fetchLiveProtocolState } from "@/lib/web3";
-import { connectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
+import { connectInjectedWallet, disconnectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
 import { requestEip712DecryptionPermission } from "@/lib/fhevm";
 
 export default function Home() {
@@ -87,40 +87,14 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [refreshOnchainState]);
 
-  // Auto connect if active (only if user hasn't explicitly disconnected)
-  useEffect(() => {
-    const checkAutoConnect = async () => {
-      if (typeof window !== "undefined" && localStorage.getItem("aurapool_disconnected") === "true") {
-        return;
-      }
-      const ethereum = getInjectedProvider();
-      if (ethereum) {
-        try {
-          const accounts: string[] = await ethereum.request({ method: "eth_accounts" });
-          if (accounts && accounts.length > 0) {
-            const browserProvider = new ethers.BrowserProvider(ethereum);
-            const userSigner = await browserProvider.getSigner();
-            setAccount(accounts[0]);
-            setProvider(browserProvider);
-            setSigner(userSigner);
-            await refreshOnchainState(accounts[0]);
-          }
-        } catch (err) {
-          console.error("Auto connect check error:", err);
-        }
-      }
-    };
-    checkAutoConnect();
-  }, [refreshOnchainState]);
-
-  // Direct Wallet Connect
+  // Explicit User Wallet Connect (Prompts MetaMask with account authorization)
   const handleConnectWallet = async () => {
     try {
       setIsConnecting(true);
       if (typeof window !== "undefined") {
         localStorage.removeItem("aurapool_disconnected");
       }
-      const res = await connectInjectedWallet();
+      const res = await connectInjectedWallet(true);
       if (res) {
         setAccount(res.account);
         setProvider(res.provider);
@@ -135,10 +109,8 @@ export default function Home() {
     }
   };
 
-  const handleDisconnectWallet = () => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("aurapool_disconnected", "true");
-    }
+  const handleDisconnectWallet = async () => {
+    await disconnectInjectedWallet();
     setAccount(null);
     setProvider(null);
     setSigner(null);

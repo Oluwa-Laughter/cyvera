@@ -40,7 +40,7 @@ export const isMobile = (): boolean => {
 };
 
 // Request wallet connection and switch to Sepolia
-export const connectInjectedWallet = async (): Promise<{
+export const connectInjectedWallet = async (forcePrompt: boolean = true): Promise<{
   account: string;
   provider: ethers.BrowserProvider;
   signer: ethers.Signer;
@@ -56,8 +56,23 @@ export const connectInjectedWallet = async (): Promise<{
     throw new Error("No Web3 wallet extension found. Please install MetaMask, Rabby, or Coinbase Wallet.");
   }
 
-  // Request accounts
+  // If forcePrompt is true, request permissions so MetaMask explicitly pops up the account selection window
   let accounts: string[] = [];
+  if (forcePrompt) {
+    try {
+      await ethereum.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }],
+      });
+    } catch (permErr: any) {
+      if (permErr.code === 4001) {
+        throw new Error("Connection rejected by user in wallet.");
+      }
+      // If wallet_requestPermissions is not supported by the wallet, continue to eth_requestAccounts
+    }
+  }
+
+  // Request accounts
   try {
     accounts = await ethereum.request({ method: "eth_requestAccounts" });
   } catch (err: any) {
@@ -109,6 +124,26 @@ export const connectInjectedWallet = async (): Promise<{
 };
 
 /**
+ * Explicitly disconnect wallet and clear permissions where supported
+ */
+export const disconnectInjectedWallet = async (): Promise<void> => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("aurapool_disconnected", "true");
+  }
+  const ethereum = getInjectedProvider();
+  if (ethereum) {
+    try {
+      await ethereum.request({
+        method: "wallet_revokePermissions",
+        params: [{ eth_accounts: {} }],
+      });
+    } catch {
+      // Ignore if revokePermissions is not supported
+    }
+  }
+};
+
+/**
  * Adds token to MetaMask / Rabby / Web3 wallet via EIP-747 wallet_watchAsset
  */
 export const addTokenToWallet = async (
@@ -120,15 +155,15 @@ export const addTokenToWallet = async (
   if (!ethereum) return false;
 
   try {
+    const formattedAddress = ethers.getAddress(tokenAddress.toLowerCase().trim());
     const wasAdded = await ethereum.request({
       method: "wallet_watchAsset",
       params: {
         type: "ERC20",
         options: {
-          address: tokenAddress,
+          address: formattedAddress,
           symbol: symbol,
           decimals: decimals,
-          image: "https://cryptologos.cc/logos/tether-usdt-logo.png",
         },
       },
     });
