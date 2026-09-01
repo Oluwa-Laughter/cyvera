@@ -485,8 +485,6 @@ export default function Home() {
                   onConnect={handleConnectWallet}
                   onTriggerDraw={handleTriggerDraw}
                   isTriggeringDraw={isTriggeringDraw}
-                  onSetDrawInterval={handleSetDrawInterval}
-                  isSettingInterval={isSettingInterval}
                 />
               )}
 

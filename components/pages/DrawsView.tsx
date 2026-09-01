@@ -9,18 +9,14 @@ import {
   ShieldCheck, 
   CheckCircle2, 
   Users,
-  Eye,
-  EyeOff,
   RefreshCw,
   Gift,
-  Settings,
   PlayCircle,
   Clock,
-  Check,
   Zap,
-  Calendar
+  Lock
 } from "lucide-react";
-import { FiZap, FiClock, FiCalendar } from "react-icons/fi";
+import { FiClock } from "react-icons/fi";
 import { HiTrophy } from "react-icons/hi2";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
 
@@ -38,8 +34,6 @@ interface DrawsViewProps {
   onConnect: () => void;
   onTriggerDraw: () => Promise<void>;
   isTriggeringDraw: boolean;
-  onSetDrawInterval: (seconds: number) => Promise<void>;
-  isSettingInterval: boolean;
 }
 
 export const DrawsView: React.FC<DrawsViewProps> = ({
@@ -56,20 +50,8 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   onConnect,
   onTriggerDraw,
   isTriggeringDraw,
-  onSetDrawInterval,
-  isSettingInterval,
 }) => {
   const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number }>({ h: 0, m: 0, s: 0 });
-  const [customSeconds, setCustomSeconds] = useState<string>("");
-
-  const intervalPresets = [
-    { label: "30 Seconds", seconds: 30, icon: FiZap },
-    { label: "1 Minute", seconds: 60, icon: FiClock },
-    { label: "5 Minutes", seconds: 300, icon: FiClock },
-    { label: "10 Minutes", seconds: 600, icon: FiClock },
-    { label: "1 Hour", seconds: 3600, icon: FiClock },
-    { label: "24 Hours", seconds: 86400, icon: FiCalendar },
-  ];
 
   useEffect(() => {
     const updateCountdown = () => {
@@ -94,20 +76,11 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
     return new Date(timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
-  const handleApplyCustom = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = parseInt(customSeconds);
-    if (!isNaN(parsed) && parsed >= 5) {
-      await onSetDrawInterval(parsed);
-      setCustomSeconds("");
-    }
-  };
-
   const isCountdownZero = timeLeft.h === 0 && timeLeft.m === 0 && timeLeft.s === 0;
 
   return (
     <div className="space-y-8 w-full max-w-4xl mx-auto text-black">
-      {/* 1. Live Draw Banner */}
+      {/* 1. Live Hourly Draw Banner */}
       <div className="aura-card p-8 sm:p-10 bg-gradient-to-br from-white via-slate-50 to-amber-50/40 relative overflow-hidden">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-200">
           <div>
@@ -116,8 +89,9 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
               <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-aura-yellow text-black font-extrabold shadow-sm">
                 Draw #{currentDrawId + 1}
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold">
-                Interval: {drawInterval}s
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold flex items-center gap-1">
+                <FiClock className="w-3 h-3" />
+                <span>Hourly Schedule</span>
               </span>
             </div>
 
@@ -199,67 +173,44 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Configurable Draw Interval Settings Card */}
+      {/* 2. Fairness & Protocol Mechanics Card */}
       <div className="aura-card p-6 sm:p-8 bg-white border border-slate-200 shadow-aura-sm space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Settings className="w-4 h-4 text-amber-600" />
-            <h3 className="text-sm font-black text-black uppercase tracking-wide">Draw Time Interval Setting</h3>
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+          <ShieldCheck className="w-5 h-5 text-emerald-600" />
+          <h3 className="text-sm font-black text-black uppercase tracking-wide">Automated Hourly Fairness Guarantee</h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+            <div className="font-bold text-black flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <span>Hourly Frequency</span>
+            </div>
+            <p className="text-slate-500 text-[11px] leading-relaxed">
+              Draws recur automatically every hour as DeFi interest accrues into the shared prize pool.
+            </p>
           </div>
-          <span className="text-[11px] text-slate-500">
-            Currently set to <strong className="text-black">{drawInterval} seconds</strong>
-          </span>
+
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+            <div className="font-bold text-black flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-amber-600" />
+              <span>Weighted RNG</span>
+            </div>
+            <p className="text-slate-500 text-[11px] leading-relaxed">
+              Chances are strictly proportional to saved principal without exposing balances onchain.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+            <div className="font-bold text-black flex items-center gap-1.5">
+              <Lock className="w-4 h-4 text-emerald-600" />
+              <span>Confidential Winner</span>
+            </div>
+            <p className="text-slate-500 text-[11px] leading-relaxed">
+              Winner identity and prize credits remain encrypted until the winner claims to their wallet.
+            </p>
+          </div>
         </div>
-
-        <p className="text-xs text-slate-600">
-          Select or set the exact draw duration. The countdown is calculated from the current time.
-        </p>
-
-        {/* Preset Chips */}
-        <div className="flex flex-wrap gap-2.5 pt-1">
-          {intervalPresets.map((preset) => {
-            const isSelected = drawInterval === preset.seconds;
-            const Icon = preset.icon;
-            return (
-              <button
-                key={preset.seconds}
-                onClick={() => onSetDrawInterval(preset.seconds)}
-                disabled={isSettingInterval}
-                className={`px-4 py-2 rounded-2xl text-xs font-extrabold transition-all border shadow-sm active:scale-95 flex items-center gap-1.5 ${
-                  isSelected
-                    ? "bg-aura-yellow text-black border-amber-400 shadow-aura-yellow"
-                    : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"
-                }`}
-              >
-                {isSettingInterval && isSelected ? (
-                  <RefreshCw className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Icon className="w-3.5 h-3.5" />
-                )}
-                <span>{preset.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Custom Interval Form */}
-        <form onSubmit={handleApplyCustom} className="pt-2 flex items-center gap-3 max-w-sm">
-          <input
-            type="number"
-            min="5"
-            placeholder="Custom seconds (e.g. 45)"
-            value={customSeconds}
-            onChange={(e) => setCustomSeconds(e.target.value)}
-            className="flex-1 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-black focus:outline-none focus:border-amber-400"
-          />
-          <button
-            type="submit"
-            disabled={isSettingInterval || !customSeconds || parseInt(customSeconds) < 5}
-            className="px-4 py-2 rounded-xl bg-black text-white text-xs font-bold hover:bg-slate-800 transition-all disabled:opacity-40"
-          >
-            Set Custom
-          </button>
-        </form>
       </div>
 
       {/* 3. Past Winners & Draws History */}
@@ -276,7 +227,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
           {drawHistory.length === 0 ? (
             <div className="py-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
               <Trophy className="w-8 h-8 text-slate-300 mx-auto" />
-              <p className="font-bold text-slate-700 text-sm">Draw #{currentDrawId + 1} In Progress ({drawInterval}s)</p>
+              <p className="font-bold text-slate-700 text-sm">Draw #{currentDrawId + 1} In Progress (Hourly)</p>
               <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
                 Deposit tokens and click &quot;Execute Draw Now&quot; to pick an onchain winner using Zama FHE randomness!
               </p>

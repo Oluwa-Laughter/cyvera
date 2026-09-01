@@ -18,7 +18,7 @@ contract AuraPrizePool {
     address public yieldSource;
 
     // Draw parameters
-    uint256 public drawInterval = 30 seconds; // Default 30 seconds for testing (configurable)
+    uint256 public drawInterval = 1 hours; // Standard hourly prize draw schedule
     uint256 public lastDrawTime;
     uint256 public currentDrawId;
     
