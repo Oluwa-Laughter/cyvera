@@ -568,7 +568,7 @@ export default function Home() {
           onDisconnect={handleDisconnectWallet}
           isConnecting={isConnecting}
           onOpenFaucet={() => setIsFaucetOpen(true)}
-          walletBalance={snap?.userWalletBalance ?? "1000.00"}
+          walletBalance={snap?.userWalletBalance ?? "0.00"}
           nativeEthBalance={snap?.userNativeEthBalance ?? "0.0000"}
           isWrongNetwork={chainId !== null && chainId !== SEPOLIA_CHAIN_ID}
         />
@@ -589,7 +589,7 @@ export default function Home() {
           {currentTab === "dashboard" && (
             <DashboardView
               account={account}
-              walletBalance={snap?.userWalletBalance ?? "1000.00"}
+              walletBalance={snap?.userWalletBalance ?? "0.00"}
               decryptedBalance={decryptedBalance}
               decryptedWinnings={decryptedWinnings}
               totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
@@ -614,7 +614,7 @@ export default function Home() {
           {currentTab === "vault" && (
             <VaultView
               account={account}
-              walletBalance={snap?.userWalletBalance ?? "1000.00"}
+              walletBalance={snap?.userWalletBalance ?? "0.00"}
               decryptedBalance={decryptedBalance}
               isDecryptingBalance={isDecryptingBalance}
               onDecryptBalance={handleDecryptBalance}
