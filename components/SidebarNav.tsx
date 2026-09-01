@@ -10,12 +10,13 @@ import {
   Trophy, 
   Droplets, 
   BookOpen, 
+  Layers,
   X, 
   Home,
   ShieldCheck
 } from "lucide-react";
 
-export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "how-it-works";
+export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "interfaces" | "how-it-works";
 
 interface SidebarNavProps {
   currentTab: AppPageTab;
@@ -39,6 +40,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     { id: "vault", label: "Prize Vaults", icon: <PiggyBank className="w-4 h-4" />, badge: "8.5%" },
     { id: "draws", label: "Prize Draws", icon: <Dices className="w-4 h-4" />, badge: "Daily" },
     { id: "rewards", label: "My Winnings", icon: <Trophy className="w-4 h-4" /> },
+    { id: "interfaces", label: "Interfaces", icon: <Layers className="w-4 h-4" /> },
     { id: "how-it-works", label: "How It Works", icon: <BookOpen className="w-4 h-4" /> },
   ];
 
