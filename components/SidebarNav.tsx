@@ -1,22 +1,22 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import { AuraLogo } from "@/components/AuraLogo";
 import { 
-  LayoutDashboard, 
-  PiggyBank, 
-  Dices, 
-  Trophy, 
+  Gavel, 
+  WalletCards, 
+  PlusCircle, 
+  Cpu, 
   Droplets, 
   BookOpen, 
   X, 
   Home,
   ShieldCheck,
-  History
+  History,
+  Lock
 } from "lucide-react";
 
-export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "activity" | "how-it-works";
+export type AppPageTab = "auctions" | "my-bids" | "create" | "fhe-lab" | "activity" | "how-it-works";
 
 interface SidebarNavProps {
   currentTab: AppPageTab;
@@ -36,11 +36,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   onCloseMobile,
 }) => {
   const navItems: { id: AppPageTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: "vault", label: "Savings Vault", icon: <PiggyBank className="w-4 h-4" />, badge: "8.5%" },
-    { id: "draws", label: "Prize Draws", icon: <Dices className="w-4 h-4" />, badge: "1-Min" },
-    { id: "rewards", label: "My Winnings", icon: <Trophy className="w-4 h-4" /> },
-    { id: "activity", label: "Activity Feed", icon: <History className="w-4 h-4" /> },
+    { id: "auctions", label: "Dark Auctions", icon: <Gavel className="w-4 h-4" />, badge: "Live" },
+    { id: "my-bids", label: "My Bids & Escrow", icon: <WalletCards className="w-4 h-4" /> },
+    { id: "create", label: "Create Auction", icon: <PlusCircle className="w-4 h-4" /> },
+    { id: "fhe-lab", label: "FHE Cryptography Lab", icon: <Cpu className="w-4 h-4" />, badge: "Zama" },
+    { id: "activity", label: "Activity & Audits", icon: <History className="w-4 h-4" /> },
     { id: "how-it-works", label: "How It Works", icon: <BookOpen className="w-4 h-4" /> },
   ];
 
@@ -73,8 +73,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             </button>
           </div>
 
+          {/* Protocol Tagline */}
+          <div className="mt-4 px-3 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center gap-2 font-medium">
+            <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+            <span>Zama FHE Confidential Auctions</span>
+          </div>
+
           {/* Navigation Links */}
-          <nav className="mt-6 space-y-1.5 font-medium text-xs">
+          <nav className="mt-5 space-y-1.5 font-medium text-xs">
             {navItems.map((item) => {
               const isActive = currentTab === item.id;
               return (
@@ -121,7 +127,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           >
             <div className="flex items-center gap-2">
               <Droplets className="w-4 h-4 text-amber-600" />
-              <span>Get Free cUSDT</span>
+              <span>Get Test cUSDT</span>
             </div>
             <span className="text-[10px] bg-aura-yellow text-black px-1.5 py-0.5 rounded-full font-extrabold">+1000</span>
           </button>

@@ -1,71 +1,61 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import { AuraLogo } from "@/components/AuraLogo";
 import { 
-  PiggyBank, 
-  Trophy, 
+  Gavel, 
+  Lock, 
   ShieldCheck, 
   Sparkles, 
   ArrowRight, 
   CheckCircle2, 
   Droplets, 
-  Lock, 
-  Unlock,
+  Cpu,
   ChevronDown, 
   TrendingUp, 
-  Users, 
   HelpCircle,
-  Dices,
   Coins,
-  ChevronRight,
-  EyeOff,
-  AlertTriangle
+  ArrowDownLeft,
+  ChevronRight
 } from "lucide-react";
+import { FaShieldAlt } from "react-icons/fa";
 
 interface LandingViewProps {
-  onEnterApp: (tab?: "dashboard" | "vault" | "draws" | "rewards" | "how-it-works", initialAmount?: string) => void;
-  onOpenFaucet?: () => void;
-  totalDeposits?: string;
-  totalPrizeReserve?: string;
-  totalPrizesAwarded?: string;
-  depositorsCount?: number;
+  onEnterApp: (tab?: "auctions" | "my-bids" | "create" | "fhe-lab" | "activity" | "how-it-works") => void;
+  onOpenHowItWorks?: () => void;
+  account?: string | null;
+  onConnect?: () => void;
+  isConnecting?: boolean;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({
   onEnterApp,
-  onOpenFaucet = () => {},
-  totalDeposits = "0",
-  totalPrizeReserve = "0",
-  totalPrizesAwarded = "0",
-  depositorsCount = 0,
+  onOpenHowItWorks,
+  account,
+  onConnect,
+  isConnecting,
 }) => {
-  // Savings Calculator
-  const [calcDeposit, setCalcDeposit] = useState<string>("500");
-  const parsedDeposit = parseFloat(calcDeposit || "0");
-  const estimatedYield = (parsedDeposit * 0.085).toFixed(2);
-  const estimatedTickets = Math.floor(parsedDeposit);
-
-  // FAQ State
+  // Simulator State
+  const [simBid, setSimBid] = useState<string>("150");
+  const parsedBid = parseFloat(simBid || "0");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const faqs = [
     {
-      q: "What is a 'No-Loss' Prize Savings vault?",
-      a: "Unlike traditional lotteries where your ticket purchase is spent forever, AuraPool works like a high-yield savings account. Your deposit is pooled with other savers to earn DeFi lending yield (8.50% APY). That interest is awarded in daily prize draws. You can withdraw 100% of your deposit at any time — you never lose your principal.",
+      q: "What is a Confidential Sealed-Bid Dark Auction?",
+      a: "In traditional onchain auctions (like OpenSea or English auctions), every bid is publicly visible in the mempool, allowing MEV bots and snipers to outbid users by 1 wei at the last second. AuraDark uses Zama FHE to encrypt all bids into euint64 ciphertexts onchain. The smart contract determines the winner homomorphically without anyone seeing the bids before settlement.",
     },
     {
-      q: "Why is financial privacy important?",
-      a: "On standard public blockchains, anyone can see your wallet balance, how much money you have saved, and who won the jackpot. Large savers become immediate targets for scammers and phishing. AuraPool keeps your balance and winning status completely confidential.",
+      q: "How does the contract find the highest bid without decrypting?",
+      a: "Using Zama's fhEVM precompiles, the contract executes `FHE.gt(newBid, highestBid)` and `FHE.select(isHigher, newBid, highestBid)` directly over encrypted ciphertexts on Ethereum Sepolia. Plaintext numbers are never revealed to miners or observers.",
     },
     {
-      q: "How are winners picked fairly?",
-      a: "Draws execute automatically onchain every 24 hours using decentralized verifiable randomness. Winner chances are strictly proportional to how much you saved without exposing your balance to the public.",
+      q: "What happens if I don't win the auction?",
+      a: "You are 100% protected. Once the auction timer expires and settlement occurs, all non-winning bidders can claim their 100% full escrow refund back into their wallet with a single click.",
     },
     {
-      q: "Can I withdraw my money at any time?",
-      a: "Yes! There are no lockups, no withdrawal penalties, and no exit fees. You have instant access to withdraw 100% of your deposited funds whenever you wish.",
+      q: "What assets can be auctioned?",
+      a: "Any ERC-20 token lot, protocol allocation, yield bond, or private treasury grant can be deployed for sealed bidding in seconds.",
     },
   ];
 
@@ -77,6 +67,14 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
         <div className="flex items-center gap-3 font-medium text-xs">
           <button
+            onClick={() => onEnterApp("fhe-lab")}
+            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200 active:scale-95"
+          >
+            <Cpu className="w-4 h-4 text-amber-600" />
+            <span>FHE Lab</span>
+          </button>
+
+          <button
             onClick={() => onEnterApp("how-it-works")}
             className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200 active:scale-95"
           >
@@ -85,313 +83,213 @@ export const LandingView: React.FC<LandingViewProps> = ({
           </button>
 
           <button
-            onClick={onOpenFaucet}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold transition-all active:scale-95"
-          >
-            <Droplets className="w-4 h-4 text-amber-600" />
-            <span>Get Test Tokens</span>
-          </button>
-
-          <button
-            onClick={() => onEnterApp("dashboard")}
+            onClick={() => onEnterApp("auctions")}
             className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold shadow-aura-yellow transition-all hover:scale-105 active:scale-95"
           >
-            <span>Launch App</span>
+            <span>Launch Dark Pools</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </header>
 
       {/* 2. Hero Section */}
-      <section className="relative px-4 sm:px-8 pt-16 pb-20 max-w-5xl mx-auto flex flex-col items-center text-center">
-        {/* Eyebrow Pill */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100/70 border border-amber-300/80 text-amber-950 text-xs font-bold uppercase tracking-wider mb-8 shadow-sm">
-          <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-          <span>Confidential Prize Savings Protocol</span>
-        </div>
-
-        {/* Main Title */}
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-black leading-[1.08] mb-6">
-          Save Money with <span className="bg-aura-yellow px-3 py-0.5 rounded-2xl inline-block text-black shadow-aura-yellow">Zero Loss.</span>
-          <br />
-          Win Daily Prizes in <span className="underline decoration-aura-yellow decoration-wavy underline-offset-8">Private.</span>
-        </h1>
-
-        {/* Subtitle */}
-        <p className="text-base sm:text-xl text-slate-600 max-w-2xl font-normal leading-relaxed mb-10">
-          Deposit tokens to earn daily prize draw tickets. 100% of your deposit stays yours to withdraw anytime while earning chances at big jackpot prizes.
-        </p>
-
-        {/* Hero CTAs */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-16">
-          <button
-            onClick={() => onEnterApp("vault")}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-sm tracking-tight transition-all shadow-aura-yellow hover:scale-105 active:scale-95"
-          >
-            <span>Start Saving with $0 Risk</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={() => onEnterApp("how-it-works")}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold shadow-aura-sm transition-all active:scale-95"
-          >
-            <HelpCircle className="w-4 h-4 text-slate-500" />
-            <span>How Does No-Loss Work?</span>
-          </button>
-        </div>
-
-        {/* Stats Grid (100% Live Real Data) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full text-left">
-          <div className="aura-card p-5">
-            <span className="text-xs font-semibold text-slate-500">Current Prize Pot</span>
-            <div className="text-2xl font-black text-black mt-1">
-              ${totalPrizeReserve} <span className="text-xs text-amber-700 font-bold">cUSDT</span>
-            </div>
-          </div>
-
-          <div className="aura-card p-5">
-            <span className="text-xs font-semibold text-slate-500">Total Shielded TVL</span>
-            <div className="text-2xl font-black text-black mt-1">
-              ${totalDeposits} <span className="text-xs text-slate-500 font-bold">cUSDT</span>
-            </div>
-          </div>
-
-          <div className="aura-card p-5">
-            <span className="text-xs font-semibold text-slate-500">DeFi APY Yield</span>
-            <div className="text-2xl font-black text-emerald-600 mt-1">
-              8.50% <span className="text-xs text-emerald-600 font-bold">APY</span>
-            </div>
-          </div>
-
-          <div className="aura-card p-5">
-            <span className="text-xs font-semibold text-slate-500">Prizes Awarded</span>
-            <div className="text-2xl font-black text-black mt-1">
-              ${totalPrizesAwarded} <span className="text-xs text-slate-500 font-bold">cUSDT</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. The 4-Step Visual Flow */}
-      <section className="py-12 px-4 sm:px-8 max-w-5xl mx-auto w-full">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-          <h2 className="text-3xl font-black text-black tracking-tight">
-            How You Save & Win on AuraPool
-          </h2>
-          <p className="text-sm text-slate-600">
-            A simple, non-custodial savings loop where your principal is always protected.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs font-medium">
-          <div className="aura-card p-6 border-slate-200 space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center font-black text-amber-900 text-sm">
-              01
-            </div>
-            <h3 className="text-base font-black text-black">Deposit Tokens</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Deposit cUSDT tokens into the pool. You get 1 prize ticket per dollar saved. Your balance is 100% private.
-            </p>
-          </div>
-
-          <div className="aura-card p-6 border-slate-200 space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center font-black text-emerald-900 text-sm">
-              02
-            </div>
-            <h3 className="text-base font-black text-black">Lending Yield</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Deposited funds generate 8.50% lending APY. That interest continuously streams into the prize pot.
-            </p>
-          </div>
-
-          <div className="aura-card p-6 border-slate-200 space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-100 flex items-center justify-center font-black text-purple-900 text-sm">
-              03
-            </div>
-            <h3 className="text-base font-black text-black">Win in Secret</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Daily draws award the prize pot to a random saver without exposing who won to the public.
-            </p>
-          </div>
-
-          <div className="aura-card p-6 border-slate-200 space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center font-black text-amber-900 text-sm">
-              04
-            </div>
-            <h3 className="text-base font-black text-black">Withdraw 100%</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Withdraw all your deposited principal at any time with zero penalties or lockup fees.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Live Active Savings Vault Card */}
-      <section className="py-12 px-4 sm:px-8 max-w-5xl mx-auto w-full">
-        <div className="aura-card p-8 sm:p-10 border border-amber-300 bg-white shadow-aura-md space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-aura-yellow text-black">
-                  Active Live Vault
-                </span>
-                <span className="text-xs font-bold text-slate-500">Ethereum Sepolia</span>
-              </div>
-              <h3 className="text-2xl font-black text-black">USD High-Yield Prize Vault</h3>
-              <p className="text-xs text-slate-600">
-                Deposit USD stablecoins (cUSDT) with zero risk and participate in automated daily prize draws.
-              </p>
+      <section className="py-16 sm:py-24 px-4 sm:px-8 max-w-6xl mx-auto w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Left Column */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 font-extrabold text-xs">
+              <FaShieldAlt className="w-3.5 h-3.5 text-amber-600" />
+              <span>Zama FHE Encrypted Sealed-Bid Auctions</span>
             </div>
 
-            <div className="text-right">
-              <span className="text-3xl font-black text-emerald-700">8.50%</span>
-              <span className="text-xs text-slate-500 block font-medium">APY Lending Yield</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-slate-500 text-[11px] block">Current Grand Prize:</span>
-              <strong className="text-black text-sm font-black">${totalPrizeReserve} cUSDT</strong>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-slate-500 text-[11px] block">Total Shielded TVL:</span>
-              <strong className="text-black text-sm font-black">${totalDeposits}</strong>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
-              <span className="text-slate-500 text-[11px] block">Savers Participating:</span>
-              <strong className="text-black text-sm font-black">{depositorsCount} Savers</strong>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <button
-              onClick={() => onEnterApp("vault")}
-              className="w-full sm:flex-1 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95"
-            >
-              <PiggyBank className="w-4 h-4" />
-              <span>Deposit & Save in Vault</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Interactive Savings Calculator */}
-      <section className="py-12 px-4 sm:px-8 max-w-5xl mx-auto w-full">
-        <div className="aura-card p-8 sm:p-10 relative overflow-hidden bg-gradient-to-br from-white via-slate-50 to-amber-50/40">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-            <div className="max-w-md space-y-3">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-3 py-1 rounded-full">
-                Savings Calculator
+            <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.08] text-black">
+              Front-Running-Proof <br />
+              <span className="bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 bg-clip-text text-transparent">
+                Dark Auctions
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
-                Calculate Your Draw Tickets
-              </h2>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Deposit tokens into the pool to receive 1 ticket per dollar. Your principal stays safe forever while participating in every daily draw.
-              </p>
+            </h1>
 
-              <div className="pt-2 flex items-center gap-2 text-xs text-emerald-700 font-bold">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>100% Principal Safe &bull; Withdraw Any Time</span>
-              </div>
+            <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
+              Bid on confidential token allocations and private dark lots without revealing your bid value to MEV bots or competitors. Powered by Zama fhEVM homomorphic comparison with <strong>100% full escrow refunds</strong> for non-winners.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+              <button
+                onClick={() => onEnterApp("auctions")}
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs uppercase tracking-wider shadow-aura-yellow flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
+              >
+                <Gavel className="w-4 h-4" />
+                <span>Explore Dark Auctions</span>
+              </button>
+
+              <button
+                onClick={() => onEnterApp("fhe-lab")}
+                className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                <Cpu className="w-4 h-4 text-amber-600" />
+                <span>Test FHE Cryptography Lab</span>
+              </button>
             </div>
 
-            {/* Interactive Slider Box */}
-            <div className="w-full md:w-80 bg-white p-6 rounded-3xl border border-slate-200 shadow-aura-md space-y-5 text-xs">
+            {/* Live Trust Metrics */}
+            <div className="pt-8 border-t border-slate-200 grid grid-cols-3 gap-6 text-xs font-medium text-slate-600">
               <div>
-                <div className="flex justify-between text-slate-600 font-bold mb-2">
-                  <span>Your Savings Deposit:</span>
-                  <span className="text-black text-sm font-black">${calcDeposit} cUSDT</span>
+                <span className="text-slate-400 block text-[11px]">Front-Running:</span>
+                <strong className="text-emerald-700 font-black text-sm">0.00% (MEV Proof)</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Privacy Level:</span>
+                <strong className="text-black font-black text-sm">Zama euint64</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Non-Winner Risk:</span>
+                <strong className="text-emerald-700 font-black text-sm">100% Refundable</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Live Interactive Card */}
+          <div className="lg:col-span-5">
+            <div className="aura-card p-6 sm:p-8 bg-white border border-amber-300 shadow-xl space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-black uppercase tracking-wider text-black">Live Dark Lot Preview</span>
+                </div>
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-aura-yellow text-black font-extrabold">
+                  Pool #1
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-black text-black">Genesis 50,000 $AURA Lot</h3>
+                <p className="text-xs text-slate-500 mt-1">Confidential seed allocation. Bids evaluated homomorphically onchain.</p>
+              </div>
+
+              {/* Interactive Bid Input */}
+              <div className="space-y-2 text-xs font-medium">
+                <div className="flex items-center justify-between font-bold">
+                  <label className="text-slate-700">Simulate Your Sealed Bid:</label>
+                  <span className="text-amber-800 font-mono font-black">${parsedBid.toFixed(2)} cUSDT</span>
                 </div>
                 <input
                   type="range"
-                  min="50"
-                  max="5000"
-                  step="50"
-                  value={calcDeposit}
-                  onChange={(e) => setCalcDeposit(e.target.value)}
-                  className="w-full accent-amber-500 cursor-pointer h-2 bg-slate-100 rounded-lg"
+                  min="25"
+                  max="500"
+                  step="5"
+                  value={simBid}
+                  onChange={(e) => setSimBid(e.target.value)}
+                  className="w-full accent-amber-500 cursor-pointer"
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2.5 font-medium">
-                <div className="flex justify-between text-slate-600">
-                  <span>Daily Draw Tickets:</span>
-                  <span className="font-extrabold text-black">{estimatedTickets} Tickets</span>
+              {/* Sealed Math Box */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Plaintext Bid:</span>
+                  <strong className="text-black">${parsedBid.toFixed(2)} cUSDT</strong>
                 </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Annual Yield Pool:</span>
-                  <span className="font-extrabold text-emerald-600">+${estimatedYield} cUSDT</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Mempool Visibility:</span>
+                  <span className="font-mono text-[10px] text-emerald-700 font-bold">0x8a9f...3c4e (Encrypted)</span>
                 </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Risk of Principal Loss:</span>
-                  <span className="font-extrabold text-black">0.00%</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">If Outbid by Another:</span>
+                  <span className="text-emerald-700 font-extrabold">+${parsedBid.toFixed(2)} Full Refund</span>
                 </div>
               </div>
 
               <button
-                onClick={() => onEnterApp("vault", calcDeposit)}
-                className="w-full py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow active:scale-95"
+                onClick={() => onEnterApp("auctions")}
+                className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs uppercase tracking-wider shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95"
               >
-                Deposit & Save Now
+                <span>Enter Dark Auction</span>
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 6. FAQ */}
-      <section className="py-12 px-4 sm:px-8 max-w-3xl mx-auto w-full">
-        <div className="text-center mb-8 space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
-            Frequently Asked Questions
-          </h2>
-          <p className="text-xs text-slate-500">
-            Simple answers to how prize savings works on AuraPool.
-          </p>
-        </div>
+      {/* 3. Core Features Grid */}
+      <section className="py-16 px-4 sm:px-8 bg-white border-t border-slate-200">
+        <div className="max-w-6xl mx-auto space-y-12">
+          <div className="text-center space-y-2 max-w-xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-black text-black">
+              Why Sealed-Bid Dark Pools Beat Public Auctions
+            </h2>
+            <p className="text-xs text-slate-500 font-medium">
+              Eliminate predatory MEV extraction with cryptographic confidentiality.
+            </p>
+          </div>
 
-        <div className="space-y-3 text-xs">
-          {faqs.map((faq, index) => {
-            const isOpen = openFaq === index;
-            return (
-              <div key={index} className="aura-card p-5">
-                <button
-                  onClick={() => setOpenFaq(isOpen ? null : index)}
-                  className="w-full flex items-center justify-between text-left gap-4"
-                >
-                  <span className="text-sm font-bold text-black flex items-center gap-2">
-                    <span className="text-amber-600">Q:</span>
-                    <span>{faq.q}</span>
-                  </span>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? "rotate-180 text-black" : ""}`} />
-                </button>
-
-                {isOpen && (
-                  <p className="mt-3 pt-3 border-t border-slate-100 text-slate-600 leading-relaxed">
-                    {faq.a}
-                  </p>
-                )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="aura-card p-6 sm:p-8 bg-slate-50 border border-slate-200 space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
+                <Lock className="w-6 h-6" />
               </div>
-            );
-          })}
+              <h3 className="text-base font-black text-black">Confidential euint64 Bids</h3>
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                Every bid is converted into a 256-bit ciphertext before reaching the mempool. Front-running and snipers are impossible.
+              </p>
+            </div>
+
+            <div className="aura-card p-6 sm:p-8 bg-slate-50 border border-slate-200 space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-black">Homomorphic FHE.gt Winner</h3>
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                The smart contract executes comparisons directly on ciphertexts. The winner is selected without ever revealing private bid numbers.
+              </p>
+            </div>
+
+            <div className="aura-card p-6 sm:p-8 bg-slate-50 border border-slate-200 space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-900 flex items-center justify-center font-bold">
+                <ArrowDownLeft className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-black">100% Escrow Refunds</h3>
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                Non-winning bidders withdraw their full escrow with 1 click. Zero slippage, zero loss, 100% verifiable onchain.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* 7. Footer */}
-      <footer className="w-full border-t border-slate-200 bg-white py-8 px-4 sm:px-8 text-xs text-slate-500">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <AuraLogo size="sm" />
-          <div className="flex items-center gap-6">
-            <span>Confidential Prize Savings</span>
-            <span>Ethereum Sepolia</span>
-            <button onClick={() => onEnterApp("how-it-works")} className="hover:text-black transition-colors font-medium">
-              How It Works
-            </button>
-          </div>
+      {/* 4. FAQ */}
+      <section className="py-16 px-4 sm:px-8 max-w-4xl mx-auto w-full space-y-8">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-black text-black">Frequently Asked Questions</h2>
+          <p className="text-xs text-slate-500 font-medium">Everything you need to know about AuraDark and Zama FHE.</p>
         </div>
+
+        <div className="space-y-3">
+          {faqs.map((faq, idx) => (
+            <div
+              key={idx}
+              className="aura-card p-5 bg-white border border-slate-200 cursor-pointer transition-all"
+              onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-black">{faq.q}</h4>
+                <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${openFaq === idx ? "rotate-180" : ""}`} />
+              </div>
+              {openFaq === idx && (
+                <p className="text-xs text-slate-600 font-medium mt-3 leading-relaxed pt-3 border-t border-slate-100">
+                  {faq.a}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. Footer */}
+      <footer className="py-8 px-4 sm:px-8 border-t border-slate-200 bg-white text-xs text-slate-500 text-center space-y-2">
+        <AuraLogo size="sm" />
+        <p>AuraDark Protocol — Confidential Sealed-Bid Dark Auctions Powered by Zama fhEVM.</p>
+        <p className="text-[11px] text-slate-400">Deployed on Ethereum Sepolia Testnet</p>
       </footer>
     </div>
   );

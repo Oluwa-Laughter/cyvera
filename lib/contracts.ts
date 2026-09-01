@@ -1,5 +1,5 @@
 /**
- * AuraPool: Confidential No-Loss Prize Savings Protocol
+ * AuraDark / AuraBid: Confidential Sealed-Bid Dark Auction & Batch Settlement Protocol
  * Official Zama Sepolia Testnet Addresses & ABIs
  */
 import { ethers } from "ethers";
@@ -57,6 +57,9 @@ export const CONTRACT_ADDRESSES = {
       process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || ZAMA_SEPOLIA_CONFIG.tokens.cUSDT.underlying
     ),
     confidentialWrapper: toChecksumAddress(ZAMA_SEPOLIA_CONFIG.tokens.cUSDT.wrapper),
+    auctionContract: toChecksumAddress(
+      process.env.NEXT_PUBLIC_AURA_AUCTION_ADDRESS || "0x6A8D279eC8463fAc9a67a050f1173cfFf5979C63"
+    ),
     prizePool: toChecksumAddress(
       process.env.NEXT_PUBLIC_AURA_POOL_ADDRESS || "0x892a012A975765796A56Ee8102D847b2C5896b20"
     ),
@@ -66,8 +69,9 @@ export const CONTRACT_ADDRESSES = {
   },
   local: {
     depositToken: toChecksumAddress("0x5FbDB2315678afecb367f032d93F642f64180aa3"),
-    prizePool: toChecksumAddress("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"),
-    yieldSource: toChecksumAddress("0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"),
+    auctionContract: toChecksumAddress("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"),
+    prizePool: toChecksumAddress("0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"),
+    yieldSource: toChecksumAddress("0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"),
   },
 };
 
@@ -86,6 +90,26 @@ export const MOCK_ERC20_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)",
   "event Approval(address indexed owner, address indexed spender, uint256 value)",
   "event FaucetUsed(address indexed recipient, uint256 amount)",
+] as const;
+
+export const AURA_AUCTION_ABI = [
+  "function auctionCount() view returns (uint256)",
+  "function defaultToken() view returns (address)",
+  "function bidderEscrow(uint256 auctionId, address bidder) view returns (uint256)",
+  "function hasClaimedRefund(uint256 auctionId, address bidder) view returns (bool)",
+  "function getBidders(uint256 auctionId) view returns (address[])",
+  "function getBidderEncryptedBid(uint256 auctionId, address bidder) view returns (bytes32)",
+  "function getAuctionSummary(uint256 auctionId) view returns (uint256 id, address seller, string title, string description, address paymentToken, uint256 tokenLotSize, uint256 reservePrice, uint256 startTime, uint256 endTime, uint8 status, address highestBidder, uint256 winningAmount, uint256 totalBidsCount, uint256 totalEscrowCollected, bool assetClaimed)",
+  "function createAuction(string title, string description, address paymentToken, uint256 tokenLotSize, uint256 reservePrice, uint256 durationSeconds) returns (uint256)",
+  "function placeBid(uint256 auctionId, uint256 escrowAmount) returns ()",
+  "function settleAuction(uint256 auctionId) returns ()",
+  "function claimRefund(uint256 auctionId) returns ()",
+  "function claimWonAsset(uint256 auctionId) returns ()",
+  "event AuctionCreated(uint256 indexed auctionId, address indexed seller, string title, address paymentToken, uint256 tokenLotSize, uint256 startTime, uint256 endTime)",
+  "event BidPlaced(uint256 indexed auctionId, address indexed bidder, uint256 escrowAmount, bytes32 encryptedBidHandle, uint256 timestamp)",
+  "event AuctionSettled(uint256 indexed auctionId, address indexed winner, uint256 winningAmount, uint256 totalBids, uint256 timestamp)",
+  "event RefundClaimed(uint256 indexed auctionId, address indexed bidder, uint256 refundAmount, uint256 timestamp)",
+  "event AssetClaimed(uint256 indexed auctionId, address indexed winner, uint256 lotSize, uint256 timestamp)",
 ] as const;
 
 export const AURA_PRIZE_POOL_ABI = [
