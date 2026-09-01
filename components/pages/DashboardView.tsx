@@ -201,89 +201,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* 3. Featured Savings Vaults (PoolTogether Style) */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-black text-black tracking-tight">Featured Prize Vaults</h3>
-          <button
-            onClick={() => onNavigateTab("vault")}
-            className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
-          >
-            <span>View All Vaults</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+      {/* 3. Live Active Savings Vault Card */}
+      <div className="aura-card p-6 sm:p-8 border border-amber-300 bg-white shadow-aura-md space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-aura-yellow text-black">
+                Active Live Vault
+              </span>
+              <span className="text-xs font-bold text-slate-500">Ethereum Sepolia</span>
+            </div>
+            <h3 className="text-xl font-black text-black">USD High-Yield Prize Vault</h3>
+            <p className="text-xs text-slate-600">
+              Save USD stablecoins (cUSDT) with zero risk and participate in automated daily prize draws.
+            </p>
+          </div>
+
+          <div className="text-right">
+            <span className="text-3xl font-black text-emerald-700">8.50%</span>
+            <span className="text-xs text-slate-500 block font-medium">APY Lending Yield</span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-medium">
-          {/* Main cUSDT Vault */}
-          <div className="aura-card p-6 border-amber-300 bg-gradient-to-br from-white to-amber-50/30 flex flex-col justify-between space-y-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-aura-yellow text-black">
-                  Daily Draw Vault
-                </span>
-                <h4 className="text-base font-bold text-black mt-2">USD High-Yield Vault</h4>
-                <span className="text-slate-500">Token: cUSDT</span>
-              </div>
-              <div className="text-right">
-                <span className="text-2xl font-black text-emerald-700">8.50%</span>
-                <span className="text-slate-500 block text-[11px]">APY Stream</span>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 flex justify-between">
-              <div>
-                <span className="text-slate-500 text-[11px] block">Grand Prize:</span>
-                <strong className="text-black text-sm">${totalPrizeReserve} cUSDT</strong>
-              </div>
-              <div className="text-right">
-                <span className="text-slate-500 text-[11px] block">Total Shielded TVL:</span>
-                <strong className="text-black text-sm">${totalDeposits}</strong>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onNavigateTab("vault")}
-              className="w-full py-3 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow active:scale-95"
-            >
-              Deposit & Save
-            </button>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+            <span className="text-slate-500 text-[11px] block">Current Grand Prize:</span>
+            <strong className="text-black text-sm font-black">${totalPrizeReserve} cUSDT</strong>
           </div>
-
-          {/* Coming Soon ETH Vault */}
-          <div className="aura-card p-6 border-slate-200 bg-slate-50 flex flex-col justify-between space-y-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                  Weekly Mega Draw
-                </span>
-                <h4 className="text-base font-bold text-black mt-2">ETH Turbo Prize Vault</h4>
-                <span className="text-slate-500">Token: WETH</span>
-              </div>
-              <div className="text-right">
-                <span className="text-2xl font-black text-emerald-700">5.40%</span>
-                <span className="text-slate-500 block text-[11px]">APY Stream</span>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 flex justify-between">
-              <div>
-                <span className="text-slate-500 text-[11px] block">Weekly Prize:</span>
-                <strong className="text-black text-sm">$2,850 WETH</strong>
-              </div>
-              <div className="text-right">
-                <span className="text-slate-500 text-[11px] block">Total TVL:</span>
-                <strong className="text-black text-sm">$142,500</strong>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onNavigateTab("vault")}
-              className="w-full py-3 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold text-xs transition-all active:scale-95"
-            >
-              View Vault
-            </button>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+            <span className="text-slate-500 text-[11px] block">Total Shielded TVL:</span>
+            <strong className="text-black text-sm font-black">${totalDeposits}</strong>
           </div>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
+            <span className="text-slate-500 text-[11px] block">Savers Participating:</span>
+            <strong className="text-black text-sm font-black">{depositorsCount} Savers</strong>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <button
+            onClick={() => onNavigateTab("vault")}
+            className="w-full sm:flex-1 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95"
+          >
+            <PiggyBank className="w-4 h-4" />
+            <span>Deposit & Win</span>
+          </button>
+
+          <button
+            onClick={() => onNavigateTab("draws")}
+            className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all flex items-center justify-center gap-2 active:scale-95"
+          >
+            <Timer className="w-4 h-4 text-slate-500" />
+            <span>View Prize Countdown</span>
+          </button>
         </div>
       </div>
     </div>

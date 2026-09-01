@@ -9,7 +9,6 @@ import { DashboardView } from "@/components/pages/DashboardView";
 import { VaultView } from "@/components/pages/VaultView";
 import { DrawsView } from "@/components/pages/DrawsView";
 import { RewardsView } from "@/components/pages/RewardsView";
-import { InterfacesView } from "@/components/pages/InterfacesView";
 import { HowItWorksView } from "@/components/pages/HowItWorksView";
 import { FaucetModal } from "@/components/FaucetModal";
 import { HowItWorksModal } from "@/components/HowItWorksModal";
@@ -342,10 +341,9 @@ export default function Home() {
   const getPageDetails = () => {
     switch (currentTab) {
       case "dashboard": return { title: "Savings Dashboard", sub: "Live prize pot, countdown clock, and portfolio overview" };
-      case "vault": return { title: "Prize Savings Vaults", sub: "Save tokens, get automatic prize tickets & withdraw principal anytime" };
+      case "vault": return { title: "Savings Vault", sub: "Deposit tokens to get draw tickets & withdraw principal anytime" };
       case "draws": return { title: "Daily Prize Draws", sub: "Automated daily winner distributions and prize history" };
       case "rewards": return { title: "My Prize Winnings", sub: "Check your winnings, claim directly to wallet, or auto-compound" };
-      case "interfaces": return { title: "Ecosystem Interfaces", sub: "Decentralized community clients and supported web apps" };
       case "how-it-works": return { title: "How It Works", sub: "The No-Loss prize savings model in 4 simple steps" };
     }
   };
@@ -465,12 +463,6 @@ export default function Home() {
                   onConnect={handleConnectWallet}
                   isLoadingAction={isLoadingAction}
                   actionStatus={actionStatus}
-                />
-              )}
-
-              {currentTab === "interfaces" && (
-                <InterfacesView
-                  onEnterVault={() => setCurrentTab("vault")}
                 />
               )}
 

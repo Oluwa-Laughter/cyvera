@@ -14,7 +14,6 @@ import {
   CheckCircle2, 
   HelpCircle,
   Coins,
-  ChevronRight,
   TrendingUp,
   Droplets
 } from "lucide-react";
@@ -54,52 +53,9 @@ export const VaultView: React.FC<VaultViewProps> = ({
   totalDeposits,
   totalPrizeReserve,
 }) => {
-  const [selectedVaultId, setSelectedVaultId] = useState<"usdt" | "weth" | "zama">("usdt");
   const [activeTab, setActiveTab] = useState<"deposit" | "withdraw">("deposit");
   const [amount, setAmount] = useState<string>(initialDepositAmount || "100");
 
-  const vaults = [
-    {
-      id: "usdt" as const,
-      name: "USD High-Yield Vault",
-      token: "cUSDT",
-      apy: "8.50%",
-      frequency: "Daily",
-      tvl: `$${totalDeposits}`,
-      prizePot: `$${totalPrizeReserve}`,
-      badge: "Active Main Vault",
-      badgeColor: "bg-aura-yellow text-black",
-      isLive: true,
-    },
-    {
-      id: "weth" as const,
-      name: "ETH Turbo Prize Vault",
-      token: "WETH",
-      apy: "5.40%",
-      frequency: "Weekly",
-      tvl: "$142,500",
-      prizePot: "$2,850",
-      badge: "Coming Soon",
-      badgeColor: "bg-slate-100 text-slate-600",
-      isLive: false,
-    },
-    {
-      id: "zama" as const,
-      name: "ZAMA Privacy Staking Vault",
-      token: "ZAMA",
-      apy: "12.00%",
-      frequency: "Bi-Weekly",
-      tvl: "$98,000",
-      prizePot: "$1,960",
-      badge: "Coming Soon",
-      badgeColor: "bg-slate-100 text-slate-600",
-      isLive: false,
-    },
-  ];
-
-  const currentVault = vaults.find((v) => v.id === selectedVaultId) || vaults[0];
-
-  const parsedAmount = parseFloat(amount || "0");
   const parsedWallet = parseFloat(walletBalance.replace(/,/g, "") || "0");
   const parsedSaved = parseFloat((decryptedBalance || "0").replace(/,/g, "") || "0");
 
@@ -130,76 +86,32 @@ export const VaultView: React.FC<VaultViewProps> = ({
   };
 
   return (
-    <div className="space-y-8 w-full max-w-4xl mx-auto text-black">
-      {/* 1. Vault Selection Carousel / Tabs */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-black text-black tracking-tight">Select a Prize Savings Vault</h2>
-          <span className="text-xs text-slate-500 font-medium">100% Principal Protected</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {vaults.map((vault) => {
-            const isSelected = selectedVaultId === vault.id;
-            return (
-              <button
-                key={vault.id}
-                onClick={() => setSelectedVaultId(vault.id)}
-                className={`p-5 rounded-3xl border text-left transition-all relative overflow-hidden flex flex-col justify-between space-y-3 ${
-                  isSelected
-                    ? "bg-white border-amber-400 shadow-aura-md ring-2 ring-aura-yellow/50"
-                    : "bg-white hover:bg-slate-50 border-slate-200"
-                }`}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-xs font-black text-black">{vault.token}</span>
-                  <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${vault.badgeColor}`}>
-                    {vault.badge}
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold text-black">{vault.name}</h3>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <span className="text-xl font-black text-emerald-700">{vault.apy}</span>
-                    <span className="text-xs text-slate-500 font-medium">APY Yield</span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-600 font-medium w-full">
-                  <span>Draws: <strong>{vault.frequency}</strong></span>
-                  <span>Prize: <strong className="text-amber-700">{vault.prizePot}</strong></span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 2. Main Vault Deposit / Withdraw Card */}
+    <div className="space-y-8 w-full max-w-3xl mx-auto text-black">
+      {/* 1. Vault Overview Card */}
       <div className="aura-card p-6 sm:p-10 bg-white border border-slate-200 shadow-aura-md space-y-6">
         {/* Vault Header Details */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <h3 className="text-xl font-black text-black">{currentVault.name}</h3>
+              <span className="text-xs font-black uppercase tracking-wider text-slate-500">Active Prize Vault</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold">
-                {currentVault.apy} APY
+                8.50% APY Stream
               </span>
             </div>
+            <h2 className="text-2xl font-black text-black">USD High-Yield Vault</h2>
             <p className="text-xs text-slate-500 font-medium">
-              Save {currentVault.token} tokens with zero loss and enter daily prize draws automatically.
+              Deposit cUSDT tokens to enter daily prize draws automatically. Zero risk of loss.
             </p>
           </div>
 
           {/* User's Shielded Balance Pill */}
-          <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
+          <div className="flex items-center gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs">
             <div className="text-right">
               <span className="text-slate-500 text-[11px] block">Your Saved Balance:</span>
               <div className="font-black text-black text-sm">
                 {account ? (
                   decryptedBalance !== null ? (
-                    <span>${decryptedBalance} {currentVault.token}</span>
+                    <span>${decryptedBalance} cUSDT</span>
                   ) : (
                     <span className="tracking-widest text-slate-400">••••••</span>
                   )
@@ -225,6 +137,22 @@ export const VaultView: React.FC<VaultViewProps> = ({
                 )}
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Live Metrics Row (100% Real Live Onchain Data) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
+            <span className="text-slate-500 text-[11px] block">Current Prize Pot:</span>
+            <strong className="text-black text-sm font-black">${totalPrizeReserve} cUSDT</strong>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
+            <span className="text-slate-500 text-[11px] block">Total Shielded TVL:</span>
+            <strong className="text-black text-sm font-black">${totalDeposits}</strong>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
+            <span className="text-slate-500 text-[11px] block">Draw Frequency:</span>
+            <strong className="text-emerald-700 text-sm font-black">Daily (Every 24h)</strong>
           </div>
         </div>
 
@@ -262,8 +190,8 @@ export const VaultView: React.FC<VaultViewProps> = ({
               <div className="flex items-center gap-2">
                 <span>
                   {activeTab === "deposit"
-                    ? `Wallet: ${walletBalance} ${currentVault.token}`
-                    : `Saved: ${decryptedBalance !== null ? `${decryptedBalance} ${currentVault.token}` : "••••••"}`}
+                    ? `Wallet: ${walletBalance} cUSDT`
+                    : `Saved: ${decryptedBalance !== null ? `${decryptedBalance} cUSDT` : "••••••"}`}
                 </span>
                 {activeTab === "deposit" && (
                   <button
@@ -271,7 +199,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                     onClick={onOpenFaucet}
                     className="text-amber-700 hover:underline font-bold"
                   >
-                    +Get Test Tokens
+                    +Get Free cUSDT
                   </button>
                 )}
               </div>
@@ -292,7 +220,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                 />
               </div>
               <span className="px-4 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-black text-slate-800 shadow-sm">
-                {currentVault.token}
+                cUSDT
               </span>
             </div>
 
@@ -370,7 +298,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
               <CheckCircle2 className="w-3.5 h-3.5" />
               100% Principal Safe (No Risk of Loss)
             </span>
-            <span>No lockups &bull; Instant Withdrawals</span>
+            <span>No lockups &bull; Instant 100% Exit</span>
           </div>
         </form>
       </div>

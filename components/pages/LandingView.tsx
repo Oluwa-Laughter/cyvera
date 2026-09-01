@@ -19,7 +19,9 @@ import {
   HelpCircle,
   Dices,
   Coins,
-  ChevronRight
+  ChevronRight,
+  EyeOff,
+  AlertTriangle
 } from "lucide-react";
 
 interface LandingViewProps {
@@ -51,7 +53,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   const faqs = [
     {
       q: "What is a 'No-Loss' Prize Savings vault?",
-      a: "Unlike traditional lotteries where your ticket money is spent forever, AuraPool works like a high-yield savings account. Your deposit is pooled with other savers to earn DeFi lending yield (8.50% APY). That interest is awarded in daily prize draws. You can withdraw 100% of your deposit at any time — you never lose your principal.",
+      a: "Unlike traditional lotteries where your ticket purchase is spent forever, AuraPool works like a high-yield savings account. Your deposit is pooled with other savers to earn DeFi lending yield (8.50% APY). That interest is awarded in daily prize draws. You can withdraw 100% of your deposit at any time — you never lose your principal.",
     },
     {
       q: "Why is financial privacy important?",
@@ -105,7 +107,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         {/* Eyebrow Pill */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100/70 border border-amber-300/80 text-amber-950 text-xs font-bold uppercase tracking-wider mb-8 shadow-sm">
           <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-          <span>The Confidential Prize Savings Protocol</span>
+          <span>Confidential Prize Savings Protocol</span>
         </div>
 
         {/* Main Title */}
@@ -139,7 +141,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
           </button>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid (100% Live Real Data) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full text-left">
           <div className="aura-card p-5">
             <span className="text-xs font-semibold text-slate-500">Current Prize Pot</span>
@@ -171,135 +173,111 @@ export const LandingView: React.FC<LandingViewProps> = ({
         </div>
       </section>
 
-      {/* 3. Featured Savings Vaults (PoolTogether Style) */}
+      {/* 3. The 4-Step Visual Flow */}
       <section className="py-12 px-4 sm:px-8 max-w-5xl mx-auto w-full">
-        <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
           <h2 className="text-3xl font-black text-black tracking-tight">
-            Explore Prize Savings Vaults
+            How You Save & Win on AuraPool
           </h2>
           <p className="text-sm text-slate-600">
-            Pick a pool, save tokens, and receive automatic tickets in every future draw.
+            A simple, non-custodial savings loop where your principal is always protected.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Main cUSDT Vault */}
-          <div className="aura-card p-6 sm:p-8 border-amber-300 bg-white shadow-aura-md flex flex-col justify-between space-y-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-black">cUSDT</span>
-                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-aura-yellow text-black">
-                  Daily Draws
-                </span>
-              </div>
-              <h3 className="text-lg font-black text-black">USD High-Yield Vault</h3>
-              <p className="text-xs text-slate-600">
-                Deposit USD stablecoins to win daily prizes. Yield generated via decentralized lending.
-              </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs font-medium">
+          <div className="aura-card p-6 border-slate-200 space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center font-black text-amber-900 text-sm">
+              01
             </div>
-
-            <div className="space-y-2 pt-4 border-t border-slate-100 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Yield APY:</span>
-                <strong className="text-emerald-700 font-black text-sm">8.50% APY</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Prize Pot:</span>
-                <strong className="text-amber-800 font-black text-sm">${totalPrizeReserve} cUSDT</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Principal Risk:</span>
-                <strong className="text-emerald-700 font-bold">0.00% (Zero Risk)</strong>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onEnterApp("vault")}
-              className="w-full py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow active:scale-95"
-            >
-              Deposit & Save
-            </button>
+            <h3 className="text-base font-black text-black">Deposit Tokens</h3>
+            <p className="text-slate-600 leading-relaxed">
+              Deposit cUSDT tokens into the pool. You get 1 prize ticket per dollar saved. Your balance is 100% private.
+            </p>
           </div>
 
-          {/* WETH Vault */}
-          <div className="aura-card p-6 sm:p-8 border-slate-200 bg-slate-50 flex flex-col justify-between space-y-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-black">WETH</span>
-                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                  Weekly Mega
-                </span>
-              </div>
-              <h3 className="text-lg font-black text-black">ETH Turbo Prize Vault</h3>
-              <p className="text-xs text-slate-600">
-                Save Ethereum and enter weekly jackpot prize draws with 100% principal protection.
-              </p>
+          <div className="aura-card p-6 border-slate-200 space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center font-black text-emerald-900 text-sm">
+              02
             </div>
-
-            <div className="space-y-2 pt-4 border-t border-slate-200 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Yield APY:</span>
-                <strong className="text-emerald-700 font-black text-sm">5.40% APY</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Estimated Pot:</span>
-                <strong className="text-black font-bold text-sm">$2,850 WETH</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Principal Risk:</span>
-                <strong className="text-emerald-700 font-bold">0.00% (Zero Risk)</strong>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onEnterApp("vault")}
-              className="w-full py-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold text-xs transition-all active:scale-95"
-            >
-              View Vault
-            </button>
+            <h3 className="text-base font-black text-black">Lending Yield</h3>
+            <p className="text-slate-600 leading-relaxed">
+              Deposited funds generate 8.50% lending APY. That interest continuously streams into the prize pot.
+            </p>
           </div>
 
-          {/* ZAMA Vault */}
-          <div className="aura-card p-6 sm:p-8 border-slate-200 bg-slate-50 flex flex-col justify-between space-y-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-black">ZAMA</span>
-                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                  Bi-Weekly
+          <div className="aura-card p-6 border-slate-200 space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-purple-100 flex items-center justify-center font-black text-purple-900 text-sm">
+              03
+            </div>
+            <h3 className="text-base font-black text-black">Win in Secret</h3>
+            <p className="text-slate-600 leading-relaxed">
+              Daily draws award the prize pot to a random saver without exposing who won to the public.
+            </p>
+          </div>
+
+          <div className="aura-card p-6 border-slate-200 space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center font-black text-amber-900 text-sm">
+              04
+            </div>
+            <h3 className="text-base font-black text-black">Withdraw 100%</h3>
+            <p className="text-slate-600 leading-relaxed">
+              Withdraw all your deposited principal at any time with zero penalties or lockup fees.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Live Active Savings Vault Card */}
+      <section className="py-12 px-4 sm:px-8 max-w-5xl mx-auto w-full">
+        <div className="aura-card p-8 sm:p-10 border border-amber-300 bg-white shadow-aura-md space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-aura-yellow text-black">
+                  Active Live Vault
                 </span>
+                <span className="text-xs font-bold text-slate-500">Ethereum Sepolia</span>
               </div>
-              <h3 className="text-lg font-black text-black">ZAMA Privacy Vault</h3>
+              <h3 className="text-2xl font-black text-black">USD High-Yield Prize Vault</h3>
               <p className="text-xs text-slate-600">
-                Stake ZAMA tokens in confidential prize pools with zero onchain balance exposure.
+                Deposit USD stablecoins (cUSDT) with zero risk and participate in automated daily prize draws.
               </p>
             </div>
 
-            <div className="space-y-2 pt-4 border-t border-slate-200 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Yield APY:</span>
-                <strong className="text-emerald-700 font-black text-sm">12.00% APY</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Estimated Pot:</span>
-                <strong className="text-black font-bold text-sm">$1,960 ZAMA</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Principal Risk:</span>
-                <strong className="text-emerald-700 font-bold">0.00% (Zero Risk)</strong>
-              </div>
+            <div className="text-right">
+              <span className="text-3xl font-black text-emerald-700">8.50%</span>
+              <span className="text-xs text-slate-500 block font-medium">APY Lending Yield</span>
             </div>
+          </div>
 
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+              <span className="text-slate-500 text-[11px] block">Current Grand Prize:</span>
+              <strong className="text-black text-sm font-black">${totalPrizeReserve} cUSDT</strong>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+              <span className="text-slate-500 text-[11px] block">Total Shielded TVL:</span>
+              <strong className="text-black text-sm font-black">${totalDeposits}</strong>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
+              <span className="text-slate-500 text-[11px] block">Savers Participating:</span>
+              <strong className="text-black text-sm font-black">{depositorsCount} Savers</strong>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3">
             <button
               onClick={() => onEnterApp("vault")}
-              className="w-full py-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold text-xs transition-all active:scale-95"
+              className="w-full sm:flex-1 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95"
             >
-              View Vault
+              <PiggyBank className="w-4 h-4" />
+              <span>Deposit & Save in Vault</span>
             </button>
           </div>
         </div>
       </section>
 
-      {/* 4. Interactive Savings Calculator */}
+      {/* 5. Interactive Savings Calculator */}
       <section className="py-12 px-4 sm:px-8 max-w-5xl mx-auto w-full">
         <div className="aura-card p-8 sm:p-10 relative overflow-hidden bg-gradient-to-br from-white via-slate-50 to-amber-50/40">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
@@ -364,7 +342,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         </div>
       </section>
 
-      {/* 5. FAQ */}
+      {/* 6. FAQ */}
       <section className="py-12 px-4 sm:px-8 max-w-3xl mx-auto w-full">
         <div className="text-center mb-8 space-y-2">
           <h2 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
@@ -402,7 +380,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         </div>
       </section>
 
-      {/* 6. Footer */}
+      {/* 7. Footer */}
       <footer className="w-full border-t border-slate-200 bg-white py-8 px-4 sm:px-8 text-xs text-slate-500">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <AuraLogo size="sm" />

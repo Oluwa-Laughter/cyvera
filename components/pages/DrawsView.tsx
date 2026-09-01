@@ -147,10 +147,12 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
 
         <div className="space-y-3 text-xs">
           {drawHistory.length === 0 ? (
-            <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-2xl border border-slate-100">
-              <Trophy className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="font-bold text-slate-700">Upcoming Draw #1 Active</p>
-              <p className="text-[11px] text-slate-500">First daily prize will be awarded when the countdown timer reaches zero.</p>
+            <div className="py-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+              <Trophy className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="font-bold text-slate-700 text-sm">Upcoming Draw #{currentDrawId + 1} Active</p>
+              <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                First prize will be awarded when the countdown timer reaches zero. Deposit in the vault to participate!
+              </p>
             </div>
           ) : (
             drawHistory.map((draw) => (
