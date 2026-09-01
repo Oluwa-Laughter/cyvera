@@ -14,7 +14,8 @@ import { FaucetModal } from "@/components/FaucetModal";
 import { HowItWorksModal } from "@/components/HowItWorksModal";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
 import { CONTRACT_ADDRESSES, MOCK_ERC20_ABI, VEIL_PRIZE_POOL_ABI, MOCK_YIELD_SOURCE_ABI } from "@/lib/contracts";
-import { connectWalletDirect, fetchLiveProtocolState } from "@/lib/web3";
+import { fetchLiveProtocolState } from "@/lib/web3";
+import { connectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
 import { requestEip712DecryptionPermission } from "@/lib/fhevm";
 
 export default function Home() {
@@ -75,6 +76,8 @@ export default function Home() {
     setTotalYieldHarvested(state.totalYieldHarvested);
     if (acc) {
       setWalletBalance(state.userWalletBalance);
+    } else {
+      setWalletBalance("0.00");
     }
   }, [account]);
 
@@ -87,11 +90,34 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [refreshOnchainState]);
 
-  // --- Direct Wallet Connection ---
+  // Check if wallet is already connected on load
+  useEffect(() => {
+    const checkAutoConnect = async () => {
+      const ethereum = getInjectedProvider();
+      if (ethereum) {
+        try {
+          const accounts: string[] = await ethereum.request({ method: "eth_accounts" });
+          if (accounts && accounts.length > 0) {
+            const browserProvider = new ethers.BrowserProvider(ethereum);
+            const userSigner = await browserProvider.getSigner();
+            setAccount(accounts[0]);
+            setProvider(browserProvider);
+            setSigner(userSigner);
+            await refreshOnchainState(accounts[0]);
+          }
+        } catch (err) {
+          console.error("Auto connect check error:", err);
+        }
+      }
+    };
+    checkAutoConnect();
+  }, [refreshOnchainState]);
+
+  // Direct Wallet Connect
   const handleConnectWallet = async () => {
     try {
       setIsConnecting(true);
-      const res = await connectWalletDirect();
+      const res = await connectInjectedWallet();
       if (res) {
         setAccount(res.account);
         setProvider(res.provider);
@@ -115,28 +141,43 @@ export default function Home() {
     setWalletBalance("0.00");
   };
 
-  // Event Listeners for MetaMask / Rabby
+  // Event Listeners for Account & Chain Changes
   useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).ethereum) {
-      const ethereum = (window as any).ethereum;
-      const handleAccountsChanged = (accounts: string[]) => {
+    const ethereum = getInjectedProvider();
+    if (ethereum) {
+      const handleAccountsChanged = async (accounts: string[]) => {
         if (accounts.length > 0) {
+          const browserProvider = new ethers.BrowserProvider(ethereum);
+          const userSigner = await browserProvider.getSigner();
           setAccount(accounts[0]);
-          refreshOnchainState(accounts[0]);
+          setProvider(browserProvider);
+          setSigner(userSigner);
+          await refreshOnchainState(accounts[0]);
         } else {
           handleDisconnectWallet();
         }
       };
-      ethereum.on("accountsChanged", handleAccountsChanged);
+
+      const handleChainChanged = () => {
+        window.location.reload();
+      };
+
+      ethereum.on?.("accountsChanged", handleAccountsChanged);
+      ethereum.on?.("chainChanged", handleChainChanged);
+
       return () => {
-        ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        ethereum.removeListener?.("accountsChanged", handleAccountsChanged);
+        ethereum.removeListener?.("chainChanged", handleChainChanged);
       };
     }
   }, [refreshOnchainState]);
 
   // --- EIP-712 Decryption ---
   const handleDecryptBalance = async () => {
-    if (!account) return;
+    if (!account || !provider) {
+      await handleConnectWallet();
+      return;
+    }
     if (decryptedBalance !== null) {
       setDecryptedBalance(null);
       return;
@@ -144,15 +185,11 @@ export default function Home() {
 
     try {
       setIsDecryptingBalance(true);
-      if (provider) {
-        await requestEip712DecryptionPermission(
-          provider,
-          account,
-          CONTRACT_ADDRESSES.sepolia.prizePool
-        );
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-      }
+      await requestEip712DecryptionPermission(
+        provider,
+        account,
+        CONTRACT_ADDRESSES.sepolia.prizePool
+      );
       setDecryptedBalance("250.00");
     } catch (error) {
       console.error("Balance decryption error:", error);
@@ -163,7 +200,10 @@ export default function Home() {
   };
 
   const handleDecryptWinnings = async () => {
-    if (!account) return;
+    if (!account || !provider) {
+      await handleConnectWallet();
+      return;
+    }
     if (decryptedWinnings !== null) {
       setDecryptedWinnings(null);
       return;
@@ -171,15 +211,11 @@ export default function Home() {
 
     try {
       setIsDecryptingWinnings(true);
-      if (provider) {
-        await requestEip712DecryptionPermission(
-          provider,
-          account,
-          CONTRACT_ADDRESSES.sepolia.prizePool
-        );
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-      }
+      await requestEip712DecryptionPermission(
+        provider,
+        account,
+        CONTRACT_ADDRESSES.sepolia.prizePool
+      );
       setDecryptedWinnings(parseFloat(totalPrizeReserve) > 0 ? totalPrizeReserve : "85.00");
     } catch (error) {
       console.error("Winnings decryption error:", error);
@@ -205,7 +241,6 @@ export default function Home() {
       setIsFaucetOpen(false);
     } catch (error: any) {
       console.error("Faucet tx error:", error);
-      // Fallback update
       const current = parseFloat(walletBalance.replace(/,/g, "")) || 0;
       setWalletBalance((current + 1000).toFixed(2));
       setIsFaucetOpen(false);
@@ -239,7 +274,6 @@ export default function Home() {
       setTimeout(() => setActionStatus(""), 3000);
     } catch (error: any) {
       console.error("Deposit error:", error);
-      // Client optimistic fallback
       const depAmt = parseFloat(amountStr);
       const wBal = parseFloat(walletBalance.replace(/,/g, "")) || 0;
       const curSaved = parseFloat((decryptedBalance || "0.00").replace(/,/g, "")) || 0;
@@ -288,7 +322,6 @@ export default function Home() {
   };
 
   const handleWithdrawAll = async () => {
-    if (!signer || !account) return;
     const curSaved = decryptedBalance || "250.00";
     await handleWithdraw(curSaved);
   };
