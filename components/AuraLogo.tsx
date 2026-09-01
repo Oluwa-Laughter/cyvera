@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion } from "framer-motion";
 
 interface AuraLogoProps {
   size?: "sm" | "md" | "lg";
@@ -21,36 +22,54 @@ export const AuraLogo: React.FC<AuraLogoProps> = ({ size = "md", showText = true
   }[size];
 
   return (
-    <div className="flex items-center gap-3 select-none">
-      {/* Radiant Yellow Brand Glyph */}
-      <div className={`relative flex items-center justify-center ${iconDimensions} rounded-2xl bg-aura-yellow shadow-aura-yellow p-2 transition-transform duration-300 hover:scale-105`}>
+    <div className="flex items-center gap-3 select-none group cursor-pointer">
+      {/* Bespoke Kinetic Cipher Prism Glyph */}
+      <motion.div 
+        whileHover={{ scale: 1.06, rotate: 3 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className={`relative flex items-center justify-center ${iconDimensions} rounded-2xl bg-black shadow-aura-md border border-slate-800 p-2 overflow-hidden`}
+      >
+        {/* Glowing Radial Backdrop */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/30 via-aura-yellow/20 to-transparent" />
+        
+        {/* Geometric Cipher Aperture / Shield Icon */}
         <svg
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full text-black"
+          className="w-full h-full relative z-10"
         >
-          {/* Modern geometric shield and crown/spark */}
+          {/* Outer Prism Triangular Aperture */}
           <path
-            d="M12 2L4 6V12C4 17.52 7.42 22.5 12 23.93C16.58 22.5 20 17.52 20 12V6L12 2Z"
-            fill="currentColor"
+            d="M12 2.5L21 19.5H3L12 2.5Z"
+            stroke="#FFD200"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
-          <circle cx="12" cy="12" r="3.5" fill="#FFD200" />
+          {/* Inner Inverted Kinetic Core */}
+          <path
+            d="M12 9L16.5 17.5H7.5L12 9Z"
+            fill="#FFD200"
+          />
+          {/* Center Cipher Dot */}
+          <circle cx="12" cy="14" r="1.5" fill="#0A0A0A" />
         </svg>
-      </div>
+      </motion.div>
 
       {showText && (
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <span className={`font-extrabold tracking-tight text-black ${textSize}`}>
+            <span className={`font-black tracking-tight text-black ${textSize}`}>
               AuraPool
             </span>
-            <span className="text-[9px] font-mono font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-aura-yellow text-black border border-black/10">
-              NO-LOSS
+            <span className="text-[9px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-full bg-aura-yellow text-black border border-amber-400 shadow-sm">
+              ZAMA FHE
             </span>
           </div>
-          <span className="text-[10px] font-medium text-slate-500 leading-none">
-            Private Prize Savings Vault
+          <span className="text-[10px] font-semibold text-slate-500 leading-none">
+            Confidential Prize Savings
           </span>
         </div>
       )}

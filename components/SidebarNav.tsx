@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion } from "framer-motion";
 import { AuraLogo } from "@/components/AuraLogo";
 import { 
   LayoutDashboard, 
@@ -12,17 +13,17 @@ import {
   HelpCircle, 
   X, 
   Home,
-  ShieldCheck
+  ShieldCheck,
+  BookOpen
 } from "lucide-react";
 
-export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "yield";
+export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "yield" | "how-it-works";
 
 interface SidebarNavProps {
   currentTab: AppPageTab;
   onSelectTab: (tab: AppPageTab) => void;
   onNavigateHome: () => void;
   onOpenFaucet: () => void;
-  onOpenHowItWorks: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
 }
@@ -32,7 +33,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   onSelectTab,
   onNavigateHome,
   onOpenFaucet,
-  onOpenHowItWorks,
   isOpenMobile,
   onCloseMobile,
 }) => {
@@ -42,6 +42,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     { id: "draws", label: "Prize Draws", icon: <Dices className="w-4 h-4" />, badge: "Daily" },
     { id: "rewards", label: "My Rewards", icon: <Trophy className="w-4 h-4" /> },
     { id: "yield", label: "Yield Growth", icon: <TrendingUp className="w-4 h-4" />, badge: "8.5%" },
+    { id: "how-it-works", label: "How It Works", icon: <BookOpen className="w-4 h-4" /> },
   ];
 
   return (
@@ -85,19 +86,19 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                     onCloseMobile();
                   }}
                   className={`
-                    w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-200
+                    w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-200 relative
                     ${isActive 
                       ? "bg-aura-yellow text-black font-extrabold shadow-aura-yellow" 
                       : "text-slate-600 hover:text-black hover:bg-slate-100"}
                   `}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 relative z-10">
                     {item.icon}
                     <span>{item.label}</span>
                   </div>
 
                   {item.badge && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold relative z-10 ${
                       isActive ? "bg-black text-white" : "bg-amber-100 text-amber-900"
                     }`}>
                       {item.badge}
@@ -117,25 +118,13 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               onOpenFaucet();
               onCloseMobile();
             }}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold transition-all"
+            className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold transition-all active:scale-95"
           >
             <div className="flex items-center gap-2">
               <Droplets className="w-4 h-4 text-amber-600" />
               <span>Get Free cUSDT</span>
             </div>
             <span className="text-[10px] bg-aura-yellow text-black px-1.5 py-0.5 rounded-full font-extrabold">+1000</span>
-          </button>
-
-          {/* How it Works Modal */}
-          <button
-            onClick={() => {
-              onOpenHowItWorks();
-              onCloseMobile();
-            }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium transition-all border border-slate-200"
-          >
-            <HelpCircle className="w-4 h-4 text-slate-500" />
-            <span>How AuraPool Works</span>
           </button>
 
           {/* Back to Home / Vision */}

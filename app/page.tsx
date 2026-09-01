@@ -10,6 +10,7 @@ import { VaultView } from "@/components/pages/VaultView";
 import { DrawsView } from "@/components/pages/DrawsView";
 import { RewardsView } from "@/components/pages/RewardsView";
 import { YieldView } from "@/components/pages/YieldView";
+import { HowItWorksView } from "@/components/pages/HowItWorksView";
 import { FaucetModal } from "@/components/FaucetModal";
 import { HowItWorksModal } from "@/components/HowItWorksModal";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
@@ -90,7 +91,7 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [refreshOnchainState]);
 
-  // Check if wallet is already connected on load
+  // Auto connect if active
   useEffect(() => {
     const checkAutoConnect = async () => {
       const ethereum = getInjectedProvider();
@@ -140,37 +141,6 @@ export default function Home() {
     setDecryptedWinnings(null);
     setWalletBalance("0.00");
   };
-
-  // Event Listeners for Account & Chain Changes
-  useEffect(() => {
-    const ethereum = getInjectedProvider();
-    if (ethereum) {
-      const handleAccountsChanged = async (accounts: string[]) => {
-        if (accounts.length > 0) {
-          const browserProvider = new ethers.BrowserProvider(ethereum);
-          const userSigner = await browserProvider.getSigner();
-          setAccount(accounts[0]);
-          setProvider(browserProvider);
-          setSigner(userSigner);
-          await refreshOnchainState(accounts[0]);
-        } else {
-          handleDisconnectWallet();
-        }
-      };
-
-      const handleChainChanged = () => {
-        window.location.reload();
-      };
-
-      ethereum.on?.("accountsChanged", handleAccountsChanged);
-      ethereum.on?.("chainChanged", handleChainChanged);
-
-      return () => {
-        ethereum.removeListener?.("accountsChanged", handleAccountsChanged);
-        ethereum.removeListener?.("chainChanged", handleChainChanged);
-      };
-    }
-  }, [refreshOnchainState]);
 
   // --- EIP-712 Decryption ---
   const handleDecryptBalance = async () => {
@@ -322,6 +292,7 @@ export default function Home() {
   };
 
   const handleWithdrawAll = async () => {
+    if (!signer || !account) return;
     const curSaved = decryptedBalance || "250.00";
     await handleWithdraw(curSaved);
   };
@@ -462,6 +433,7 @@ export default function Home() {
       case "draws": return { title: "Daily Prize Draws", sub: "Onchain fair winner selection weighted by deposit size" };
       case "rewards": return { title: "My Secret Rewards", sub: "Check your private winnings, claim to wallet, or auto-compound" };
       case "yield": return { title: "Yield Growth Strategy", sub: "How Aave V3 lending yield generates prize pots with zero principal loss" };
+      case "how-it-works": return { title: "Protocol Architecture", sub: "4-phase cryptographic lifecycle, FHE math, and confidentiality matrix" };
     }
   };
 
@@ -478,7 +450,6 @@ export default function Home() {
             setCurrentView("app");
           }}
           onOpenFaucet={() => setIsFaucetOpen(true)}
-          onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
           totalDeposits={totalDeposits}
           totalPrizeReserve={totalPrizeReserve}
           totalPrizesAwarded={totalPrizesAwarded}
@@ -493,7 +464,6 @@ export default function Home() {
             onSelectTab={setCurrentTab}
             onNavigateHome={() => setCurrentView("landing")}
             onOpenFaucet={() => setIsFaucetOpen(true)}
-            onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
             isOpenMobile={isMobileNavOpen}
             onCloseMobile={() => setIsMobileNavOpen(false)}
           />
@@ -590,6 +560,12 @@ export default function Home() {
                   isHarvesting={isHarvesting}
                   account={account}
                   onConnect={handleConnectWallet}
+                />
+              )}
+
+              {currentTab === "how-it-works" && (
+                <HowItWorksView
+                  onEnterVault={() => setCurrentTab("vault")}
                 />
               )}
             </main>
