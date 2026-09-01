@@ -59,9 +59,10 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   const [customSeconds, setCustomSeconds] = useState<string>("");
 
   const intervalPresets = [
-    { label: "⚡ 30s (Testing)", seconds: 30 },
-    { label: "⏱️ 1 Min", seconds: 60 },
-    { label: "⏱️ 5 Min", seconds: 300 },
+    { label: "⚡ 30 Seconds", seconds: 30 },
+    { label: "⏱️ 1 Minute", seconds: 60 },
+    { label: "⏱️ 5 Minutes", seconds: 300 },
+    { label: "⏱️ 10 Minutes", seconds: 600 },
     { label: "⏳ 1 Hour", seconds: 3600 },
     { label: "📅 24 Hours", seconds: 86400 },
   ];

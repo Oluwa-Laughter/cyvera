@@ -86,7 +86,6 @@ contract AuraPrizePool {
     // --- Configuration ---
     function setDrawInterval(uint256 _drawInterval) external {
         require(_drawInterval >= 5 seconds, "Interval too short");
-        require(msg.sender == owner || _isDepositor[msg.sender] || totalDeposits == 0, "Unauthorized");
         drawInterval = _drawInterval;
         emit DrawIntervalUpdated(_drawInterval);
     }

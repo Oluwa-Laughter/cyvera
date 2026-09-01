@@ -369,22 +369,22 @@ export default function Home() {
   };
 
   const handleSetDrawInterval = async (seconds: number) => {
-    if (!signer || !account) {
-      await handleConnectWallet();
-      return;
-    }
+    // Immediately update local timer so countdown reacts instantly to user input
+    setDrawInterval(seconds);
+    setLastDrawTime(Math.floor(Date.now() / 1000));
 
-    try {
-      setIsSettingInterval(true);
-      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
-      const tx = await poolContract.setDrawInterval(seconds);
-      await tx.wait();
-      await refreshOnchainState();
-    } catch (error: any) {
-      console.error("Set interval error:", error);
-      alert(error.reason || error.message || "Failed to set draw interval onchain.");
-    } finally {
-      setIsSettingInterval(false);
+    if (signer && account) {
+      try {
+        setIsSettingInterval(true);
+        const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+        const tx = await poolContract.setDrawInterval(seconds);
+        await tx.wait();
+        await refreshOnchainState();
+      } catch (error: any) {
+        console.error("Set interval error:", error);
+      } finally {
+        setIsSettingInterval(false);
+      }
     }
   };
 
