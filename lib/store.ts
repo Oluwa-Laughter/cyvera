@@ -15,12 +15,16 @@ export interface StoredDrawRecord {
 }
 
 export interface StoredActivityEntry {
-  id: number;
-  ts: number;
-  kind: "deposit" | "withdraw" | "claim" | "compound" | "draw" | "faucet" | "decrypt" | "connect";
-  description: string;
+  id: string | number;
+  ts?: number;
+  timestamp?: number;
+  kind?: string;
+  type?: string;
+  description?: string;
+  account?: string;
   amount?: string;
   txHash?: string;
+  status?: string;
 }
 
 const STORAGE_KEYS = {
