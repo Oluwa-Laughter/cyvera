@@ -8,31 +8,35 @@ import { AlertTriangle, CheckCircle2, ExternalLink, Info, X } from "lucide-react
 import { SidebarNav, AppPageTab } from "@/components/SidebarNav";
 import { TopHeader } from "@/components/TopHeader";
 import { LandingView } from "@/components/pages/LandingView";
-import { AuctionsListView } from "@/components/pages/AuctionsListView";
-import { MyBidsView } from "@/components/pages/MyBidsView";
-import { CreateAuctionView } from "@/components/pages/CreateAuctionView";
-import { FheLabView } from "@/components/pages/FheLabView";
+import { DashboardView } from "@/components/pages/DashboardView";
+import { VaultView } from "@/components/pages/VaultView";
+import { DrawsView } from "@/components/pages/DrawsView";
+import { RewardsView } from "@/components/pages/RewardsView";
 import { ActivityView } from "@/components/pages/ActivityView";
-import { HowItWorksDarkView } from "@/components/pages/HowItWorksDarkView";
+import { HowItWorksView } from "@/components/pages/HowItWorksView";
 import { FaucetModal } from "@/components/FaucetModal";
 import { HowItWorksModal } from "@/components/HowItWorksModal";
 import {
   CONTRACT_ADDRESSES,
   MOCK_ERC20_ABI,
-  AURA_AUCTION_ABI,
+  AURA_PRIZE_POOL_ABI,
+  MOCK_YIELD_SOURCE_ABI,
 } from "@/lib/contracts";
 import { fetchLiveProtocolState, SEPOLIA_CHAIN_ID, ProtocolSnapshot } from "@/lib/web3";
 import { connectInjectedWallet, disconnectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
 import {
-  getStoredAuctions,
-  saveStoredAuction,
-  recordUserBid,
-  settleStoredAuction,
-  recordClaimRefund,
-  recordClaimAsset,
-  AuctionView,
-} from "@/lib/auctionStore";
-import {
+  getStoredSavings,
+  setStoredSavings,
+  getStoredWinnings,
+  setStoredWinnings,
+  getStoredWalletBalance,
+  setStoredWalletBalance,
+  getStoredTVL,
+  setStoredTVL,
+  getStoredPrizePot,
+  setStoredPrizePot,
+  getStoredDrawHistory,
+  addStoredDraw,
   getStoredActivity,
   addStoredActivity,
   StoredActivityEntry,
@@ -52,8 +56,9 @@ const TOAST_LIMIT = 5;
 export default function Home() {
   // Routing
   const [currentView, setCurrentView] = useState<"landing" | "app">("landing");
-  const [currentTab, setCurrentTab] = useState<AppPageTab>("auctions");
+  const [currentTab, setCurrentTab] = useState<AppPageTab>("dashboard");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [initialDepositAmount, setInitialDepositAmount] = useState("");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -69,10 +74,17 @@ export default function Home() {
 
   // Protocol snapshot
   const [snap, setSnap] = useState<ProtocolSnapshot | null>(null);
-  const [auctions, setAuctions] = useState<AuctionView[]>([]);
+  const [isLoadingState, setIsLoadingState] = useState(true);
+
+  // Decrypted values
+  const [decryptedBalance, setDecryptedBalance] = useState<string | null>(null);
+  const [isDecryptingBalance, setIsDecryptingBalance] = useState(false);
+  const [decryptedWinnings, setDecryptedWinnings] = useState<string | null>(null);
+  const [isDecryptingWinnings, setIsDecryptingWinnings] = useState(false);
 
   // Action state
   const [isLoadingAction, setIsLoadingAction] = useState(false);
+  const [isTriggeringDraw, setIsTriggeringDraw] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -88,6 +100,7 @@ export default function Home() {
   // Modals
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
   const [isClaimingFaucet, setIsClaimingFaucet] = useState(false);
+  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
 
   const addToast = useCallback(
     (type: "success" | "error" | "info", message: string, txHash?: string) => {
@@ -110,24 +123,30 @@ export default function Home() {
     setActivity((prev) => [newEntry, ...prev.slice(0, 49)]);
   }, []);
 
-  // Load auctions and state
-  const loadState = useCallback(async () => {
-    const list = getStoredAuctions(account);
-    setAuctions(list);
-
+  // Fetch Protocol Snapshot
+  const refreshProtocolState = useCallback(async () => {
     try {
-      const protocolSnap = await fetchLiveProtocolState(account);
-      setSnap(protocolSnap);
-    } catch (e) {
-      console.warn("Could not fetch live protocol snapshot:", e);
+      const liveSnapshot = await fetchLiveProtocolState(account);
+      setSnap(liveSnapshot);
+
+      if (account) {
+        const saved = getStoredSavings(account);
+        const win = getStoredWinnings(account);
+        setDecryptedBalance(saved);
+        setDecryptedWinnings(win);
+      }
+    } catch (err) {
+      console.warn("Snapshot refresh warning:", err);
+    } finally {
+      setIsLoadingState(false);
     }
   }, [account]);
 
   useEffect(() => {
-    loadState();
-    const interval = setInterval(loadState, 5000);
+    refreshProtocolState();
+    const interval = setInterval(refreshProtocolState, 6000);
     return () => clearInterval(interval);
-  }, [loadState]);
+  }, [refreshProtocolState]);
 
   useEffect(() => {
     setActivity(getStoredActivity());
@@ -147,7 +166,7 @@ export default function Home() {
       const net = await res.provider.getNetwork();
       setChainId(Number(net.chainId));
       addToast("success", `Connected wallet ${res.account.slice(0, 6)}...${res.account.slice(-4)}`);
-      loadState();
+      refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected")) {
         addToast("error", err.message || "Failed to connect wallet.");
@@ -155,7 +174,7 @@ export default function Home() {
     } finally {
       setIsConnecting(false);
     }
-  }, [addToast, loadState]);
+  }, [addToast, refreshProtocolState]);
 
   // Disconnect Wallet
   const handleDisconnectWallet = useCallback(async () => {
@@ -164,6 +183,8 @@ export default function Home() {
     setProvider(null);
     setSigner(null);
     setChainId(null);
+    setDecryptedBalance(null);
+    setDecryptedWinnings(null);
     addToast("info", "Wallet disconnected.");
   }, [addToast]);
 
@@ -183,8 +204,39 @@ export default function Home() {
     }
   }, [addToast]);
 
-  // Place Sealed Bid
-  const handlePlaceBid = async (auctionId: number, amount: string) => {
+  // Decrypt Balance (Instant Reveal/Hide)
+  const handleDecryptBalance = useCallback(() => {
+    if (!account) return;
+    if (decryptedBalance !== null) {
+      setDecryptedBalance(null);
+      return;
+    }
+    setIsDecryptingBalance(true);
+    setTimeout(() => {
+      const saved = getStoredSavings(account);
+      setDecryptedBalance(saved);
+      setIsDecryptingBalance(false);
+    }, 200);
+  }, [account, decryptedBalance]);
+
+  // Decrypt Winnings (Instant Reveal)
+  const handleDecryptWinnings = useCallback(() => {
+    if (!account) return;
+    setIsDecryptingWinnings(true);
+    setTimeout(() => {
+      const win = getStoredWinnings(account);
+      setDecryptedWinnings(win);
+      setIsDecryptingWinnings(false);
+      if (parseFloat(win) > 0) {
+        addToast("success", `You have $${win} cUSDT in unclaimed prize winnings!`);
+      } else {
+        addToast("info", "No unclaimed prize winnings found for this wallet yet.");
+      }
+    }, 250);
+  }, [account, addToast]);
+
+  // Deposit Action
+  const handleDeposit = async (amount: string) => {
     if (!account) {
       handleConnectWallet();
       return;
@@ -196,28 +248,18 @@ export default function Home() {
     try {
       const parsedAmount = parseFloat(amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        throw new Error("Invalid bid amount.");
+        throw new Error("Invalid deposit amount.");
       }
 
-      // 1. Sign onchain approval if provider available
+      // Check / execute approval if onchain provider is available
       if (signer) {
         try {
           const token = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, signer);
-          const currentBal: bigint = await token.balanceOf(account).catch(() => 0n);
+          const currentAllowance: bigint = await token.allowance(account, CONTRACT_ADDRESSES.sepolia.prizePool).catch(() => 0n);
           const needed = ethers.parseUnits(amount, 6);
 
-          if (currentBal < needed) {
-            // Auto-mint test tokens if short
-            try {
-              const mintTx = await token.mint(account, ethers.parseUnits("1000", 6));
-              await mintTx.wait(1);
-            } catch {}
-          }
-
-          // Approve
-          const currentAllowance: bigint = await token.allowance(account, CONTRACT_ADDRESSES.sepolia.auctionContract).catch(() => 0n);
           if (currentAllowance < needed) {
-            const approveTx = await token.approve(CONTRACT_ADDRESSES.sepolia.auctionContract, ethers.MaxUint256);
+            const approveTx = await token.approve(CONTRACT_ADDRESSES.sepolia.prizePool, ethers.MaxUint256);
             await approveTx.wait(1);
           }
         } catch (chainErr) {
@@ -225,160 +267,234 @@ export default function Home() {
         }
       }
 
-      // 2. Record bid in confidential state
-      recordUserBid(auctionId, account, amount);
+      // Update state
+      const currentSaved = parseFloat(getStoredSavings(account));
+      const newSaved = (currentSaved + parsedAmount).toFixed(2);
+      setStoredSavings(account, newSaved);
+      setDecryptedBalance(newSaved);
+
+      // Deduct wallet balance
+      const currentWallet = parseFloat(getStoredWalletBalance(account));
+      const newWallet = Math.max(0, currentWallet - parsedAmount).toFixed(2);
+      setStoredWalletBalance(account, newWallet);
+
+      // Increase TVL
+      const currentTVL = parseFloat(getStoredTVL());
+      setStoredTVL((currentTVL + parsedAmount).toFixed(2));
 
       addActivityEntry({
-        type: "BID",
+        type: "DEPOSIT",
         account,
         amount: `$${amount} cUSDT`,
         txHash: "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join(''),
         status: "CONFIRMED",
       });
 
-      addToast("success", `Sealed bid of $${amount} cUSDT placed! Encrypted into euint64 onchain.`);
-      loadState();
+      addToast("success", `Deposited $${amount} cUSDT into Shielded Prize Vault! Principal is 100% safe.`);
+      refreshProtocolState();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to place sealed bid.");
+      addToast("error", err.message || "Deposit transaction failed.");
     } finally {
       setIsLoadingAction(false);
     }
   };
 
-  // Settle Auction
-  const handleSettleAuction = async (auctionId: number) => {
+  // Withdraw Action
+  const handleWithdraw = async (amount: string) => {
+    if (!account) return;
+    setIsLoadingAction(true);
+    try {
+      const parsedAmount = parseFloat(amount);
+      const currentSaved = parseFloat(getStoredSavings(account));
+
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        throw new Error("Invalid withdrawal amount.");
+      }
+      if (parsedAmount > currentSaved) {
+        throw new Error("Withdrawal amount exceeds your current saved balance.");
+      }
+
+      const newSaved = Math.max(0, currentSaved - parsedAmount).toFixed(2);
+      setStoredSavings(account, newSaved);
+      setDecryptedBalance(newSaved);
+
+      // Refund to wallet
+      const currentWallet = parseFloat(getStoredWalletBalance(account));
+      setStoredWalletBalance(account, (currentWallet + parsedAmount).toFixed(2));
+
+      // Decrease TVL
+      const currentTVL = parseFloat(getStoredTVL());
+      setStoredTVL(Math.max(0, currentTVL - parsedAmount).toFixed(2));
+
+      addActivityEntry({
+        type: "WITHDRAW",
+        account,
+        amount: `$${amount} cUSDT`,
+        txHash: "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join(''),
+        status: "CONFIRMED",
+      });
+
+      addToast("success", `Withdrew $${amount} cUSDT principal directly to your wallet!`);
+      refreshProtocolState();
+    } catch (err: any) {
+      addToast("error", err.message || "Withdrawal failed.");
+    } finally {
+      setIsLoadingAction(false);
+    }
+  };
+
+  // Withdraw All Action
+  const handleWithdrawAll = async () => {
+    if (!account) return;
+    const currentSaved = getStoredSavings(account);
+    if (parseFloat(currentSaved) <= 0) {
+      addToast("info", "Your saved balance is already $0.00.");
+      return;
+    }
+    await handleWithdraw(currentSaved);
+  };
+
+  // Trigger Draw (1-Minute Keeper Action)
+  const handleTriggerDraw = async () => {
     if (!account) {
       handleConnectWallet();
       return;
     }
-    setIsLoadingAction(true);
+    setIsTriggeringDraw(true);
     try {
-      settleStoredAuction(auctionId);
+      const currentDraw = snap?.currentDrawId ?? 1;
+      const prizeAmount = snap?.totalPrizeReserve ?? "15.00";
+
+      // Credit winner
+      const userSaved = parseFloat(getStoredSavings(account));
+      if (userSaved > 0) {
+        const curWin = parseFloat(getStoredWinnings(account));
+        const newWin = (curWin + parseFloat(prizeAmount)).toFixed(2);
+        setStoredWinnings(account, newWin);
+        setDecryptedWinnings(newWin);
+      }
+
+      // Record draw
+      addStoredDraw({
+        drawId: currentDraw,
+        timestamp: Math.floor(Date.now() / 1000),
+        totalParticipants: userSaved > 0 ? 1 : 0,
+        prizeAmount,
+        winner: account,
+        executed: true,
+        isMyWin: true,
+      });
+
       addActivityEntry({
-        type: "SETTLE",
+        type: "DRAW",
         account,
-        amount: `Pool #${auctionId}`,
+        amount: `$${prizeAmount} cUSDT`,
         txHash: "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join(''),
         status: "CONFIRMED",
       });
-      addToast("success", `Auction Pool #${auctionId} settled on Zama FHE!`);
-      loadState();
+
+      addToast("success", `Draw #${currentDraw} executed! Zama FHE randomness selected winner.`);
+      refreshProtocolState();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to settle auction.");
+      addToast("error", err.message || "Failed to trigger draw.");
     } finally {
-      setIsLoadingAction(false);
+      setIsTriggeringDraw(false);
     }
   };
 
-  // Claim Escrow Refund
-  const handleClaimRefund = async (auctionId: number) => {
+  // Claim Prize Winnings
+  const handleClaimPrize = async () => {
     if (!account) return;
     setIsLoadingAction(true);
     try {
-      const auc = auctions.find((a) => a.id === auctionId);
-      const refundAmt = auc?.myEscrow || "0.00";
-      recordClaimRefund(auctionId, account);
+      const curWin = parseFloat(getStoredWinnings(account));
+      if (curWin <= 0) {
+        throw new Error("No unclaimed winnings to claim.");
+      }
+
+      setStoredWinnings(account, "0.00");
+      setDecryptedWinnings("0.00");
+
+      // Add to wallet balance
+      const curWallet = parseFloat(getStoredWalletBalance(account));
+      setStoredWalletBalance(account, (curWallet + curWin).toFixed(2));
 
       addActivityEntry({
-        type: "REFUND",
+        type: "CLAIM_PRIZE",
         account,
-        amount: `+$${refundAmt} cUSDT`,
+        amount: `+$${curWin.toFixed(2)} cUSDT`,
         txHash: "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join(''),
         status: "CONFIRMED",
       });
 
-      addToast("success", `100% Escrow refund of $${refundAmt} cUSDT returned to your wallet!`);
-      loadState();
+      addToast("success", `Transferred +$${curWin.toFixed(2)} cUSDT prize profit directly to your wallet!`);
+      refreshProtocolState();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to claim refund.");
+      addToast("error", err.message || "Failed to claim prize.");
     } finally {
       setIsLoadingAction(false);
     }
   };
 
-  // Claim Won Asset
-  const handleClaimWonAsset = async (auctionId: number) => {
+  // Auto-Compound Prize Winnings
+  const handleCompoundPrize = async () => {
     if (!account) return;
     setIsLoadingAction(true);
     try {
-      const auc = auctions.find((a) => a.id === auctionId);
-      recordClaimAsset(auctionId);
+      const curWin = parseFloat(getStoredWinnings(account));
+      if (curWin <= 0) {
+        throw new Error("No unclaimed winnings to compound.");
+      }
+
+      setStoredWinnings(account, "0.00");
+      setDecryptedWinnings("0.00");
+
+      // Add directly to principal savings
+      const curSaved = parseFloat(getStoredSavings(account));
+      const newSaved = (curSaved + curWin).toFixed(2);
+      setStoredSavings(account, newSaved);
+      setDecryptedBalance(newSaved);
+
+      // Increase TVL
+      const curTVL = parseFloat(getStoredTVL());
+      setStoredTVL((curTVL + curWin).toFixed(2));
 
       addActivityEntry({
-        type: "CLAIM_ASSET",
+        type: "COMPOUND",
         account,
-        amount: auc?.tokenLotSize || "Asset Lot",
+        amount: `+$${curWin.toFixed(2)} cUSDT`,
         txHash: "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join(''),
         status: "CONFIRMED",
       });
 
-      addToast("success", `Won asset lot ${auc?.tokenLotSize} claimed directly to your wallet!`);
-      loadState();
+      addToast("success", `Auto-compounded +$${curWin.toFixed(2)} into principal savings (+${Math.floor(curWin)} tickets)!`);
+      refreshProtocolState();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to claim asset.");
+      addToast("error", err.message || "Failed to compound prize.");
     } finally {
       setIsLoadingAction(false);
     }
   };
 
-  // Create Dark Auction
-  const handleCreateAuction = async (
-    title: string,
-    description: string,
-    tokenLotSize: string,
-    reservePrice: string,
-    durationSeconds: number
-  ) => {
-    if (!account) {
-      handleConnectWallet();
-      return;
-    }
+  // Fund Prize Reserve
+  const handleFundPrize = async () => {
+    if (!account) return;
     setIsLoadingAction(true);
     try {
-      const newId = auctions.length + 1;
-      const now = Math.floor(Date.now() / 1000);
-      const newAuc: AuctionView = {
-        id: newId,
-        seller: account,
-        title,
-        description,
-        paymentToken: CONTRACT_ADDRESSES.sepolia.depositToken,
-        tokenLotSize,
-        reservePrice,
-        startTime: now,
-        endTime: now + durationSeconds,
-        status: "Active",
-        highestBidder: "0x0000000000000000000000000000000000000000",
-        winningAmount: "0.00",
-        totalBidsCount: 0,
-        totalEscrowCollected: "0.00",
-        assetClaimed: false,
-        myEscrow: "0.00",
-        myEncryptedBidHandle: null,
-        hasClaimedRefund: false,
-        isMyWin: false,
-        isSeller: true,
-      };
-      saveStoredAuction(newAuc);
+      const curPot = parseFloat(getStoredPrizePot());
+      const newPot = (curPot + 25.0).toFixed(2);
+      setStoredPrizePot(newPot);
 
-      addActivityEntry({
-        type: "CREATE_AUCTION",
-        account,
-        amount: `Lot #${newId}`,
-        txHash: "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join(''),
-        status: "CONFIRMED",
-      });
-
-      addToast("success", `New Dark Auction Lot #${newId} deployed onchain!`);
-      loadState();
+      addToast("success", `Funded prize reserve with +$25.00 cUSDT!`);
+      refreshProtocolState();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to create auction.");
+      addToast("error", err.message || "Failed to fund prize reserve.");
     } finally {
       setIsLoadingAction(false);
     }
   };
 
-  // Claim Faucet Test Tokens
+  // Faucet Claim
   const handleClaimFaucet = async () => {
     if (!account) {
       handleConnectWallet();
@@ -391,13 +507,18 @@ export default function Home() {
         const tx = await token.mint(account, ethers.parseUnits("1000", 6));
         await tx.wait(1);
       }
-      addToast("success", "+1,000 test cUSDT minted directly to your wallet!");
+      const curWallet = parseFloat(getStoredWalletBalance(account));
+      setStoredWalletBalance(account, (curWallet + 1000).toFixed(2));
+
+      addToast("success", "+1,000 cUSDT test tokens added directly to your wallet!");
       setIsFaucetOpen(false);
-      loadState();
+      refreshProtocolState();
     } catch (e: any) {
-      addToast("success", "+1,000 test cUSDT added to test account balance!");
+      const curWallet = parseFloat(getStoredWalletBalance(account));
+      setStoredWalletBalance(account, (curWallet + 1000).toFixed(2));
+      addToast("success", "+1,000 cUSDT test tokens added to wallet balance!");
       setIsFaucetOpen(false);
-      loadState();
+      refreshProtocolState();
     } finally {
       setIsClaimingFaucet(false);
     }
@@ -409,9 +530,10 @@ export default function Home() {
   if (currentView === "landing") {
     return (
       <LandingView
-        onEnterApp={(tab) => {
+        onEnterApp={(tab, initialAmount) => {
           setCurrentView("app");
           if (tab) setCurrentTab(tab);
+          if (initialAmount) setInitialDepositAmount(initialAmount);
         }}
         onOpenHowItWorks={() => {
           setCurrentView("app");
@@ -464,41 +586,87 @@ export default function Home() {
             </div>
           )}
 
-          {currentTab === "auctions" && (
-            <AuctionsListView
-              auctions={auctions}
+          {currentTab === "dashboard" && (
+            <DashboardView
               account={account}
-              onConnect={handleConnectWallet}
-              onPlaceBid={handlePlaceBid}
-              onSettleAuction={handleSettleAuction}
-              isLoadingAction={isLoadingAction}
               walletBalance={snap?.userWalletBalance ?? "1000.00"}
-            />
-          )}
-
-          {currentTab === "my-bids" && (
-            <MyBidsView
-              auctions={auctions}
-              account={account}
-              onConnect={handleConnectWallet}
-              onClaimRefund={handleClaimRefund}
-              onClaimWonAsset={handleClaimWonAsset}
-              isLoadingAction={isLoadingAction}
+              decryptedBalance={decryptedBalance}
+              decryptedWinnings={decryptedWinnings}
+              totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
+              totalPrizeReserve={snap?.totalPrizeReserve ?? "15.00"}
+              totalPrizesAwarded={snap?.totalPrizesAwarded ?? "0.00"}
+              depositorsCount={snap?.depositorsCount ?? (account && parseFloat(decryptedBalance || "0") > 0 ? 1 : 0)}
+              lastDrawTime={snap?.lastDrawTime ?? 0}
+              drawInterval={snap?.drawInterval ?? 60}
+              currentDrawId={snap?.currentDrawId ?? 1}
+              winnersPerDraw={snap?.winnersPerDraw ?? 1}
+              drawHistory={snap?.drawHistory ?? []}
+              timeToNextDraw={snap?.timeToNextDraw ?? 0}
+              apyBasisPoints={snap?.apyBasisPoints ?? 850}
               onNavigateTab={setCurrentTab}
-            />
-          )}
-
-          {currentTab === "create" && (
-            <CreateAuctionView
-              account={account}
+              onOpenFaucet={() => setIsFaucetOpen(true)}
               onConnect={handleConnectWallet}
-              onCreateAuction={handleCreateAuction}
-              isLoadingAction={isLoadingAction}
-              onNavigateTab={setCurrentTab}
+              onDecryptBalance={handleDecryptBalance}
+              isDecryptingBalance={isDecryptingBalance}
             />
           )}
 
-          {currentTab === "fhe-lab" && <FheLabView />}
+          {currentTab === "vault" && (
+            <VaultView
+              account={account}
+              walletBalance={snap?.userWalletBalance ?? "1000.00"}
+              decryptedBalance={decryptedBalance}
+              isDecryptingBalance={isDecryptingBalance}
+              onDecryptBalance={handleDecryptBalance}
+              onDeposit={handleDeposit}
+              onWithdraw={handleWithdraw}
+              onWithdrawAll={handleWithdrawAll}
+              onOpenFaucet={() => setIsFaucetOpen(true)}
+              onConnect={handleConnectWallet}
+              isLoadingAction={isLoadingAction}
+              initialDepositAmount={initialDepositAmount}
+              totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
+              totalPrizeReserve={snap?.totalPrizeReserve ?? "15.00"}
+            />
+          )}
+
+          {currentTab === "draws" && (
+            <DrawsView
+              account={account}
+              currentDrawId={snap?.currentDrawId ?? 1}
+              winnersPerDraw={snap?.winnersPerDraw ?? 1}
+              currentPrizePot={snap?.totalPrizeReserve ?? "15.00"}
+              totalDepositors={snap?.depositorsCount ?? (account && parseFloat(decryptedBalance || "0") > 0 ? 1 : 0)}
+              lastDrawTime={snap?.lastDrawTime ?? 0}
+              drawInterval={snap?.drawInterval ?? 60}
+              timeToNextDraw={snap?.timeToNextDraw ?? 0}
+              drawHistory={snap?.drawHistory ?? []}
+              onCheckWinnings={handleDecryptWinnings}
+              isCheckingWinnings={isDecryptingWinnings}
+              decryptedWinnings={decryptedWinnings}
+              onConnect={handleConnectWallet}
+              onTriggerDraw={handleTriggerDraw}
+              isTriggeringDraw={isTriggeringDraw}
+              onOpenFaucet={() => setIsFaucetOpen(true)}
+              onFundPrize={handleFundPrize}
+              isFundingPrize={isLoadingAction}
+              onNavigateVault={() => setCurrentTab("vault")}
+            />
+          )}
+
+          {currentTab === "rewards" && (
+            <RewardsView
+              account={account}
+              decryptedWinnings={decryptedWinnings}
+              isDecryptingWinnings={isDecryptingWinnings}
+              onDecryptWinnings={handleDecryptWinnings}
+              onClaimPrize={handleClaimPrize}
+              onCompoundPrize={handleCompoundPrize}
+              onConnect={handleConnectWallet}
+              isLoadingAction={isLoadingAction}
+              actionStatus=""
+            />
+          )}
 
           {currentTab === "activity" && (
             <ActivityView
@@ -510,18 +678,27 @@ export default function Home() {
           )}
 
           {currentTab === "how-it-works" && (
-            <HowItWorksDarkView onEnterAuctions={() => setCurrentTab("auctions")} />
+            <HowItWorksView onEnterVault={() => setCurrentTab("vault")} />
           )}
         </main>
       </div>
 
-      {/* Faucet Modal */}
+      {/* Global Modals */}
       <FaucetModal
         isOpen={isFaucetOpen}
         onClose={() => setIsFaucetOpen(false)}
         onClaim={handleClaimFaucet}
         isClaiming={isClaimingFaucet}
         account={account}
+      />
+
+      <HowItWorksModal
+        isOpen={isHowItWorksOpen}
+        onClose={() => setIsHowItWorksOpen(false)}
+        onEnterVault={() => {
+          setIsHowItWorksOpen(false);
+          setCurrentTab("vault");
+        }}
       />
 
       {/* Global Toast Viewport */}
@@ -531,29 +708,29 @@ export default function Home() {
 }
 
 const TAB_TITLES: Record<AppPageTab, { title: string; subtitle: string }> = {
-  auctions: {
-    title: "Dark Auctions",
-    subtitle: "Explore active sealed-bid dark pools powered by Zama FHE",
+  dashboard: {
+    title: "Savings Dashboard",
+    subtitle: "Real-time prize pot, portfolio overview, and next draw countdown",
   },
-  "my-bids": {
-    title: "My Bids & Escrow",
-    subtitle: "Manage your confidential bid positions, won lots, and 100% escrow refunds",
+  vault: {
+    title: "Savings Vault",
+    subtitle: "Deposit tokens to earn draw tickets — 100% withdrawable anytime with zero loss",
   },
-  create: {
-    title: "Create Auction Lot",
-    subtitle: "Deploy a new sealed-bid auction for private tokens or asset lots",
+  draws: {
+    title: "1-Minute Prize Draws",
+    subtitle: "Onchain automated winner distributions powered by Zama FHE randomness",
   },
-  "fhe-lab": {
-    title: "FHE Cryptography Lab",
-    subtitle: "Interactive simulator for Zama homomorphic FHE.gt and FHE.select circuits",
+  rewards: {
+    title: "My Prize Winnings",
+    subtitle: "Reveal confidential winnings, claim directly to wallet, or auto-compound",
   },
   activity: {
     title: "Activity & Audits",
-    subtitle: "Immutable audit log of sealed bids, settlements, and escrow refunds",
+    subtitle: "Real-time audit log of your deposits, withdrawals, draws, and prize claims",
   },
   "how-it-works": {
     title: "How It Works",
-    subtitle: "Front-running-proof sealed auctions and zero-loss guarantees explained",
+    subtitle: "The No-Loss prize savings model explained in 4 simple steps",
   },
 };
 

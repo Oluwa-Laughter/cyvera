@@ -3,25 +3,29 @@
 import React, { useState } from "react";
 import { AuraLogo } from "@/components/AuraLogo";
 import { 
-  Gavel, 
-  Lock, 
+  PiggyBank, 
+  Trophy, 
   ShieldCheck, 
   Sparkles, 
   ArrowRight, 
   CheckCircle2, 
   Droplets, 
-  Cpu,
+  Lock, 
+  Unlock,
   ChevronDown, 
   TrendingUp, 
+  Users, 
   HelpCircle,
+  Dices,
   Coins,
-  ArrowDownLeft,
-  ChevronRight
+  ChevronRight,
+  EyeOff
 } from "lucide-react";
+import { HiTrophy } from "react-icons/hi2";
 import { FaShieldAlt } from "react-icons/fa";
 
 interface LandingViewProps {
-  onEnterApp: (tab?: "auctions" | "my-bids" | "create" | "fhe-lab" | "activity" | "how-it-works") => void;
+  onEnterApp: (tab?: "dashboard" | "vault" | "draws" | "rewards" | "activity" | "how-it-works", initialAmount?: string) => void;
   onOpenHowItWorks?: () => void;
   account?: string | null;
   onConnect?: () => void;
@@ -35,27 +39,31 @@ export const LandingView: React.FC<LandingViewProps> = ({
   onConnect,
   isConnecting,
 }) => {
-  // Simulator State
-  const [simBid, setSimBid] = useState<string>("150");
-  const parsedBid = parseFloat(simBid || "0");
+  // Savings Calculator
+  const [calcDeposit, setCalcDeposit] = useState<string>("50");
+  const parsedDeposit = parseFloat(calcDeposit || "0");
+  const estimatedYield = (parsedDeposit * 0.085).toFixed(2);
+  const estimatedTickets = Math.floor(parsedDeposit);
+
+  // FAQ State
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const faqs = [
     {
-      q: "What is a Confidential Sealed-Bid Dark Auction?",
-      a: "In traditional onchain auctions (like OpenSea or English auctions), every bid is publicly visible in the mempool, allowing MEV bots and snipers to outbid users by 1 wei at the last second. AuraDark uses Zama FHE to encrypt all bids into euint64 ciphertexts onchain. The smart contract determines the winner homomorphically without anyone seeing the bids before settlement.",
+      q: "What is a 'No-Loss' Prize Savings Vault?",
+      a: "Unlike traditional lotteries where ticket money is lost forever, AuraPool works like a high-yield prize savings protocol (inspired by PoolTogether). Deposited funds generate DeFi yield (8.50% APY). That interest is awarded in recurring prize draws. You can withdraw 100% of your principal at any time with zero loss.",
     },
     {
-      q: "How does the contract find the highest bid without decrypting?",
-      a: "Using Zama's fhEVM precompiles, the contract executes `FHE.gt(newBid, highestBid)` and `FHE.select(isHigher, newBid, highestBid)` directly over encrypted ciphertexts on Ethereum Sepolia. Plaintext numbers are never revealed to miners or observers.",
+      q: "Why is FHE privacy essential for prize savings?",
+      a: "On public blockchains, transparent pools leak how much every saver has deposited and their winning odds. Whales become targets for phishing and physical attacks. With Zama FHE, your balances and ticket counts are stored as encrypted euint64 ciphertexts onchain. Nobody can see your wealth.",
     },
     {
-      q: "What happens if I don't win the auction?",
-      a: "You are 100% protected. Once the auction timer expires and settlement occurs, all non-winning bidders can claim their 100% full escrow refund back into their wallet with a single click.",
+      q: "How are winners selected onchain?",
+      a: "Draws execute onchain using Zama's FHE.randEuint64() randomness engine. Winner selection is deposit-weighted over encrypted balances without ever exposing any user's balance to the public.",
     },
     {
-      q: "What assets can be auctioned?",
-      a: "Any ERC-20 token lot, protocol allocation, yield bond, or private treasury grant can be deployed for sealed bidding in seconds.",
+      q: "How do I claim my winnings or withdraw?",
+      a: "Winners can decrypt and claim prize winnings directly to their wallet via the EIP-712 user-decryption flow, or auto-compound prizes into additional savings tickets. You can withdraw 100% of your principal anytime with zero loss.",
     },
   ];
 
@@ -67,14 +75,6 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
         <div className="flex items-center gap-3 font-medium text-xs">
           <button
-            onClick={() => onEnterApp("fhe-lab")}
-            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200 active:scale-95"
-          >
-            <Cpu className="w-4 h-4 text-amber-600" />
-            <span>FHE Lab</span>
-          </button>
-
-          <button
             onClick={() => onEnterApp("how-it-works")}
             className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200 active:scale-95"
           >
@@ -83,10 +83,18 @@ export const LandingView: React.FC<LandingViewProps> = ({
           </button>
 
           <button
-            onClick={() => onEnterApp("auctions")}
+            onClick={() => onEnterApp("vault")}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold transition-all active:scale-95"
+          >
+            <Droplets className="w-4 h-4 text-amber-600" />
+            <span>Get Test cUSDT</span>
+          </button>
+
+          <button
+            onClick={() => onEnterApp("dashboard")}
             className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold shadow-aura-yellow transition-all hover:scale-105 active:scale-95"
           >
-            <span>Launch Dark Pools</span>
+            <span>Launch App</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -99,111 +107,111 @@ export const LandingView: React.FC<LandingViewProps> = ({
           <div className="lg:col-span-7 space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 font-extrabold text-xs">
               <FaShieldAlt className="w-3.5 h-3.5 text-amber-600" />
-              <span>Zama FHE Encrypted Sealed-Bid Auctions</span>
+              <span>Confidential PoolTogether Powered by Zama FHE</span>
             </div>
 
             <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.08] text-black">
-              Front-Running-Proof <br />
+              Save Confidentially. <br />
               <span className="bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 bg-clip-text text-transparent">
-                Dark Auctions
+                Win Without Loss.
               </span>
             </h1>
 
             <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
-              Bid on confidential token allocations and private dark lots without revealing your bid value to MEV bots or competitors. Powered by Zama fhEVM homomorphic comparison with <strong>100% full escrow refunds</strong> for non-winners.
+              Deposit tokens, keep 100% of your principal safe, and win recurring prize pots funded by DeFi yield. Your deposit amounts, savings tickets, and winnings remain encrypted end-to-end with the Zama Protocol.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
               <button
-                onClick={() => onEnterApp("auctions")}
+                onClick={() => onEnterApp("vault", calcDeposit)}
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs uppercase tracking-wider shadow-aura-yellow flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
               >
-                <Gavel className="w-4 h-4" />
-                <span>Explore Dark Auctions</span>
+                <PiggyBank className="w-4 h-4" />
+                <span>Start Saving (100% Safe)</span>
               </button>
 
               <button
-                onClick={() => onEnterApp("fhe-lab")}
+                onClick={() => onEnterApp("draws")}
                 className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 active:scale-95"
               >
-                <Cpu className="w-4 h-4 text-amber-600" />
-                <span>Test FHE Cryptography Lab</span>
+                <Dices className="w-4 h-4 text-amber-600" />
+                <span>View 1-Min Prize Draws</span>
               </button>
             </div>
 
             {/* Live Trust Metrics */}
             <div className="pt-8 border-t border-slate-200 grid grid-cols-3 gap-6 text-xs font-medium text-slate-600">
               <div>
-                <span className="text-slate-400 block text-[11px]">Front-Running:</span>
-                <strong className="text-emerald-700 font-black text-sm">0.00% (MEV Proof)</strong>
+                <span className="text-slate-400 block text-[11px]">Principal Safety:</span>
+                <strong className="text-emerald-700 font-black text-sm">100% Zero-Loss</strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[11px]">Privacy Level:</span>
+                <span className="text-slate-400 block text-[11px]">Confidentiality:</span>
                 <strong className="text-black font-black text-sm">Zama euint64</strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[11px]">Non-Winner Risk:</span>
-                <strong className="text-emerald-700 font-black text-sm">100% Refundable</strong>
+                <span className="text-slate-400 block text-[11px]">Draw RNG:</span>
+                <strong className="text-amber-800 font-black text-sm">FHE.randEuint64()</strong>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Live Interactive Card */}
+          {/* Right Column: Interactive Savings Card */}
           <div className="lg:col-span-5">
             <div className="aura-card p-6 sm:p-8 bg-white border border-amber-300 shadow-xl space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-black uppercase tracking-wider text-black">Live Dark Lot Preview</span>
+                  <span className="text-xs font-black uppercase tracking-wider text-black">Live Vault Simulator</span>
                 </div>
                 <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-aura-yellow text-black font-extrabold">
-                  Pool #1
+                  8.50% APY
                 </span>
               </div>
 
               <div>
-                <h3 className="text-lg font-black text-black">Genesis 50,000 $AURA Lot</h3>
-                <p className="text-xs text-slate-500 mt-1">Confidential seed allocation. Bids evaluated homomorphically onchain.</p>
+                <h3 className="text-lg font-black text-black">USD Shielded Prize Vault</h3>
+                <p className="text-xs text-slate-500 mt-1">Deposit tokens to earn draw tickets without risking a single penny.</p>
               </div>
 
-              {/* Interactive Bid Input */}
+              {/* Slider */}
               <div className="space-y-2 text-xs font-medium">
                 <div className="flex items-center justify-between font-bold">
-                  <label className="text-slate-700">Simulate Your Sealed Bid:</label>
-                  <span className="text-amber-800 font-mono font-black">${parsedBid.toFixed(2)} cUSDT</span>
+                  <label className="text-slate-700">Simulate Deposit Amount:</label>
+                  <span className="text-amber-800 font-mono font-black">${parsedDeposit.toFixed(2)} cUSDT</span>
                 </div>
                 <input
                   type="range"
-                  min="25"
-                  max="500"
-                  step="5"
-                  value={simBid}
-                  onChange={(e) => setSimBid(e.target.value)}
+                  min="10"
+                  max="1000"
+                  step="10"
+                  value={calcDeposit}
+                  onChange={(e) => setCalcDeposit(e.target.value)}
                   className="w-full accent-amber-500 cursor-pointer"
                 />
               </div>
 
-              {/* Sealed Math Box */}
+              {/* Stats Box */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Plaintext Bid:</span>
-                  <strong className="text-black">${parsedBid.toFixed(2)} cUSDT</strong>
+                  <span className="text-slate-500">Draw Tickets Earned:</span>
+                  <strong className="text-black">{estimatedTickets} Tickets</strong>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Mempool Visibility:</span>
-                  <span className="font-mono text-[10px] text-emerald-700 font-bold">0x8a9f...3c4e (Encrypted)</span>
+                  <span className="text-slate-500">Balance Privacy:</span>
+                  <span className="font-mono text-[10px] text-emerald-700 font-bold">Encrypted euint64</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500">If Outbid by Another:</span>
-                  <span className="text-emerald-700 font-extrabold">+${parsedBid.toFixed(2)} Full Refund</span>
+                  <span className="text-slate-500">Principal Withdrawable:</span>
+                  <span className="text-emerald-700 font-extrabold">100% Anytime</span>
                 </div>
               </div>
 
               <button
-                onClick={() => onEnterApp("auctions")}
+                onClick={() => onEnterApp("vault", calcDeposit)}
                 className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs uppercase tracking-wider shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95"
               >
-                <span>Enter Dark Auction</span>
+                <span>Deposit & Enter Prize Draws</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -216,41 +224,41 @@ export const LandingView: React.FC<LandingViewProps> = ({
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="text-center space-y-2 max-w-xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-black text-black">
-              Why Sealed-Bid Dark Pools Beat Public Auctions
+              Why Confidential Prize Savings Beats Traditional Lotteries
             </h2>
             <p className="text-xs text-slate-500 font-medium">
-              Eliminate predatory MEV extraction with cryptographic confidentiality.
+              Zero loss for savers, mathematically fair randomness, and end-to-end privacy.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="aura-card p-6 sm:p-8 bg-slate-50 border border-slate-200 space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
-                <Lock className="w-6 h-6" />
+                <PiggyBank className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-black text-black">Confidential euint64 Bids</h3>
+              <h3 className="text-base font-black text-black">100% Principal Safe</h3>
               <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                Every bid is converted into a 256-bit ciphertext before reaching the mempool. Front-running and snipers are impossible.
+                You never lose your deposit. Your principal is pooled to generate DeFi interest, which funds recurring prize draws. Withdraw anytime.
               </p>
             </div>
 
             <div className="aura-card p-6 sm:p-8 bg-slate-50 border border-slate-200 space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold">
-                <Sparkles className="w-6 h-6" />
+                <Lock className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-black text-black">Homomorphic FHE.gt Winner</h3>
+              <h3 className="text-base font-black text-black">Encrypted euint64 Balances</h3>
               <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                The smart contract executes comparisons directly on ciphertexts. The winner is selected without ever revealing private bid numbers.
+                Deposit amounts and ticket holdings are stored as encrypted integers onchain. Observers and MEV bots cannot see your wealth.
               </p>
             </div>
 
             <div className="aura-card p-6 sm:p-8 bg-slate-50 border border-slate-200 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-900 flex items-center justify-center font-bold">
-                <ArrowDownLeft className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-900 flex items-center justify-center font-bold">
+                <Sparkles className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-black text-black">100% Escrow Refunds</h3>
+              <h3 className="text-base font-black text-black">Onchain FHE Randomness</h3>
               <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                Non-winning bidders withdraw their full escrow with 1 click. Zero slippage, zero loss, 100% verifiable onchain.
+                Zama's FHE.randEuint64() samples verifiable randomness onchain. Winner selection is deposit-weighted without revealing individual balances.
               </p>
             </div>
           </div>
@@ -261,7 +269,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
       <section className="py-16 px-4 sm:px-8 max-w-4xl mx-auto w-full space-y-8">
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-black text-black">Frequently Asked Questions</h2>
-          <p className="text-xs text-slate-500 font-medium">Everything you need to know about AuraDark and Zama FHE.</p>
+          <p className="text-xs text-slate-500 font-medium">Everything you need to know about AuraPool and Zama FHE.</p>
         </div>
 
         <div className="space-y-3">
@@ -288,7 +296,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
       {/* 5. Footer */}
       <footer className="py-8 px-4 sm:px-8 border-t border-slate-200 bg-white text-xs text-slate-500 text-center space-y-2">
         <AuraLogo size="sm" />
-        <p>AuraDark Protocol — Confidential Sealed-Bid Dark Auctions Powered by Zama fhEVM.</p>
+        <p>AuraPool Protocol — Confidential No-Loss Prize Savings Powered by Zama fhEVM.</p>
         <p className="text-[11px] text-slate-400">Deployed on Ethereum Sepolia Testnet</p>
       </footer>
     </div>

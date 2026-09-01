@@ -3,10 +3,10 @@
 import React from "react";
 import { AuraLogo } from "@/components/AuraLogo";
 import { 
-  Gavel, 
-  WalletCards, 
-  PlusCircle, 
-  Cpu, 
+  LayoutDashboard, 
+  PiggyBank, 
+  Dices, 
+  Trophy, 
   Droplets, 
   BookOpen, 
   X, 
@@ -16,7 +16,7 @@ import {
   Lock
 } from "lucide-react";
 
-export type AppPageTab = "auctions" | "my-bids" | "create" | "fhe-lab" | "activity" | "how-it-works";
+export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "activity" | "how-it-works";
 
 interface SidebarNavProps {
   currentTab: AppPageTab;
@@ -36,11 +36,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   onCloseMobile,
 }) => {
   const navItems: { id: AppPageTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: "auctions", label: "Dark Auctions", icon: <Gavel className="w-4 h-4" />, badge: "Live" },
-    { id: "my-bids", label: "My Bids & Escrow", icon: <WalletCards className="w-4 h-4" /> },
-    { id: "create", label: "Create Auction", icon: <PlusCircle className="w-4 h-4" /> },
-    { id: "fhe-lab", label: "FHE Cryptography Lab", icon: <Cpu className="w-4 h-4" />, badge: "Zama" },
-    { id: "activity", label: "Activity & Audits", icon: <History className="w-4 h-4" /> },
+    { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: "vault", label: "Savings Vault", icon: <PiggyBank className="w-4 h-4" />, badge: "8.5%" },
+    { id: "draws", label: "Prize Draws", icon: <Dices className="w-4 h-4" />, badge: "1-Min" },
+    { id: "rewards", label: "My Winnings", icon: <Trophy className="w-4 h-4" /> },
+    { id: "activity", label: "Activity Feed", icon: <History className="w-4 h-4" /> },
     { id: "how-it-works", label: "How It Works", icon: <BookOpen className="w-4 h-4" /> },
   ];
 
@@ -73,10 +73,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             </button>
           </div>
 
-          {/* Protocol Tagline */}
+          {/* Tagline */}
           <div className="mt-4 px-3 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center gap-2 font-medium">
             <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-            <span>Zama FHE Confidential Auctions</span>
+            <span>Confidential No-Loss Prize Savings</span>
           </div>
 
           {/* Navigation Links */}
@@ -127,7 +127,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           >
             <div className="flex items-center gap-2">
               <Droplets className="w-4 h-4 text-amber-600" />
-              <span>Get Test cUSDT</span>
+              <span>Get Free cUSDT</span>
             </div>
             <span className="text-[10px] bg-aura-yellow text-black px-1.5 py-0.5 rounded-full font-extrabold">+1000</span>
           </button>
