@@ -205,17 +205,38 @@ export default function Home() {
       return;
     }
 
+    const numAmt = parseFloat(amountStr);
+    if (isNaN(numAmt) || numAmt <= 0) {
+      setActionStatus("Please enter a valid deposit amount.");
+      setTimeout(() => setActionStatus(""), 3000);
+      return;
+    }
+
     try {
       setIsLoadingAction(true);
       const amountUnits = ethers.parseUnits(amountStr, 6);
       const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, signer);
       const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
 
-      setActionStatus("1/2 Approving cUSDT token allowance onchain...");
-      const approveTx = await tokenContract.approve(CONTRACT_ADDRESSES.sepolia.prizePool, amountUnits);
-      await approveTx.wait();
+      // Check current wallet token balance first
+      const currentBal = await tokenContract.balanceOf(account).catch(() => 0n);
+      if (currentBal < amountUnits) {
+        setIsLoadingAction(false);
+        setActionStatus(`Insufficient cUSDT balance (${ethers.formatUnits(currentBal, 6)} available). Click "Get Free cUSDT" first!`);
+        setIsFaucetOpen(true);
+        setTimeout(() => setActionStatus(""), 6000);
+        return;
+      }
 
-      setActionStatus("2/2 Depositing into Savings Vault...");
+      // Check allowance — only approve if needed
+      const currentAllowance = await tokenContract.allowance(account, CONTRACT_ADDRESSES.sepolia.prizePool).catch(() => 0n);
+      if (currentAllowance < amountUnits) {
+        setActionStatus("1/2 Approving cUSDT allowance in MetaMask...");
+        const approveTx = await tokenContract.approve(CONTRACT_ADDRESSES.sepolia.prizePool, ethers.MaxUint256);
+        await approveTx.wait();
+      }
+
+      setActionStatus("2/2 Confirming Deposit into Savings Vault...");
       const depositTx = await poolContract.deposit(amountUnits);
       await depositTx.wait();
 
@@ -229,8 +250,9 @@ export default function Home() {
       setTimeout(() => setActionStatus(""), 3000);
     } catch (error: any) {
       console.error("Deposit error:", error);
-      setActionStatus(error.reason || error.message || "Deposit transaction rejected or failed.");
-      setTimeout(() => setActionStatus(""), 4000);
+      const errorMsg = error.reason || error.shortMessage || error.message || "Deposit transaction rejected or failed.";
+      setActionStatus(errorMsg);
+      setTimeout(() => setActionStatus(""), 5000);
     } finally {
       setIsLoadingAction(false);
     }
