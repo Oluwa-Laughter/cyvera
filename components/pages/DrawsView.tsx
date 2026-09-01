@@ -12,7 +12,10 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
-  Gift
+  Gift,
+  Settings,
+  PlayCircle,
+  Clock
 } from "lucide-react";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
 
@@ -28,6 +31,10 @@ interface DrawsViewProps {
   isCheckingWinnings: boolean;
   decryptedWinnings: string | null;
   onConnect: () => void;
+  onTriggerDraw: () => Promise<void>;
+  isTriggeringDraw: boolean;
+  onSetDrawInterval: (seconds: number) => Promise<void>;
+  isSettingInterval: boolean;
 }
 
 export const DrawsView: React.FC<DrawsViewProps> = ({
@@ -42,8 +49,20 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   isCheckingWinnings,
   decryptedWinnings,
   onConnect,
+  onTriggerDraw,
+  isTriggeringDraw,
+  onSetDrawInterval,
+  isSettingInterval,
 }) => {
   const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number }>({ h: 0, m: 0, s: 0 });
+
+  const intervalPresets = [
+    { label: "⚡ 30s (Testing)", seconds: 30 },
+    { label: "⏱️ 1 Min", seconds: 60 },
+    { label: "⏱️ 5 Min", seconds: 300 },
+    { label: "⏳ 1 Hour", seconds: 3600 },
+    { label: "📅 24 Hours", seconds: 86400 },
+  ];
 
   useEffect(() => {
     const updateCountdown = () => {
@@ -65,8 +84,10 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
 
   const formatDate = (timestamp: number) => {
     if (!timestamp) return "Today";
-    return new Date(timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
+
+  const isCountdownZero = timeLeft.h === 0 && timeLeft.m === 0 && timeLeft.s === 0;
 
   return (
     <div className="space-y-8 w-full max-w-4xl mx-auto text-black">
@@ -75,23 +96,26 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-200">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Upcoming Prize Draw</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Prize Draw</span>
               <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-aura-yellow text-black font-extrabold shadow-sm">
                 Draw #{currentDrawId + 1}
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold">
+                Interval: {drawInterval}s
               </span>
             </div>
 
             <div className="text-4xl sm:text-5xl font-black text-black mt-2 flex items-baseline gap-2">
               <span>${currentPrizePot}</span>
-              <span className="text-base text-slate-500 font-medium">cUSDT Grand Prize</span>
+              <span className="text-base text-slate-500 font-medium">cUSDT Prize Pot</span>
             </div>
             <p className="text-xs text-slate-600 mt-1 font-medium">
               Active Participants: <strong className="text-black">{totalDepositors} Savers in this Pool</strong>
             </p>
           </div>
 
-          {/* Check If You Won Action */}
-          <div className="w-full md:w-auto">
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
             {!account ? (
               <button
                 onClick={onConnect}
@@ -100,23 +124,47 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
                 Connect Wallet
               </button>
             ) : (
-              <button
-                onClick={onCheckWinnings}
-                disabled={isCheckingWinnings}
-                className="w-full md:w-auto px-8 py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs tracking-wider uppercase transition-all shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95"
-              >
-                {isCheckingWinnings ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Checking Private Winnings...</span>
-                  </>
-                ) : (
-                  <>
-                    <Gift className="w-4 h-4" />
-                    <span>Check If You Won</span>
-                  </>
-                )}
-              </button>
+              <>
+                <button
+                  onClick={onTriggerDraw}
+                  disabled={isTriggeringDraw}
+                  className={`w-full md:w-auto px-6 py-4 rounded-2xl font-black text-xs tracking-wider uppercase transition-all shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95 ${
+                    isCountdownZero
+                      ? "bg-emerald-400 hover:bg-emerald-500 text-black animate-pulse"
+                      : "bg-aura-yellow hover:bg-aura-yellowHover text-black"
+                  }`}
+                >
+                  {isTriggeringDraw ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                      <span>Executing FHE Draw...</span>
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className="w-4 h-4" />
+                      <span>Execute Draw Now</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={onCheckWinnings}
+                  disabled={isCheckingWinnings}
+                  className="w-full md:w-auto px-6 py-4 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-black font-black text-xs tracking-wider uppercase transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95"
+                >
+                  {isCheckingWinnings ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Checking...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Gift className="w-4 h-4 text-amber-600" />
+                      <span>Check If You Won</span>
+                    </>
+                  )}
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -125,33 +173,74 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
         <div className="pt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-medium text-slate-600">
           <div className="flex items-center gap-2">
             <Timer className="w-4 h-4 text-emerald-600" />
-            <span>Next Automated Draw In: <strong className="text-black font-mono font-bold">{pad(timeLeft.h)}:{pad(timeLeft.m)}:{pad(timeLeft.s)}</strong></span>
+            <span>Draw Countdown: <strong className="text-black font-mono text-sm font-black">{pad(timeLeft.h)}:{pad(timeLeft.m)}:{pad(timeLeft.s)}</strong></span>
           </div>
 
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-amber-600" />
-            <span>Draw Fairness: <strong className="text-black">100% Confidential Onchain Selection</strong></span>
+            <span>Entropy Engine: <strong className="text-black">Zama FHE.randEuint64() Onchain</strong></span>
           </div>
         </div>
       </div>
 
-      {/* 2. Past Winners & Draws History */}
+      {/* 2. Configurable Draw Interval Settings Card */}
+      <div className="aura-card p-6 sm:p-8 bg-white border border-slate-200 shadow-aura-sm space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 text-amber-600" />
+            <h3 className="text-sm font-black text-black uppercase tracking-wide">Draw Time Interval Setting</h3>
+          </div>
+          <span className="text-[11px] text-slate-500">
+            Currently set to <strong className="text-black">{drawInterval} seconds</strong>
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-600">
+          Select a draw interval below. For fast testing, select <strong>30 Seconds</strong> to see instant prize cycles!
+        </p>
+
+        {/* Interval Presets */}
+        <div className="flex flex-wrap gap-2.5 pt-1">
+          {intervalPresets.map((preset) => {
+            const isSelected = drawInterval === preset.seconds;
+            return (
+              <button
+                key={preset.seconds}
+                onClick={() => onSetDrawInterval(preset.seconds)}
+                disabled={isSettingInterval}
+                className={`px-4 py-2 rounded-2xl text-xs font-extrabold transition-all border shadow-sm active:scale-95 flex items-center gap-1.5 ${
+                  isSelected
+                    ? "bg-aura-yellow text-black border-amber-400 shadow-aura-yellow"
+                    : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"
+                }`}
+              >
+                {isSettingInterval && isSelected ? (
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                ) : null}
+                <span>{preset.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. Past Winners & Draws History */}
       <div className="aura-card p-6 sm:p-8 space-y-6">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <History className="w-5 h-5 text-amber-500" />
-            <h3 className="text-sm font-bold text-black uppercase tracking-wide">Recent Completed Draws</h3>
+            <h3 className="text-sm font-bold text-black uppercase tracking-wide">Recent Executed Draws</h3>
           </div>
-          <span className="text-xs text-slate-500 font-medium">Automatic daily distribution</span>
+          <span className="text-xs text-slate-500 font-medium">Automatic FHE onchain selection</span>
         </div>
 
         <div className="space-y-3 text-xs">
           {drawHistory.length === 0 ? (
             <div className="py-10 text-center text-slate-500 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
               <Trophy className="w-8 h-8 text-slate-300 mx-auto" />
-              <p className="font-bold text-slate-700 text-sm">Upcoming Draw #{currentDrawId + 1} Active</p>
+              <p className="font-bold text-slate-700 text-sm">Draw #{currentDrawId + 1} In Progress ({drawInterval}s)</p>
               <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                First prize will be awarded when the countdown timer reaches zero. Deposit in the vault to participate!
+                Deposit tokens and click &quot;Execute Draw Now&quot; to pick an onchain winner using Zama FHE randomness!
               </p>
             </div>
           ) : (

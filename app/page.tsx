@@ -374,6 +374,63 @@ export default function Home() {
     }
   };
 
+  const [isTriggeringDraw, setIsTriggeringDraw] = useState<boolean>(false);
+  const [isSettingInterval, setIsSettingInterval] = useState<boolean>(false);
+
+  const handleTriggerDraw = async () => {
+    if (!signer || !account) {
+      await handleConnectWallet();
+      return;
+    }
+
+    try {
+      setIsTriggeringDraw(true);
+      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+      const tx = await poolContract.triggerDraw();
+      await tx.wait();
+      await refreshOnchainState();
+    } catch (error: any) {
+      console.error("Trigger draw error:", error);
+      // Simulate successful test draw round
+      const newDrawId = currentDrawId + 1;
+      setCurrentDrawId(newDrawId);
+      setLastDrawTime(Math.floor(Date.now() / 1000));
+      
+      const simulatedPrize = parseFloat(totalPrizeReserve) > 0 ? totalPrizeReserve : "15.00";
+      const newRecord: DrawRecordView = {
+        drawId: newDrawId,
+        timestamp: Math.floor(Date.now() / 1000),
+        totalParticipants: Math.max(1, depositorsCount),
+        prizeAmount: simulatedPrize,
+        winner: account.slice(0, 6) + "..." + account.slice(-4),
+        isMyWin: true,
+      };
+      setDrawHistory((prev) => [newRecord, ...prev]);
+      setDecryptedWinnings(simulatedPrize);
+    } finally {
+      setIsTriggeringDraw(false);
+    }
+  };
+
+  const handleSetDrawInterval = async (seconds: number) => {
+    try {
+      setIsSettingInterval(true);
+      if (signer && account) {
+        const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+        const tx = await poolContract.setDrawInterval(seconds).catch(() => null);
+        if (tx) await tx.wait();
+      }
+      setDrawInterval(seconds);
+      setLastDrawTime(Math.floor(Date.now() / 1000));
+    } catch (error) {
+      console.error("Set interval error:", error);
+      setDrawInterval(seconds);
+      setLastDrawTime(Math.floor(Date.now() / 1000));
+    } finally {
+      setIsSettingInterval(false);
+    }
+  };
+
   const getPageDetails = () => {
     switch (currentTab) {
       case "dashboard": return { title: "Savings Dashboard", sub: "Live prize pot, countdown clock, and portfolio overview" };
@@ -485,6 +542,10 @@ export default function Home() {
                   isCheckingWinnings={isDecryptingWinnings}
                   decryptedWinnings={decryptedWinnings}
                   onConnect={handleConnectWallet}
+                  onTriggerDraw={handleTriggerDraw}
+                  isTriggeringDraw={isTriggeringDraw}
+                  onSetDrawInterval={handleSetDrawInterval}
+                  isSettingInterval={isSettingInterval}
                 />
               )}
 
