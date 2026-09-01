@@ -114,6 +114,31 @@ export const fetchLiveProtocolState = async (userAccount?: string | null) => {
       userWinnings = ethers.formatUnits(winnings, 6);
     }
 
+    // Fetch real onchain draw history records
+    const numDraws = Number(currentDrawIdRaw) || 0;
+    const realHistory: any[] = [];
+    if (numDraws > 0) {
+      for (let i = numDraws; i >= Math.max(1, numDraws - 10); i--) {
+        try {
+          const rec = await poolContract.getDrawHistory(i);
+          if (rec && rec.executed) {
+            const winnerAddr = rec.winner ? rec.winner.toString() : "";
+            const isMyWin = userAccount && winnerAddr && userAccount.toLowerCase() === winnerAddr.toLowerCase();
+            realHistory.push({
+              drawId: Number(rec.drawId),
+              timestamp: Number(rec.timestamp),
+              totalParticipants: Number(rec.totalParticipants),
+              prizeAmount: ethers.formatUnits(rec.prizeAmount, 6),
+              winner: winnerAddr ? `${winnerAddr.slice(0, 6)}...${winnerAddr.slice(-4)}` : "Confidential",
+              isMyWin: !!isMyWin,
+            });
+          }
+        } catch (e) {
+          // ignore single draw read error
+        }
+      }
+    }
+
     return {
       totalDeposits: ethers.formatUnits(totalDepositsRaw, 6),
       totalPrizeReserve: ethers.formatUnits(totalPrizeReserveRaw, 6),
@@ -126,6 +151,7 @@ export const fetchLiveProtocolState = async (userAccount?: string | null) => {
       userWalletBalance,
       userShieldedBalance,
       userWinnings,
+      drawHistory: realHistory,
     };
   } catch (error) {
     console.error("Error reading live onchain protocol state:", error);
@@ -141,6 +167,7 @@ export const fetchLiveProtocolState = async (userAccount?: string | null) => {
       userWalletBalance: "0.00",
       userShieldedBalance: "0.00",
       userWinnings: "0.00",
+      drawHistory: [],
     };
   }
 };

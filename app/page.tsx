@@ -70,6 +70,7 @@ export default function Home() {
     setDrawInterval(state.drawInterval);
     setCurrentDrawId(state.currentDrawId);
     setDepositorsCount(state.depositorsCount);
+    setDrawHistory(state.drawHistory || []);
     if (acc) {
       setWalletBalance(state.userWalletBalance);
     } else {
@@ -334,17 +335,17 @@ export default function Home() {
     try {
       setIsLoadingAction(true);
       const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+      setActionStatus("Claiming prize to your wallet...");
       const tx = await poolContract.claimPrize();
       await tx.wait();
-
+      setActionStatus("Prize claimed successfully!");
       await refreshOnchainState();
       setDecryptedWinnings("0.00");
+      setTimeout(() => setActionStatus(""), 3000);
     } catch (error: any) {
       console.error("Claim prize error:", error);
-      const winAmt = parseFloat(decryptedWinnings || "0");
-      const wBal = parseFloat(walletBalance.replace(/,/g, "")) || 0;
-      setWalletBalance((wBal + winAmt).toFixed(2));
-      setDecryptedWinnings("0.00");
+      setActionStatus(error.reason || error.message || "Claim prize failed onchain.");
+      setTimeout(() => setActionStatus(""), 4000);
     } finally {
       setIsLoadingAction(false);
     }
@@ -356,20 +357,17 @@ export default function Home() {
     try {
       setIsLoadingAction(true);
       const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+      setActionStatus("Compounding prize into savings principal...");
       const tx = await poolContract.compoundPrize();
       await tx.wait();
-
+      setActionStatus("Prize compounded successfully!");
       await refreshOnchainState();
       setDecryptedWinnings("0.00");
+      setTimeout(() => setActionStatus(""), 3000);
     } catch (error: any) {
       console.error("Compound prize error:", error);
-      const winAmt = parseFloat(decryptedWinnings || "0");
-      const curSaved = parseFloat((decryptedBalance || "0").replace(/,/g, "")) || 0;
-      const curTVL = parseFloat(totalDeposits.replace(/,/g, "")) || 0;
-
-      setDecryptedBalance((curSaved + winAmt).toFixed(2));
-      setTotalDeposits((curTVL + winAmt).toFixed(2));
-      setDecryptedWinnings("0.00");
+      setActionStatus(error.reason || error.message || "Compound prize failed onchain.");
+      setTimeout(() => setActionStatus(""), 4000);
     } finally {
       setIsLoadingAction(false);
     }
@@ -392,41 +390,27 @@ export default function Home() {
       await refreshOnchainState();
     } catch (error: any) {
       console.error("Trigger draw error:", error);
-      // Simulate successful test draw round
-      const newDrawId = currentDrawId + 1;
-      setCurrentDrawId(newDrawId);
-      setLastDrawTime(Math.floor(Date.now() / 1000));
-      
-      const simulatedPrize = parseFloat(totalPrizeReserve) > 0 ? totalPrizeReserve : "15.00";
-      const newRecord: DrawRecordView = {
-        drawId: newDrawId,
-        timestamp: Math.floor(Date.now() / 1000),
-        totalParticipants: Math.max(1, depositorsCount),
-        prizeAmount: simulatedPrize,
-        winner: account.slice(0, 6) + "..." + account.slice(-4),
-        isMyWin: true,
-      };
-      setDrawHistory((prev) => [newRecord, ...prev]);
-      setDecryptedWinnings(simulatedPrize);
+      alert(error.reason || error.message || "Failed to trigger draw onchain. Ensure draw interval has elapsed.");
     } finally {
       setIsTriggeringDraw(false);
     }
   };
 
   const handleSetDrawInterval = async (seconds: number) => {
+    if (!signer || !account) {
+      await handleConnectWallet();
+      return;
+    }
+
     try {
       setIsSettingInterval(true);
-      if (signer && account) {
-        const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
-        const tx = await poolContract.setDrawInterval(seconds).catch(() => null);
-        if (tx) await tx.wait();
-      }
-      setDrawInterval(seconds);
-      setLastDrawTime(Math.floor(Date.now() / 1000));
-    } catch (error) {
+      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+      const tx = await poolContract.setDrawInterval(seconds);
+      await tx.wait();
+      await refreshOnchainState();
+    } catch (error: any) {
       console.error("Set interval error:", error);
-      setDrawInterval(seconds);
-      setLastDrawTime(Math.floor(Date.now() / 1000));
+      alert(error.reason || error.message || "Failed to set draw interval onchain.");
     } finally {
       setIsSettingInterval(false);
     }
