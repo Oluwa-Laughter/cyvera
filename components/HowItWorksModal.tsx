@@ -28,7 +28,7 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ isOpen, onClos
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-black">How AuraPool Works</h3>
+            <h3 className="text-2xl font-black text-black">How VeilPool Works</h3>
             <p className="text-xs text-slate-500 font-medium">The No-Loss, 100% Private Prize Savings Protocol</p>
           </div>
         </div>

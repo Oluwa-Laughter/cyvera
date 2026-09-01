@@ -1,4 +1,4 @@
-# 🛡️ AuraPool — Confidential No-Loss Prize Savings Protocol
+# 🛡️ VeilPool — Confidential No-Loss Prize Savings Protocol
 > **Production-Ready Confidential Version of PoolTogether Powered by the Zama Protocol (fhEVM)**
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)](https://soliditylang.org/)
@@ -10,7 +10,7 @@
 
 ## 📌 Executive Summary & Objective
 
-**AuraPool** is a production-ready, privacy-preserving **No-Loss Prize Savings Protocol** (the confidential evolution of [PoolTogether](https://pooltogether.com/)). 
+**VeilPool** is a production-ready, privacy-preserving **No-Loss Prize Savings Protocol** (the confidential evolution of [PoolTogether](https://pooltogether.com/)). 
 
 In traditional lotteries, 99.999% of participants lose 100% of their money. In PoolTogether's no-loss model, users deposit funds into a shared vault, the pooled capital generates DeFi yield, and that accrued interest is awarded as recurring prizes while **100% of the depositors' principal remains safe and withdrawable anytime**.
 
@@ -21,7 +21,7 @@ On transparent blockchains (Ethereum, Arbitrum, Optimism), prize-savings protoco
 3. **Winner Identities are Broadcast**: Instant jackpot winners have their addresses publicly flagged across the mempool.
 
 ### 🛡️ The Zama FHE Solution
-AuraPool eliminates these privacy trade-offs using **Zama Fully Homomorphic Encryption (FHE)**:
+VeilPool eliminates these privacy trade-offs using **Zama Fully Homomorphic Encryption (FHE)**:
 - **Encrypted Balances**: Deposits are converted into encrypted `euint64` ciphertexts onchain. No observer, keeper, or miner can view your balance.
 - **Onchain FHE Randomness**: Winner selection is sampled directly onchain using `FHE.randEuint64()` and evaluated over encrypted balances.
 - **Confidential Prize Claims**: Winnings are credited as an encrypted ciphertext handle that only the winner can decrypt using EIP-712 user signatures.
@@ -133,7 +133,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 | Contract | Address | Network |
 | :--- | :--- | :--- |
-| **AuraPrizePool** | `0x892a012A975765796A56Ee8102D847b2C5896b20` | Ethereum Sepolia (11155111) |
+| **VeilPool Vault** | `0x892a012A975765796A56Ee8102D847b2C5896b20` | Ethereum Sepolia (11155111) |
 | **MockYieldSource** | `0x63BC7333B39794966953289052d751079F4386A4` | Ethereum Sepolia (11155111) |
 | **Confidential USDT (cUSDT)** | `0xa7dA08FafDC9097Cc0E7D4f113A61e31d7e8e9b0` | Ethereum Sepolia (11155111) |
 

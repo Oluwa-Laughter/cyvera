@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AuraPool | Confidential No-Loss Prize Savings",
+  title: "VeilPool | Confidential No-Loss Prize Savings",
   description: "A production-ready confidential version of PoolTogether powered by Zama FHE on Ethereum Sepolia. Save tokens with zero loss, keep balances strictly encrypted, and win yield-backed prize draws.",
   icons: {
     icon: "/favicon.ico",
