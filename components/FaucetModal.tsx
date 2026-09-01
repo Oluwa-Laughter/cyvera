@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
-import { X, Droplets, Sparkles, RefreshCw, CheckCircle2 } from "lucide-react";
+import React, { useState } from "react";
+import { X, Droplets, Sparkles, RefreshCw, PlusCircle, Check } from "lucide-react";
+import { addTokenToWallet } from "@/lib/wallet";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts";
 
 interface FaucetModalProps {
   isOpen: boolean;
@@ -22,7 +24,17 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
   account,
   onConnect,
 }) => {
+  const [isAdded, setIsAdded] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleAddToken = async () => {
+    const success = await addTokenToWallet(CONTRACT_ADDRESSES.sepolia.depositToken, "cUSDT", 6);
+    if (success) {
+      setIsAdded(true);
+      setTimeout(() => setIsAdded(false), 3000);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -42,26 +54,47 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
           </div>
           <div>
             <h3 className="text-xl font-black text-black">Get Free Test Tokens</h3>
-            <p className="text-xs text-slate-500 font-medium">1,000 cUSDT to test savings on Sepolia</p>
+            <p className="text-xs text-slate-500 font-medium">1,000 cUSDT on Ethereum Sepolia</p>
           </div>
         </div>
 
-        {/* Current Balance */}
-        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-6 flex items-center justify-between text-xs font-medium">
-          <span className="text-slate-500">Current Wallet Balance:</span>
-          <span className="font-extrabold text-black text-sm">
-            {account ? `${walletBalance} cUSDT` : "Not Connected"}
-          </span>
+        {/* Current Balance & Add to MetaMask */}
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-4 flex items-center justify-between text-xs font-medium">
+          <div>
+            <span className="text-slate-500 block text-[11px]">Wallet Token Balance:</span>
+            <span className="font-extrabold text-black text-sm">
+              {account ? `${walletBalance} cUSDT` : "Not Connected"}
+            </span>
+          </div>
+
+          {account && (
+            <button
+              onClick={handleAddToken}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 text-[11px] font-bold transition-all shadow-sm active:scale-95"
+            >
+              {isAdded ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Added to Wallet</span>
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="w-3.5 h-3.5 text-amber-700" />
+                  <span>+Add to MetaMask</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Info */}
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 mb-6 text-xs text-amber-950 space-y-2">
           <div className="flex items-center gap-2 font-bold text-amber-900">
             <Sparkles className="w-4 h-4 text-amber-700" />
-            <span>Instant +1,000 cUSDT per claim</span>
+            <span>Instant +1,000 cUSDT per mint</span>
           </div>
           <p className="text-amber-800 leading-relaxed text-[11px]">
-            Mint mock tokens directly to your wallet to test deposits, daily prize draw entries, and instant zero-loss withdrawals.
+            Calls the official Zama Sepolia token mint function (<code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-[10px]">0xa7dA08FafDC9097Cc0E7D4f113A61e31d7e8e9b0</code>).
           </p>
         </div>
 

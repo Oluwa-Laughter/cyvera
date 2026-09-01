@@ -22,7 +22,6 @@ export const getInjectedProvider = (): any => {
 
   // Check if multiple providers exist (e.g. MetaMask + Coinbase + Rabby)
   if (anyWindow.ethereum?.providers?.length) {
-    // Prefer MetaMask or first available
     const metamask = anyWindow.ethereum.providers.find((p: any) => p.isMetaMask);
     return metamask || anyWindow.ethereum.providers[0];
   }
@@ -81,7 +80,6 @@ export const connectInjectedWallet = async (): Promise<{
       params: [{ chainId: SEPOLIA_HEX_CHAIN_ID }],
     });
   } catch (switchError: any) {
-    // Chain not added to wallet (4902 / -32603)
     if (switchError.code === 4902 || switchError.code === -32603) {
       try {
         await ethereum.request({
@@ -108,4 +106,35 @@ export const connectInjectedWallet = async (): Promise<{
     provider: browserProvider,
     signer,
   };
+};
+
+/**
+ * Adds token to MetaMask / Rabby / Web3 wallet via EIP-747 wallet_watchAsset
+ */
+export const addTokenToWallet = async (
+  tokenAddress: string,
+  symbol: string = "cUSDT",
+  decimals: number = 6
+): Promise<boolean> => {
+  const ethereum = getInjectedProvider();
+  if (!ethereum) return false;
+
+  try {
+    const wasAdded = await ethereum.request({
+      method: "wallet_watchAsset",
+      params: {
+        type: "ERC20",
+        options: {
+          address: tokenAddress,
+          symbol: symbol,
+          decimals: decimals,
+          image: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+        },
+      },
+    });
+    return !!wasAdded;
+  } catch (error) {
+    console.error("Error adding token to wallet via wallet_watchAsset:", error);
+    return false;
+  }
 };

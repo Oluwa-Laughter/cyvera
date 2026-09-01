@@ -15,8 +15,13 @@ import {
   HelpCircle,
   Coins,
   TrendingUp,
-  Droplets
+  Droplets,
+  PlusCircle,
+  Check,
+  AlertCircle
 } from "lucide-react";
+import { addTokenToWallet } from "@/lib/wallet";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts";
 
 interface VaultViewProps {
   account: string | null;
@@ -54,14 +59,15 @@ export const VaultView: React.FC<VaultViewProps> = ({
   totalPrizeReserve,
 }) => {
   const [activeTab, setActiveTab] = useState<"deposit" | "withdraw">("deposit");
-  const [amount, setAmount] = useState<string>(initialDepositAmount || "100");
+  const [amount, setAmount] = useState<string>(initialDepositAmount || "50");
+  const [isTokenAdded, setIsTokenAdded] = useState(false);
 
   const parsedWallet = parseFloat(walletBalance.replace(/,/g, "") || "0");
   const parsedSaved = parseFloat((decryptedBalance || "0").replace(/,/g, "") || "0");
 
   const handleQuickPreset = (val: number) => {
     if (activeTab === "deposit") {
-      setAmount(Math.min(parsedWallet, val).toString());
+      setAmount(val.toString());
     } else {
       setAmount(Math.min(parsedSaved, val).toString());
     }
@@ -75,6 +81,14 @@ export const VaultView: React.FC<VaultViewProps> = ({
     }
   };
 
+  const handleAddToken = async () => {
+    const success = await addTokenToWallet(CONTRACT_ADDRESSES.sepolia.depositToken, "cUSDT", 6);
+    if (success) {
+      setIsTokenAdded(true);
+      setTimeout(() => setIsTokenAdded(false), 3000);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || parseFloat(amount) <= 0) return;
@@ -84,6 +98,8 @@ export const VaultView: React.FC<VaultViewProps> = ({
       await onWithdraw(amount);
     }
   };
+
+  const isWithdrawDisabled = activeTab === "withdraw" && (parsedSaved <= 0 || parseFloat(amount || "0") > parsedSaved);
 
   return (
     <div className="space-y-8 w-full max-w-3xl mx-auto text-black">
@@ -100,14 +116,14 @@ export const VaultView: React.FC<VaultViewProps> = ({
             </div>
             <h2 className="text-2xl font-black text-black">USD High-Yield Vault</h2>
             <p className="text-xs text-slate-500 font-medium">
-              Deposit cUSDT tokens to enter daily prize draws automatically. Zero risk of loss.
+              Deposit cUSDT tokens to enter prize draws automatically. Zero risk of principal loss.
             </p>
           </div>
 
           {/* User's Shielded Balance Pill */}
           <div className="flex items-center gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs">
             <div className="text-right">
-              <span className="text-slate-500 text-[11px] block">Your Saved Balance:</span>
+              <span className="text-slate-500 text-[11px] block">Your Saved Principal:</span>
               <div className="font-black text-black text-sm">
                 {account ? (
                   decryptedBalance !== null ? (
@@ -150,9 +166,15 @@ export const VaultView: React.FC<VaultViewProps> = ({
             <span className="text-slate-500 text-[11px] block">Total Shielded TVL:</span>
             <strong className="text-black text-sm font-black">${totalDeposits}</strong>
           </div>
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
-            <span className="text-slate-500 text-[11px] block">Draw Frequency:</span>
-            <strong className="text-emerald-700 text-sm font-black">Daily (Every 24h)</strong>
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1 flex flex-col justify-between">
+            <span className="text-slate-500 text-[11px] block">Metamask Token:</span>
+            <button
+              onClick={handleAddToken}
+              className="text-amber-800 hover:text-black font-bold flex items-center gap-1 text-[11px]"
+            >
+              {isTokenAdded ? <Check className="w-3 h-3 text-emerald-600" /> : <PlusCircle className="w-3 h-3 text-amber-600" />}
+              <span>{isTokenAdded ? "cUSDT Added" : "+Add to MetaMask"}</span>
+            </button>
           </div>
         </div>
 
@@ -167,7 +189,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
             }`}
           >
             <ArrowUpRight className="w-4 h-4" />
-            <span>Deposit & Win</span>
+            <span>Deposit & Save</span>
           </button>
           <button
             onClick={() => setActiveTab("withdraw")}
@@ -226,14 +248,14 @@ export const VaultView: React.FC<VaultViewProps> = ({
 
             {/* Quick Preset Buttons */}
             <div className="flex items-center gap-2 pt-2 text-xs font-bold">
-              {[50, 100, 500].map((val) => (
+              {[25, 50, 100, 500].map((val) => (
                 <button
                   key={val}
                   type="button"
                   onClick={() => handleQuickPreset(val)}
                   className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition-all active:scale-95"
                 >
-                  +${val}
+                  ${val}
                 </button>
               ))}
               <button
@@ -253,7 +275,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
               animate={{ opacity: 1, y: 0 }}
               className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-950 font-bold flex items-center gap-2"
             >
-              <RefreshCw className="w-4 h-4 animate-spin text-amber-700 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
               <span>{actionStatus}</span>
             </motion.div>
           )}
@@ -270,7 +292,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
           ) : (
             <button
               type="submit"
-              disabled={isLoadingAction || !amount || parseFloat(amount) <= 0}
+              disabled={isLoadingAction || !amount || parseFloat(amount) <= 0 || isWithdrawDisabled}
               className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-sm tracking-tight transition-all shadow-aura-yellow flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
             >
               {isLoadingAction ? (
@@ -278,6 +300,8 @@ export const VaultView: React.FC<VaultViewProps> = ({
                   <RefreshCw className="w-4 h-4 animate-spin" />
                   <span>Processing Onchain Transaction...</span>
                 </>
+              ) : isWithdrawDisabled ? (
+                <span>No Principal Available to Withdraw</span>
               ) : activeTab === "deposit" ? (
                 <>
                   <PiggyBank className="w-4 h-4" />
@@ -286,7 +310,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
               ) : (
                 <>
                   <ArrowDownLeft className="w-4 h-4" />
-                  <span>Withdraw ${amount || "0"} Instantly</span>
+                  <span>Withdraw ${amount || "0"} Principal Instantly</span>
                 </>
               )}
             </button>
@@ -296,7 +320,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
           <div className="pt-2 flex flex-wrap items-center justify-between text-xs text-slate-500 font-medium">
             <span className="flex items-center gap-1 text-emerald-700 font-bold">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              100% Principal Safe (No Risk of Loss)
+              100% Principal Safe (Zero Risk of Loss)
             </span>
             <span>No lockups &bull; Instant 100% Exit</span>
           </div>

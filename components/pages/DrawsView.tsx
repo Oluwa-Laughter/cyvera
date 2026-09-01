@@ -15,7 +15,8 @@ import {
   Gift,
   Settings,
   PlayCircle,
-  Clock
+  Clock,
+  Check
 } from "lucide-react";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
 
@@ -55,6 +56,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   isSettingInterval,
 }) => {
   const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number }>({ h: 0, m: 0, s: 0 });
+  const [customSeconds, setCustomSeconds] = useState<string>("");
 
   const intervalPresets = [
     { label: "⚡ 30s (Testing)", seconds: 30 },
@@ -85,6 +87,15 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   const formatDate = (timestamp: number) => {
     if (!timestamp) return "Today";
     return new Date(timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
+
+  const handleApplyCustom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseInt(customSeconds);
+    if (!isNaN(parsed) && parsed >= 5) {
+      await onSetDrawInterval(parsed);
+      setCustomSeconds("");
+    }
   };
 
   const isCountdownZero = timeLeft.h === 0 && timeLeft.m === 0 && timeLeft.s === 0;
@@ -196,10 +207,10 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
         </div>
 
         <p className="text-xs text-slate-600">
-          Select a draw interval below. For fast testing, select <strong>30 Seconds</strong> to see instant prize cycles!
+          Select or set the exact draw duration. The countdown is calculated from the current time.
         </p>
 
-        {/* Interval Presets */}
+        {/* Preset Chips */}
         <div className="flex flex-wrap gap-2.5 pt-1">
           {intervalPresets.map((preset) => {
             const isSelected = drawInterval === preset.seconds;
@@ -222,6 +233,25 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
             );
           })}
         </div>
+
+        {/* Custom Interval Form */}
+        <form onSubmit={handleApplyCustom} className="pt-2 flex items-center gap-3 max-w-sm">
+          <input
+            type="number"
+            min="5"
+            placeholder="Custom seconds (e.g. 45)"
+            value={customSeconds}
+            onChange={(e) => setCustomSeconds(e.target.value)}
+            className="flex-1 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-black focus:outline-none focus:border-amber-400"
+          />
+          <button
+            type="submit"
+            disabled={isSettingInterval || !customSeconds || parseInt(customSeconds) < 5}
+            className="px-4 py-2 rounded-xl bg-black text-white text-xs font-bold hover:bg-slate-800 transition-all disabled:opacity-40"
+          >
+            Set Custom
+          </button>
+        </form>
       </div>
 
       {/* 3. Past Winners & Draws History */}

@@ -1,8 +1,10 @@
 "use client";
 
-import React from "react";
-import { Menu, Wallet, Droplets, RefreshCw } from "lucide-react";
+import React, { useState } from "react";
+import { Menu, Wallet, Droplets, RefreshCw, LogOut, PlusCircle, Check } from "lucide-react";
 import { AuraLogo } from "@/components/AuraLogo";
+import { addTokenToWallet } from "@/lib/wallet";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts";
 
 interface TopHeaderProps {
   pageTitle: string;
@@ -27,8 +29,18 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onOpenFaucet,
   walletBalance,
 }) => {
+  const [isTokenAdded, setIsTokenAdded] = useState(false);
+
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
+  const handleAddToken = async () => {
+    const success = await addTokenToWallet(CONTRACT_ADDRESSES.sepolia.depositToken, "cUSDT", 6);
+    if (success) {
+      setIsTokenAdded(true);
+      setTimeout(() => setIsTokenAdded(false), 3000);
+    }
   };
 
   return (
@@ -53,12 +65,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Network, Balance, Wallet */}
-      <div className="flex items-center gap-3 font-medium text-xs">
+      {/* Right: Network, Balance, Add to Wallet, Wallet / Disconnect */}
+      <div className="flex items-center gap-2.5 font-medium text-xs">
         {/* Network Badge */}
         <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Sepolia Live</span>
+          <span>Sepolia</span>
         </div>
 
         {/* Balance Capsule */}
@@ -66,22 +78,51 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           <button
             onClick={onOpenFaucet}
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200"
+            title="Click to get testnet tokens"
           >
             <span className="text-slate-500">Wallet:</span>
             <span className="font-extrabold text-black">{walletBalance} cUSDT</span>
           </button>
         )}
 
-        {/* Direct Wallet Connect Button */}
-        {account ? (
+        {/* Add cUSDT to Wallet Button */}
+        {account && (
           <button
-            onClick={onDisconnect}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 hover:bg-red-50 hover:border-red-200 hover:text-red-600 border border-slate-200 text-slate-800 transition-all font-mono"
-            title="Click to disconnect"
+            onClick={handleAddToken}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold transition-all shadow-sm active:scale-95"
+            title="Add cUSDT test token to MetaMask"
           >
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>{formatAddress(account)}</span>
+            {isTokenAdded ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Added</span>
+              </>
+            ) : (
+              <>
+                <PlusCircle className="w-3.5 h-3.5 text-amber-700" />
+                <span>+cUSDT to Wallet</span>
+              </>
+            )}
           </button>
+        )}
+
+        {/* Connected Wallet Pill + Explicit Disconnect Button */}
+        {account ? (
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-full border border-slate-200">
+            <div className="flex items-center gap-2 px-3 py-1 text-slate-800 font-mono text-[11px] font-bold">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>{formatAddress(account)}</span>
+            </div>
+
+            <button
+              onClick={onDisconnect}
+              className="flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-rose-50 hover:text-rose-600 text-slate-600 transition-all border border-slate-200 shadow-sm active:scale-95 font-bold"
+              title="Disconnect Wallet"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-500" />
+              <span className="hidden sm:inline">Disconnect</span>
+            </button>
+          </div>
         ) : (
           <button
             onClick={onConnect}

@@ -86,9 +86,12 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [refreshOnchainState]);
 
-  // Auto connect if active
+  // Auto connect if active (only if user hasn't explicitly disconnected)
   useEffect(() => {
     const checkAutoConnect = async () => {
+      if (typeof window !== "undefined" && localStorage.getItem("aurapool_disconnected") === "true") {
+        return;
+      }
       const ethereum = getInjectedProvider();
       if (ethereum) {
         try {
@@ -113,6 +116,9 @@ export default function Home() {
   const handleConnectWallet = async () => {
     try {
       setIsConnecting(true);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("aurapool_disconnected");
+      }
       const res = await connectInjectedWallet();
       if (res) {
         setAccount(res.account);
@@ -129,6 +135,9 @@ export default function Home() {
   };
 
   const handleDisconnectWallet = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("aurapool_disconnected", "true");
+    }
     setAccount(null);
     setProvider(null);
     setSigner(null);
@@ -226,8 +235,7 @@ export default function Home() {
       setIsFaucetOpen(false);
     } catch (error: any) {
       console.error("Faucet tx error:", error);
-      const current = parseFloat(walletBalance.replace(/,/g, "")) || 0;
-      setWalletBalance((current + 1000).toFixed(2));
+      alert(error.reason || error.message || "Failed to mint test tokens.");
       setIsFaucetOpen(false);
     } finally {
       setIsClaimingFaucet(false);
@@ -256,19 +264,16 @@ export default function Home() {
 
       setActionStatus("Deposit completed successfully!");
       await refreshOnchainState();
+      
+      // Update decrypted balance directly
+      const realBal = await poolContract.getUserPlaintextBalance(account).catch(() => 0n);
+      setDecryptedBalance(ethers.formatUnits(realBal, 6));
+
       setTimeout(() => setActionStatus(""), 3000);
     } catch (error: any) {
       console.error("Deposit error:", error);
-      const depAmt = parseFloat(amountStr);
-      const wBal = parseFloat(walletBalance.replace(/,/g, "")) || 0;
-      const curSaved = parseFloat((decryptedBalance || "0.00").replace(/,/g, "")) || 0;
-      const curTVL = parseFloat(totalDeposits.replace(/,/g, "")) || 0;
-
-      setWalletBalance(Math.max(0, wBal - depAmt).toFixed(2));
-      setDecryptedBalance((curSaved + depAmt).toFixed(2));
-      setTotalDeposits((curTVL + depAmt).toFixed(2));
-      setActionStatus("Deposit completed!");
-      setTimeout(() => setActionStatus(""), 3000);
+      setActionStatus(error.reason || error.message || "Deposit transaction rejected or failed.");
+      setTimeout(() => setActionStatus(""), 4000);
     } finally {
       setIsLoadingAction(false);
     }
@@ -288,19 +293,15 @@ export default function Home() {
 
       setActionStatus("Withdrawal completed!");
       await refreshOnchainState();
+
+      const realBal = await poolContract.getUserPlaintextBalance(account).catch(() => 0n);
+      setDecryptedBalance(ethers.formatUnits(realBal, 6));
+
       setTimeout(() => setActionStatus(""), 3000);
     } catch (error: any) {
       console.error("Withdraw error:", error);
-      const wAmt = parseFloat(amountStr);
-      const wBal = parseFloat(walletBalance.replace(/,/g, "")) || 0;
-      const curSaved = parseFloat((decryptedBalance || "0.00").replace(/,/g, "")) || 0;
-      const curTVL = parseFloat(totalDeposits.replace(/,/g, "")) || 0;
-
-      setWalletBalance((wBal + wAmt).toFixed(2));
-      setDecryptedBalance(Math.max(0, curSaved - wAmt).toFixed(2));
-      setTotalDeposits(Math.max(0, curTVL - wAmt).toFixed(2));
-      setActionStatus("Withdrawal completed!");
-      setTimeout(() => setActionStatus(""), 3000);
+      setActionStatus(error.reason || error.message || "Withdrawal failed onchain.");
+      setTimeout(() => setActionStatus(""), 4000);
     } finally {
       setIsLoadingAction(false);
     }
