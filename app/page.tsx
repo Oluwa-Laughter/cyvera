@@ -119,7 +119,7 @@ export default function Home() {
     setWalletBalance("0.00");
   };
 
-  // --- EIP-712 Decryption ---
+  // --- Instant Reveal / Hide Balances (Zero Signature Friction) ---
   const handleDecryptBalance = async () => {
     if (!account || !provider) {
       await handleConnectWallet();
@@ -132,21 +132,12 @@ export default function Home() {
 
     try {
       setIsDecryptingBalance(true);
-      await requestEip712DecryptionPermission(
-        provider,
-        account,
-        CONTRACT_ADDRESSES.sepolia.prizePool
-      );
-      
-      // Read real onchain balance for connected account
       const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, provider);
       const realBal = await poolContract.getUserPlaintextBalance(account).catch(() => 0n);
       setDecryptedBalance(ethers.formatUnits(realBal, 6));
     } catch (error) {
-      console.error("Balance decryption error:", error);
-      const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, provider);
-      const realBal = await poolContract.getUserPlaintextBalance(account).catch(() => 0n);
-      setDecryptedBalance(ethers.formatUnits(realBal, 6));
+      console.error("Balance fetch error:", error);
+      setDecryptedBalance("0.00");
     } finally {
       setIsDecryptingBalance(false);
     }
@@ -164,18 +155,11 @@ export default function Home() {
 
     try {
       setIsDecryptingWinnings(true);
-      await requestEip712DecryptionPermission(
-        provider,
-        account,
-        CONTRACT_ADDRESSES.sepolia.prizePool
-      );
-      
-      // Read real onchain winnings for connected account
       const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, provider);
       const realWin = await poolContract.getUserPlaintextWinnings(account).catch(() => 0n);
       setDecryptedWinnings(ethers.formatUnits(realWin, 6));
     } catch (error) {
-      console.error("Winnings decryption error:", error);
+      console.error("Winnings fetch error:", error);
       setDecryptedWinnings("0.00");
     } finally {
       setIsDecryptingWinnings(false);

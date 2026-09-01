@@ -132,7 +132,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-mono uppercase text-slate-400">Onchain FHE State</span>
                 <span className="text-[10px] font-mono text-zama-violet px-2 py-0.5 rounded bg-zama-violet/10 border border-zama-violet/20">
-                  {isEncrypted ? "🔒 euint64 Ciphertext" : "🔓 Plaintext View"}
+                  {isEncrypted ? "euint64 Ciphertext" : "Plaintext View"}
                 </span>
               </div>
               <div className="text-sm font-mono font-bold text-slate-200 truncate py-1">

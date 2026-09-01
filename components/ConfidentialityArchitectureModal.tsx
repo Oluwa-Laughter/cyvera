@@ -89,32 +89,32 @@ export const ConfidentialityArchitectureModal: React.FC<ArchitectureModalProps> 
                 <tbody className="divide-y divide-slate-800/60">
                   <tr>
                     <td className="py-2 font-semibold text-slate-200">Individual Deposit Amounts</td>
-                    <td className="py-2 text-emerald-400">🔒 Strictly Confidential</td>
+                    <td className="py-2 text-emerald-400 font-bold">Strictly Confidential</td>
                     <td className="py-2 text-slate-400">Zama <code className="text-cyan-300">euint64</code> ciphertext</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-semibold text-slate-200">User Savings Balances</td>
-                    <td className="py-2 text-emerald-400">🔒 Strictly Confidential</td>
+                    <td className="py-2 text-emerald-400 font-bold">Strictly Confidential</td>
                     <td className="py-2 text-slate-400">Decryption locked to user EIP-712 key</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-semibold text-slate-200">Individual Winning Odds</td>
-                    <td className="py-2 text-emerald-400">🔒 Strictly Confidential</td>
+                    <td className="py-2 text-emerald-400 font-bold">Strictly Confidential</td>
                     <td className="py-2 text-slate-400">Zero balance leakage prevents odds calculation</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-semibold text-slate-200">Winner Allocation</td>
-                    <td className="py-2 text-emerald-400">🔒 Winner-Only Decryptable</td>
+                    <td className="py-2 text-emerald-400 font-bold">Winner-Only Decryptable</td>
                     <td className="py-2 text-slate-400">Encrypted prize credit awarded onchain</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-semibold text-slate-200">Total Pool Deposits (TVL)</td>
-                    <td className="py-2 text-amber-400">🌐 Public Aggregation</td>
+                    <td className="py-2 text-amber-400 font-bold">Public Aggregation</td>
                     <td className="py-2 text-slate-400">Aggregated for yield strategy accounting</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-semibold text-slate-200">Participant Addresses List</td>
-                    <td className="py-2 text-amber-400">🌐 Public Address Set</td>
+                    <td className="py-2 text-amber-400 font-bold">Public Address Set</td>
                     <td className="py-2 text-slate-400">Set of active wallets without balances</td>
                   </tr>
                 </tbody>

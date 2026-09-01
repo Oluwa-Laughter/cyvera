@@ -110,7 +110,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
               <div className="w-2 h-2 rounded-full bg-zama-emerald" />
               <span>{formatAddress(account)}</span>
               <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] text-slate-400">
-                ✕
+                <X className="w-3 h-3 text-slate-400" />
               </div>
             </button>
           ) : (

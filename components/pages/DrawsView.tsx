@@ -16,8 +16,12 @@ import {
   Settings,
   PlayCircle,
   Clock,
-  Check
+  Check,
+  Zap,
+  Calendar
 } from "lucide-react";
+import { FiZap, FiClock, FiCalendar } from "react-icons/fi";
+import { HiTrophy } from "react-icons/hi2";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
 
 interface DrawsViewProps {
@@ -59,12 +63,12 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   const [customSeconds, setCustomSeconds] = useState<string>("");
 
   const intervalPresets = [
-    { label: "⚡ 30 Seconds", seconds: 30 },
-    { label: "⏱️ 1 Minute", seconds: 60 },
-    { label: "⏱️ 5 Minutes", seconds: 300 },
-    { label: "⏱️ 10 Minutes", seconds: 600 },
-    { label: "⏳ 1 Hour", seconds: 3600 },
-    { label: "📅 24 Hours", seconds: 86400 },
+    { label: "30 Seconds", seconds: 30, icon: FiZap },
+    { label: "1 Minute", seconds: 60, icon: FiClock },
+    { label: "5 Minutes", seconds: 300, icon: FiClock },
+    { label: "10 Minutes", seconds: 600, icon: FiClock },
+    { label: "1 Hour", seconds: 3600, icon: FiClock },
+    { label: "24 Hours", seconds: 86400, icon: FiCalendar },
   ];
 
   useEffect(() => {
@@ -215,6 +219,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
         <div className="flex flex-wrap gap-2.5 pt-1">
           {intervalPresets.map((preset) => {
             const isSelected = drawInterval === preset.seconds;
+            const Icon = preset.icon;
             return (
               <button
                 key={preset.seconds}
@@ -228,7 +233,9 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
               >
                 {isSettingInterval && isSelected ? (
                   <RefreshCw className="w-3 h-3 animate-spin" />
-                ) : null}
+                ) : (
+                  <Icon className="w-3.5 h-3.5" />
+                )}
                 <span>{preset.label}</span>
               </button>
             );
@@ -298,8 +305,15 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
                   <span className="text-base font-black text-emerald-700">
                     +${draw.prizeAmount} cUSDT
                   </span>
-                  <span className={`text-xs px-3 py-1 rounded-full font-bold ${draw.isMyWin ? "bg-aura-yellow text-black" : "bg-white text-slate-600 border border-slate-200"}`}>
-                    {draw.isMyWin ? "🏆 YOU WON!" : `Winner: ${draw.winner}`}
+                  <span className={`text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1 ${draw.isMyWin ? "bg-aura-yellow text-black" : "bg-white text-slate-600 border border-slate-200"}`}>
+                    {draw.isMyWin ? (
+                      <>
+                        <HiTrophy className="w-3.5 h-3.5 text-black" />
+                        <span>YOU WON!</span>
+                      </>
+                    ) : (
+                      `Winner: ${draw.winner}`
+                    )}
                   </span>
                 </div>
               </div>

@@ -145,8 +145,9 @@ export const FHEInteractiveLab: React.FC = () => {
                 )}
               </div>
 
-              <div className="text-[11px] font-mono text-slate-400 leading-relaxed pt-2">
-                🔒 <strong>Zero Knowledge Guaranteed:</strong> The smart contract added both encrypted numbers together without ever learning the balance of Alice or Bob.
+              <div className="text-[11px] font-mono text-slate-400 leading-relaxed pt-2 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-zama-emerald shrink-0" />
+                <span><strong>Zero Knowledge Guaranteed:</strong> The smart contract added both encrypted numbers together without ever learning the balance of Alice or Bob.</span>
               </div>
             </div>
           )}

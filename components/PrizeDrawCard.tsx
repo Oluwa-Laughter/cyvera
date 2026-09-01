@@ -39,7 +39,7 @@ export const PrizeDrawCard: React.FC<PrizeDrawCardProps> = ({
 }) => {
   const formatAddress = (addr: string) => {
     if (!addr || addr === "0x0000000000000000000000000000000000000000") return "Confidential Winner (FHE Encrypted)";
-    if (account && addr.toLowerCase() === account.toLowerCase()) return "🏆 YOU WON!";
+    if (account && addr.toLowerCase() === account.toLowerCase()) return "YOU WON!";
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 

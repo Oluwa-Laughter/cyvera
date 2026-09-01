@@ -119,7 +119,10 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
         </div>
 
         <div className="pt-4 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2 font-medium">
-          <span>🔒 Only your wallet can decrypt and claim your prizes</span>
+          <span className="flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Only your wallet can decrypt and claim your prizes</span>
+          </span>
           <span>Zero public broadcast of winner net worth</span>
         </div>
       </div>

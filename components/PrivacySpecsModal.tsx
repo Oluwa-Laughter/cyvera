@@ -63,32 +63,32 @@ export const PrivacySpecsModal: React.FC<PrivacySpecsModalProps> = ({
                 <tbody className="divide-y divide-white/5">
                   <tr>
                     <td className="py-2 font-bold text-white">Individual Deposit Amounts</td>
-                    <td className="py-2 text-zama-yellow">🔒 Strictly Confidential</td>
+                    <td className="py-2 text-zama-yellow font-bold">Strictly Confidential</td>
                     <td className="py-2 text-zinc-400">Zama <code className="text-white">euint64</code> ciphertext</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-bold text-white">User Savings Balances</td>
-                    <td className="py-2 text-zama-yellow">🔒 Strictly Confidential</td>
+                    <td className="py-2 text-zama-yellow font-bold">Strictly Confidential</td>
                     <td className="py-2 text-zinc-400">Locked to user EIP-712 key</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-bold text-white">Individual Winning Odds</td>
-                    <td className="py-2 text-zama-yellow">🔒 Strictly Confidential</td>
+                    <td className="py-2 text-zama-yellow font-bold">Strictly Confidential</td>
                     <td className="py-2 text-zinc-400">Concealed balances prevent odds leaks</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-bold text-white">Winner Prize Allocation</td>
-                    <td className="py-2 text-zama-yellow">🔒 Winner-Only Decryptable</td>
+                    <td className="py-2 text-zama-yellow font-bold">Winner-Only Decryptable</td>
                     <td className="py-2 text-zinc-400">Encrypted prize credit onchain</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-bold text-white">Total Pool Deposits (TVL)</td>
-                    <td className="py-2 text-zinc-400">🌐 Public Aggregation</td>
+                    <td className="py-2 text-zinc-400">Public Aggregation</td>
                     <td className="py-2 text-zinc-400">Aggregated for DeFi yield routing</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-bold text-white">Participant Addresses List</td>
-                    <td className="py-2 text-zinc-400">🌐 Public Address Set</td>
+                    <td className="py-2 text-zinc-400">Public Address Set</td>
                     <td className="py-2 text-zinc-400">Set of active wallets without balances</td>
                   </tr>
                 </tbody>
