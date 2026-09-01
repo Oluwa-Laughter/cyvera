@@ -13,8 +13,7 @@ import { VaultView } from "@/components/pages/VaultView";
 import { DrawsView } from "@/components/pages/DrawsView";
 import { RewardsView } from "@/components/pages/RewardsView";
 import { HowItWorksView } from "@/components/pages/HowItWorksView";
-import { ActivityFeed } from "@/components/ActivityFeed";
-import { UserHistory } from "@/components/UserHistory";
+import { ActivityView } from "@/components/pages/ActivityView";
 import { FaucetModal } from "@/components/FaucetModal";
 import { HowItWorksModal } from "@/components/HowItWorksModal";
 import {
@@ -743,31 +742,28 @@ export default function Home() {
           )}
 
           {currentTab === "dashboard" && (
-            <>
-              <DashboardView
-                account={account}
-                walletBalance={snap?.userWalletBalance ?? "0.00"}
-                decryptedBalance={decryptedBalance}
-                decryptedWinnings={decryptedWinnings}
-                totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
-                totalPrizeReserve={snap?.totalPrizeReserve ?? "15.00"}
-                totalPrizesAwarded={snap?.totalPrizesAwarded ?? "0.00"}
-                depositorsCount={snap?.depositorsCount ?? (account && parseFloat(decryptedBalance || "0") > 0 ? 1 : 0)}
-                lastDrawTime={snap?.lastDrawTime ?? 0}
-                drawInterval={snap?.drawInterval ?? 60}
-                currentDrawId={snap?.currentDrawId ?? 1}
-                winnersPerDraw={snap?.winnersPerDraw ?? 1}
-                drawHistory={snap?.drawHistory ?? []}
-                timeToNextDraw={snap?.timeToNextDraw ?? 0}
-                apyBasisPoints={snap?.apyBasisPoints ?? 850}
-                onNavigateTab={setCurrentTab}
-                onOpenFaucet={() => setIsFaucetOpen(true)}
-                onConnect={handleConnectWallet}
-                onDecryptBalance={handleDecryptBalance}
-                isDecryptingBalance={isDecryptingBalance}
-              />
-              <UserHistory entries={history} isLoading={isLoadingHistory} />
-            </>
+            <DashboardView
+              account={account}
+              walletBalance={snap?.userWalletBalance ?? "0.00"}
+              decryptedBalance={decryptedBalance}
+              decryptedWinnings={decryptedWinnings}
+              totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
+              totalPrizeReserve={snap?.totalPrizeReserve ?? "15.00"}
+              totalPrizesAwarded={snap?.totalPrizesAwarded ?? "0.00"}
+              depositorsCount={snap?.depositorsCount ?? (account && parseFloat(decryptedBalance || "0") > 0 ? 1 : 0)}
+              lastDrawTime={snap?.lastDrawTime ?? 0}
+              drawInterval={snap?.drawInterval ?? 60}
+              currentDrawId={snap?.currentDrawId ?? 1}
+              winnersPerDraw={snap?.winnersPerDraw ?? 1}
+              drawHistory={snap?.drawHistory ?? []}
+              timeToNextDraw={snap?.timeToNextDraw ?? 0}
+              apyBasisPoints={snap?.apyBasisPoints ?? 850}
+              onNavigateTab={setCurrentTab}
+              onOpenFaucet={() => setIsFaucetOpen(true)}
+              onConnect={handleConnectWallet}
+              onDecryptBalance={handleDecryptBalance}
+              isDecryptingBalance={isDecryptingBalance}
+            />
           )}
 
           {currentTab === "vault" && (
@@ -826,12 +822,18 @@ export default function Home() {
             />
           )}
 
+          {currentTab === "activity" && (
+            <ActivityView
+              activity={activity}
+              history={history}
+              isLoadingHistory={isLoadingHistory}
+              account={account}
+            />
+          )}
+
           {currentTab === "how-it-works" && (
             <HowItWorksView onEnterVault={() => setCurrentTab("vault")} />
           )}
-
-          {/* Activity Feed */}
-          <ActivityFeed entries={activity} />
         </main>
       </div>
 
@@ -869,12 +871,16 @@ const TAB_TITLES: Record<AppPageTab, { title: string; subtitle: string }> = {
     subtitle: "Deposit tokens to earn draw tickets — 100% withdrawable anytime with zero loss",
   },
   draws: {
-    title: "Hourly Prize Draws",
+    title: "1-Minute Prize Draws",
     subtitle: "Onchain automated winner distributions powered by Zama FHE randomness",
   },
   rewards: {
     title: "My Prize Winnings",
     subtitle: "Reveal confidential winnings, claim directly to wallet, or auto-compound",
+  },
+  activity: {
+    title: "Activity & History",
+    subtitle: "Real-time audit log of your deposits, withdrawals, draws, and prize claims",
   },
   "how-it-works": {
     title: "How It Works",

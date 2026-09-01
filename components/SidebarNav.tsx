@@ -12,10 +12,11 @@ import {
   BookOpen, 
   X, 
   Home,
-  ShieldCheck
+  ShieldCheck,
+  History
 } from "lucide-react";
 
-export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "how-it-works";
+export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "activity" | "how-it-works";
 
 interface SidebarNavProps {
   currentTab: AppPageTab;
@@ -37,8 +38,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   const navItems: { id: AppPageTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: "vault", label: "Savings Vault", icon: <PiggyBank className="w-4 h-4" />, badge: "8.5%" },
-    { id: "draws", label: "Prize Draws", icon: <Dices className="w-4 h-4" />, badge: "Daily" },
+    { id: "draws", label: "Prize Draws", icon: <Dices className="w-4 h-4" />, badge: "1-Min" },
     { id: "rewards", label: "My Winnings", icon: <Trophy className="w-4 h-4" /> },
+    { id: "activity", label: "Activity Feed", icon: <History className="w-4 h-4" /> },
     { id: "how-it-works", label: "How It Works", icon: <BookOpen className="w-4 h-4" /> },
   ];
 

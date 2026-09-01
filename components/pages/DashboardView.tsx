@@ -87,6 +87,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const hasWinnings = parseFloat(decryptedWinnings || "0") > 0;
 
+  const savedNum = parseFloat(decryptedBalance || "0");
+  const winNum = parseFloat(decryptedWinnings || "0");
+  const totalNetPortfolio = (savedNum + winNum).toFixed(2);
+
   return (
     <div className="space-y-8 w-full max-w-4xl mx-auto text-black">
       {/* 1. User Portfolio Hero Banner */}
@@ -98,6 +102,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-200">
                 100% Principal Safe
               </span>
+              {hasWinnings && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-black border border-amber-300 animate-bounce">
+                  +${decryptedWinnings} Won Profit
+                </span>
+              )}
             </div>
 
             <div className="flex items-baseline gap-3 mt-1">
@@ -105,7 +114,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {account ? (
                   decryptedBalance !== null ? (
                     <span className="text-black">
-                      ${decryptedBalance} <span className="text-base text-slate-500 font-medium">cUSDT</span>
+                      ${hasWinnings ? totalNetPortfolio : decryptedBalance}{" "}
+                      <span className="text-base text-slate-500 font-medium">cUSDT</span>
                     </span>
                   ) : (
                     <span className="text-slate-400 tracking-widest text-3xl">
@@ -139,6 +149,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </button>
               )}
             </div>
+
+            {account && decryptedBalance !== null && hasWinnings && (
+              <p className="text-xs text-emerald-800 font-semibold mt-1">
+                ${savedNum.toFixed(2)} Saved Principal + <strong className="text-amber-800 font-extrabold">+${winNum.toFixed(2)} Prize Profit</strong>
+              </p>
+            )}
           </div>
 
           {/* Quick Actions */}
@@ -193,17 +209,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Trophy className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-base font-black text-black">You Won ${decryptedWinnings} cUSDT!</h4>
-              <p className="text-xs text-amber-900 font-medium">Claim your prize to your wallet or auto-compound into your savings.</p>
+              <h4 className="text-base font-black text-black">You Won +${decryptedWinnings} cUSDT!</h4>
+              <p className="text-xs text-amber-900 font-medium">Your prize profit is ready. Auto-compound to earn more tickets or claim to wallet.</p>
             </div>
           </div>
 
-          <button
-            onClick={() => onNavigateTab("rewards")}
-            className="px-6 py-3 rounded-2xl bg-black text-white hover:bg-slate-800 font-extrabold text-xs transition-all shadow-sm active:scale-95"
-          >
-            Claim Winnings
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onNavigateTab("rewards")}
+              className="px-6 py-3 rounded-2xl bg-black text-white hover:bg-slate-800 font-extrabold text-xs transition-all shadow-sm active:scale-95"
+            >
+              Claim or Compound
+            </button>
+          </div>
         </div>
       )}
 
