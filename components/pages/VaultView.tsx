@@ -166,15 +166,9 @@ export const VaultView: React.FC<VaultViewProps> = ({
             <span className="text-slate-500 text-[11px] block">Total Shielded TVL:</span>
             <strong className="text-black text-sm font-black">${totalDeposits}</strong>
           </div>
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1 flex flex-col justify-between">
-            <span className="text-slate-500 text-[11px] block">Metamask Token:</span>
-            <button
-              onClick={handleAddToken}
-              className="text-amber-800 hover:text-black font-bold flex items-center gap-1 text-[11px]"
-            >
-              {isTokenAdded ? <Check className="w-3 h-3 text-emerald-600" /> : <PlusCircle className="w-3 h-3 text-amber-600" />}
-              <span>{isTokenAdded ? "cUSDT Added" : "+Add to MetaMask"}</span>
-            </button>
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
+            <span className="text-slate-500 text-[11px] block">Prize Invariant:</span>
+            <strong className="text-emerald-700 text-sm font-black">100% No-Loss</strong>
           </div>
         </div>
 

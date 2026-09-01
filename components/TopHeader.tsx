@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import { Menu, Wallet, Droplets, RefreshCw, LogOut, PlusCircle, Check } from "lucide-react";
+import React from "react";
+import { Menu, Wallet, Droplets, RefreshCw, LogOut } from "lucide-react";
 import { AuraLogo } from "@/components/AuraLogo";
-import { addTokenToWallet } from "@/lib/wallet";
-import { CONTRACT_ADDRESSES } from "@/lib/contracts";
 
 interface TopHeaderProps {
   pageTitle: string;
@@ -29,18 +27,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onOpenFaucet,
   walletBalance,
 }) => {
-  const [isTokenAdded, setIsTokenAdded] = useState(false);
-
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  };
-
-  const handleAddToken = async () => {
-    const success = await addTokenToWallet(CONTRACT_ADDRESSES.sepolia.depositToken, "cUSDT", 6);
-    if (success) {
-      setIsTokenAdded(true);
-      setTimeout(() => setIsTokenAdded(false), 3000);
-    }
   };
 
   return (
@@ -65,7 +53,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Network, Balance, Add to Wallet, Wallet / Disconnect */}
+      {/* Right: Network, Balance, Wallet / Disconnect */}
       <div className="flex items-center gap-2.5 font-medium text-xs">
         {/* Network Badge */}
         <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800">
@@ -82,27 +70,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           >
             <span className="text-slate-500">Wallet:</span>
             <span className="font-extrabold text-black">{walletBalance} cUSDT</span>
-          </button>
-        )}
-
-        {/* Add cUSDT to Wallet Button */}
-        {account && (
-          <button
-            onClick={handleAddToken}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold transition-all shadow-sm active:scale-95"
-            title="Add cUSDT test token to MetaMask"
-          >
-            {isTokenAdded ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Added</span>
-              </>
-            ) : (
-              <>
-                <PlusCircle className="w-3.5 h-3.5 text-amber-700" />
-                <span>+cUSDT to Wallet</span>
-              </>
-            )}
           </button>
         )}
 

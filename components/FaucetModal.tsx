@@ -94,7 +94,7 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
             <span>Instant +1,000 cUSDT per mint</span>
           </div>
           <p className="text-amber-800 leading-relaxed text-[11px]">
-            Calls the official Zama Sepolia token mint function (<code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-[10px]">0xa7dA08FafDC9097Cc0E7D4f113A61e31d7e8e9b0</code>).
+            Mints testnet cUSDT tokens directly to your wallet for testing deposits, daily prize draws, and instant zero-loss withdrawals.
           </p>
         </div>
 
