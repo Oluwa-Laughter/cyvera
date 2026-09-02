@@ -23,8 +23,8 @@ import {
   ZAMA_SEPOLIA_CONFIG,
   MOCK_ERC20_ABI,
   WRAPPER_TOKEN_ABI,
-  AURA_PRIZE_POOL_ABI,
-  MOCK_YIELD_SOURCE_ABI,
+  CYVERA_PRIZE_POOL_ABI,
+  CYVERA_YIELD_SOURCE_ABI,
 } from "@/lib/contracts";
 import { fetchLiveProtocolState, SEPOLIA_CHAIN_ID, ProtocolSnapshot } from "@/lib/web3";
 import { connectInjectedWallet, disconnectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
@@ -279,7 +279,7 @@ export default function Home() {
   }, [account, activeMarket, addToast]);
 
   // 1. Faucet Claim (Sepolia)
-  const handleClaimFaucet = async () => {
+  const handleClaimFaucet = async (targetMarket: ActiveMarketId = activeMarket) => {
     if (!account || !signer) {
       await handleConnectWallet();
       return;
@@ -289,7 +289,7 @@ export default function Home() {
 
     setIsClaimingFaucet(true);
     try {
-      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[targetMarket];
       const token = new ethers.Contract(marketCfg.underlying, MOCK_ERC20_ABI, signer);
       addToast("info", `Confirm mint of 1,000 ${marketCfg.symbol} in your wallet...`);
       
@@ -305,7 +305,7 @@ export default function Home() {
 
       const onchainBal: bigint = await token.balanceOf(account);
       const formatted = ethers.formatUnits(onchainBal, marketCfg.decimals);
-      setStoredWalletBalance(account, formatted, activeMarket);
+      setStoredWalletBalance(account, formatted, targetMarket);
 
       addActivityEntry({
         kind: "faucet",
@@ -461,7 +461,7 @@ export default function Home() {
       addToast("info", `Step 2/2: Confirm deposit of $${amount} ${marketCfg.symbol} in your wallet...`);
       let txHash = "";
       try {
-        const pool = new ethers.Contract(marketCfg.vault, AURA_PRIZE_POOL_ABI, signer);
+        const pool = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, signer);
         const depTx = await pool.deposit(needed, { gasLimit: 250000 });
         txHash = depTx.hash;
         addToast("info", "Executing confidential deposit on Sepolia...", depTx.hash);
@@ -534,7 +534,7 @@ export default function Home() {
       addToast("info", `Confirm withdrawal of $${amount} ${marketCfg.symbol} in your wallet...`);
       let txHash = "";
       try {
-        const pool = new ethers.Contract(marketCfg.vault, AURA_PRIZE_POOL_ABI, signer);
+        const pool = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, signer);
         const withTx = await pool.withdraw(needed, { gasLimit: 250000 });
         txHash = withTx.hash;
         addToast("info", "Processing withdrawal on Sepolia...", withTx.hash);
@@ -604,7 +604,7 @@ export default function Home() {
       addToast("info", `Executing onchain Zama FHE draw for Draw #${currentDraw} on ${activeMarket}...`);
       let txHash = "";
       try {
-        const pool = new ethers.Contract(marketCfg.vault, AURA_PRIZE_POOL_ABI, signer);
+        const pool = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, signer);
         const tx = await pool.triggerDraw({ gasLimit: 300000 });
         txHash = tx.hash;
         addToast("info", "Sampling Zama FHE onchain randomness...", tx.hash);
@@ -676,7 +676,7 @@ export default function Home() {
       addToast("info", `Confirm prize claim for +$${curWin.toFixed(2)} ${activeMarket} in your wallet...`);
       let txHash = "";
       try {
-        const pool = new ethers.Contract(marketCfg.vault, AURA_PRIZE_POOL_ABI, signer);
+        const pool = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, signer);
         const tx = await pool.claimPrize({ gasLimit: 250000 });
         txHash = tx.hash;
         addToast("info", "Transferring prize tokens on Sepolia...", tx.hash);
@@ -965,9 +965,12 @@ export default function Home() {
       <FaucetModal
         isOpen={isFaucetOpen}
         onClose={() => setIsFaucetOpen(false)}
-        onClaim={handleClaimFaucet}
+        onClaimFaucet={handleClaimFaucet}
         isClaiming={isClaimingFaucet}
+        walletBalance={snap?.userWalletBalance ?? "0.00"}
         account={account}
+        onConnect={handleConnectWallet}
+        activeMarket={activeMarket}
       />
 
       <HowItWorksModal
