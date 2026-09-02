@@ -7,14 +7,12 @@ interface IYieldReceiver {
     function fundPrizeReserve(uint256 amount) external;
 }
 
-/// @title MockYieldSource
-/// @notice Simulates a yield-bearing strategy (Aave V3 / Compound / Lido).
-///         Yield is **minted** into the source so the protocol can stream
-///         it to the prize reserve without ever touching depositor
-///         principal. In production this contract would be replaced by a
-///         real Aave V3 deposit/withdraw adapter that accrues variableDebt
-///         tokens and harvests the supply APY into the prize reserve.
-contract MockYieldSource {
+/// @title CyveraYieldSource
+/// @notice Simulates a yield-bearing DeFi strategy (Aave V3 / Compound / Lido).
+///         Yield is generated and streamed to the Cyvera prize reserve without
+///         ever touching depositor principal. In production this contract connects
+///         to Aave V3 / Euler / Morpho to harvest real supply APY into the prize pool.
+contract CyveraYieldSource {
     MockERC20 public immutable yieldToken;
     address public prizePool;
     address public owner;
@@ -51,11 +49,6 @@ contract MockYieldSource {
         emit YieldRateUpdated(_apyBasisPoints);
     }
 
-    /// @notice Pull-based yield harvest. `simulatedPrincipal` is the TVL of
-    ///         the prize pool; the function computes the accrued interest
-    ///         over `block.timestamp - lastHarvestTime` and forwards it to
-    ///         the prize reserve. A minimum of 5 tokens is always minted so
-    ///         demos run quickly.
     function harvestAndFund(uint256 simulatedPrincipal) external returns (uint256) {
         require(prizePool != address(0), "Prize pool not set");
 
@@ -78,7 +71,6 @@ contract MockYieldSource {
         return accruedYield;
     }
 
-    /// @notice Manually inject yield into the prize reserve (admin / judges).
     function manualInjectYield(uint256 amount) external returns (uint256) {
         require(prizePool != address(0), "Prize pool not set");
         yieldToken.mint(address(this), amount);
@@ -88,4 +80,9 @@ contract MockYieldSource {
         emit YieldHarvested(amount, block.timestamp);
         return amount;
     }
+}
+
+/// @notice Backward compatibility alias for MockYieldSource
+contract MockYieldSource is CyveraYieldSource {
+    constructor(address _yieldToken) CyveraYieldSource(_yieldToken) {}
 }

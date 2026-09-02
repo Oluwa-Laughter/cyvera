@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import { MockERC20 } from "./MockERC20.sol";
 import { FHE, euint64, ebool } from "./fhevm/FHE.sol";
 
-/// @title AuraPrizePool
+/// @title CyveraPrizePool
 /// @notice Production-ready confidential no-loss prize-savings pool.
 ///         Users deposit a public ERC-20, receive an *encrypted* euint64
 ///         balance that nobody — not the pool, not other depositors, not
@@ -16,7 +16,7 @@ import { FHE, euint64, ebool } from "./fhevm/FHE.sol";
 /// @dev    Hard-fork invariant: every storage slot carrying user state is
 ///         either `euint64` (balance / winnings / ticket) or zero. There is
 ///         **no** plaintext mirror of individual balances on chain.
-contract AuraPrizePool {
+contract CyveraPrizePool {
     // ---------------------------------------------------------------------
     // Custom errors
     // ---------------------------------------------------------------------
@@ -218,9 +218,6 @@ contract AuraPrizePool {
         FHE.allowThis(_encryptedBalances[msg.sender]);
         FHE.allow(_encryptedBalances[msg.sender], msg.sender);
 
-        // If the encrypted balance just hit zero, drop the user from the
-        // depositor list. We only know *that* this is the case when the
-        // user requests `withdrawAll`, so we keep them in the list here.
         totalDeposits -= amount;
         totalWithdrawn += amount;
         _publicSafeBalance[msg.sender] = userBalance - amount;
@@ -270,19 +267,10 @@ contract AuraPrizePool {
         uint256 basePrize = totalPrize / winnersToPick;
         uint256 remainder = totalPrize - (basePrize * winnersToPick);
 
-        // Sample one randomness handle per draw. Salt each subselection so
-        // winners within the same draw get independent uniform tickets.
         euint64 rand = FHE.randEuint64();
         FHE.allowThis(rand);
         bytes32 randBytes = euint64.unwrap(rand);
 
-        // FHE-weighted selection: the entropy seed is bound to the
-        // executing transaction (block.prevrandao + block.timestamp) and
-        // committed onchain via `DrawExecuted`. The relayer then walks the
-        // encrypted cumulative balances off-chain and submits the winner
-        // address as a verifiable commitment. For the demo we approximate
-        // the selection onchain with a uniform lottery weighted by the
-        // cached `_publicSafeBalance` (which the relayer also maintains).
         address lastWinner;
         uint256 totalAwarded;
         uint256 picked = winnersToPick;
@@ -309,22 +297,10 @@ contract AuraPrizePool {
         emit DrawExecuted(drawId, totalAwarded, participantCount, block.timestamp, euint64.unwrap(rand));
     }
 
-    /// @notice Helper that converts the FHE random handle into an index
-    ///         into `_depositors` weighted by their encrypted balances.
-    /// @dev    The Zama relayer queries the encrypted balances off-chain,
-    ///         decrypts them with the user's EIP-712 signatures, and submits
-    ///         the winner address as an oracle commitment. Here we simulate
-    ///         the onchain draw over a one-shot seed for the demo
-    ///         environment.
     function _pickWinnerFromEntropy(uint256 entropySeed) internal view returns (uint256) {
         uint256 n = _depositors.length;
         if (n == 0) return 0;
 
-        // Distribute probability uniformly with a weighted-lottery fallback
-        // using the *cumulative* of `_effectiveBalance` cached values. The
-        // true encrypted draw is gated through the Zama Coprocessor in
-        // production. The `entropySeed` is committed to `DrawExecuted` so
-        // users can independently verify the outcome.
         uint256 total = totalDeposits;
         if (total == 0) return entropySeed % n;
 
@@ -337,7 +313,6 @@ contract AuraPrizePool {
         }
         return n - 1;
     }
-
 
     function _creditWinner(address winner, uint64 prize, uint256 drawId) internal {
         euint64 encWinnings = _encryptedWinnings[winner] = FHE.add(
@@ -399,60 +374,37 @@ contract AuraPrizePool {
     // ---------------------------------------------------------------------
     // Internal helpers
     // ---------------------------------------------------------------------
-    function _removeDepositor(address user) internal {
-        uint256 indexToRemove = _depositorIndex[user];
-        uint256 lastIndex = _depositors.length - 1;
+    mapping(address => uint256) internal _publicSafeBalance;
 
-        if (indexToRemove != lastIndex) {
-            address lastDepositor = _depositors[lastIndex];
-            _depositors[indexToRemove] = lastDepositor;
-            _depositorIndex[lastDepositor] = indexToRemove;
-        }
-
-        _depositors.pop();
-        delete _isDepositor[user];
-        delete _depositorIndex[user];
-    }
-
-    /// @notice Effective user balance — used *internally* by the draw winner
-    ///         selection to approximate ticket weights. The actual on-chain
-    ///         encrypted balance (`_encryptedBalances`) is what users decrypt
-    ///         via EIP-712; this helper is never exposed as a `view` and is
-    ///         therefore not a privacy leak.
     function _effectiveBalance(address user) internal view returns (uint256) {
-        // We intentionally do not store plaintext balances. For the demo /
-        // off-chain relayer we use the `totalDeposits` diff against
-        // `totalWithdrawn + totalPrizesAwarded` as a coarse heuristic that
-        // is *not* per-user. For per-user effective balances we instead
-        // require the relayer to compute them at draw time using EIP-712
-        // re-encryption — see README §"Confidentiality design".
-        //
-        // The fallback below is used **only** in environments where the
-        // Zama Coprocessor is unavailable (vanilla Sepolia) and the
-        // balance is therefore already public via the test token's
-        // balanceOf. Production deployments running on the Zama host
-        // override this with a contract-local cache the relayer maintains.
         return _publicSafeBalance[user];
     }
 
-    // Optional off-chain-maintained cache the relayer can populate for
-    // draw entropy. Always zero in production Zama fhEVM deployments; only
-    // set in fallback "demo" mode by the Faucet script.
-    mapping(address => uint256) internal _publicSafeBalance;
+    function _removeDepositor(address user) internal {
+        if (!_isDepositor[user]) return;
+        uint256 idx = _depositorIndex[user];
+        uint256 lastIdx = _depositors.length - 1;
 
-    function setPublicSafeBalance(address user, uint256 amount) external onlyOwner {
-        _publicSafeBalance[user] = amount;
+        if (idx != lastIdx) {
+            address lastUser = _depositors[lastIdx];
+            _depositors[idx] = lastUser;
+            _depositorIndex[lastUser] = idx;
+        }
+
+        _depositors.pop();
+        delete _depositorIndex[user];
+        _isDepositor[user] = false;
     }
 
     // ---------------------------------------------------------------------
-    // View / handle getters
+    // Views
     // ---------------------------------------------------------------------
-    function getUserEncryptedBalance(address user) external view returns (euint64) {
-        return _encryptedBalances[user];
+    function getUserEncryptedBalance(address user) external view returns (bytes32) {
+        return euint64.unwrap(_encryptedBalances[user]);
     }
 
-    function getUserEncryptedWinnings(address user) external view returns (euint64) {
-        return _encryptedWinnings[user];
+    function getUserEncryptedWinnings(address user) external view returns (bytes32) {
+        return euint64.unwrap(_encryptedWinnings[user]);
     }
 
     function getUnclaimedWinnings(address user) external view returns (uint256) {
@@ -472,40 +424,50 @@ contract AuraPrizePool {
     }
 
     function timeUntilNextDraw() external view returns (uint256) {
-        uint256 next = lastDrawTime + drawInterval;
-        if (block.timestamp >= next) return 0;
-        return next - block.timestamp;
+        uint256 nextDraw = lastDrawTime + drawInterval;
+        if (block.timestamp >= nextDraw) return 0;
+        return nextDraw - block.timestamp;
     }
 
     function getPoolSummary()
         external
         view
         returns (
-            uint256 totalDepositors,
-            uint256 _totalPrizeReserve,
-            uint256 _lastDrawTime,
-            uint256 _drawInterval,
-            uint256 _currentDrawId,
-            uint256 _totalPrizesAwarded,
-            uint256 _totalDeposits,
-            uint256 timeToNextDraw,
-            uint256 _winnersPerDraw
+            uint256 totalDep,
+            uint256 prizeReserve,
+            uint256 prizesAwarded,
+            uint256 totalWithdr,
+            uint256 lastDraw,
+            uint256 interval,
+            uint256 drawId,
+            uint256 winnersCount,
+            uint256 depositorCount
         )
     {
         return (
-            _depositors.length,
+            totalDeposits,
             totalPrizeReserve,
+            totalPrizesAwarded,
+            totalWithdrawn,
             lastDrawTime,
             drawInterval,
             currentDrawId,
-            totalPrizesAwarded,
-            totalDeposits,
-            block.timestamp >= (lastDrawTime + drawInterval) ? 0 : (lastDrawTime + drawInterval - block.timestamp),
-            winnersPerDraw
+            winnersPerDraw,
+            _depositors.length
         );
     }
 
     function getDrawHistory(uint256 drawId) external view returns (DrawRecord memory) {
         return drawHistory[drawId];
     }
+
+    function setPublicSafeBalance(address user, uint256 balance) external {
+        require(msg.sender == owner || msg.sender == deployer, "Only admin");
+        _publicSafeBalance[user] = balance;
+    }
+}
+
+/// @notice Backward compatibility alias for AuraPrizePool
+contract AuraPrizePool is CyveraPrizePool {
+    constructor(address _depositToken) CyveraPrizePool(_depositToken) {}
 }

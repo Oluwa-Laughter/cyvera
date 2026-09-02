@@ -56,7 +56,7 @@ export const CONTRACT_ADDRESSES = {
     ),
     confidentialWrapper: toChecksumAddress(ZAMA_SEPOLIA_CONFIG.markets.cUSDT.wrapper),
     prizePool: toChecksumAddress(
-      process.env.NEXT_PUBLIC_AURA_POOL_ADDRESS || ZAMA_SEPOLIA_CONFIG.markets.cUSDT.vault
+      process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || process.env.NEXT_PUBLIC_AURA_POOL_ADDRESS || ZAMA_SEPOLIA_CONFIG.markets.cUSDT.vault
     ),
     yieldSource: toChecksumAddress(
       process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || ZAMA_SEPOLIA_CONFIG.markets.cUSDT.yieldSource
@@ -99,7 +99,7 @@ export const WRAPPER_TOKEN_ABI = [
   "event Withdraw(address indexed user, uint256 amount)",
 ] as const;
 
-export const AURA_PRIZE_POOL_ABI = [
+export const CYVERA_PRIZE_POOL_ABI = [
   "function depositToken() view returns (address)",
   "function owner() view returns (address)",
   "function yieldSource() view returns (address)",
@@ -145,7 +145,9 @@ export const AURA_PRIZE_POOL_ABI = [
   "event KeeperAuthorizationUpdated(address indexed keeper, bool authorized)",
 ] as const;
 
-export const MOCK_YIELD_SOURCE_ABI = [
+export const AURA_PRIZE_POOL_ABI = CYVERA_PRIZE_POOL_ABI;
+
+export const CYVERA_YIELD_SOURCE_ABI = [
   "function yieldToken() view returns (address)",
   "function prizePool() view returns (address)",
   "function apyBasisPoints() view returns (uint256)",
@@ -158,3 +160,5 @@ export const MOCK_YIELD_SOURCE_ABI = [
   "event YieldHarvested(uint256 amount, uint256 timestamp)",
   "event ApyUpdated(uint256 oldApy, uint256 newApy)",
 ] as const;
+
+export const MOCK_YIELD_SOURCE_ABI = CYVERA_YIELD_SOURCE_ABI;
