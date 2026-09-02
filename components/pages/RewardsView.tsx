@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { 
   Trophy, 
   Sparkles, 
@@ -48,6 +48,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
   onConnect,
   isLoadingAction,
 }) => {
+  const [isMasked, setIsMasked] = useState<boolean>(false);
   const hasWinnings = parseFloat(decryptedWinnings || "0") > 0;
   const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
 
@@ -60,14 +61,27 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
   };
 
   const handleClaim = async () => {
+    if (isLoadingAction) return;
     triggerCelebration();
     await onClaimPrize();
   };
 
   const handleCompound = async () => {
+    if (isLoadingAction) return;
     triggerCelebration();
     await onCompoundPrize();
   };
+
+  const handleToggleHideShow = () => {
+    if (decryptedWinnings === null) {
+      onDecryptWinnings();
+      setIsMasked(false);
+    } else {
+      setIsMasked((prev) => !prev);
+    }
+  };
+
+  const isCurrentlyRevealed = decryptedWinnings !== null && !isMasked;
 
   return (
     <div className="space-y-8 w-full max-w-4xl mx-auto text-foreground">
@@ -119,14 +133,14 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
               Your Confidential Winnings
             </h2>
             <p className="text-xs text-[var(--muted)] font-medium">
-              The result is not published to the chain as a readable prize amount. Authorize a session to inspect your permitted value.
+              The result is not published to the chain as a readable prize amount. Authorize an EIP-712 session to inspect your permitted value.
             </p>
           </div>
 
           <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-right min-w-[140px]">
             <span className="text-[10px] font-bold text-amber-500 uppercase">Status</span>
             <div className="text-sm font-black text-foreground">
-              {hasWinnings ? "🎉 Prize Won!" : "🔒 Encrypted Handle"}
+              {hasWinnings && isCurrentlyRevealed ? "🎉 Prize Won!" : isCurrentlyRevealed ? "🛡️ Verified $0.00" : "🔒 Encrypted Handle"}
             </div>
           </div>
         </div>
@@ -143,13 +157,13 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
             </span>
             <div className="text-4xl sm:text-5xl font-black text-foreground mt-1 font-mono">
               {account ? (
-                decryptedWinnings !== null ? (
+                isCurrentlyRevealed ? (
                   <span className={hasWinnings ? "text-emerald-500" : "text-foreground"}>
                     {hasWinnings ? `+$${decryptedWinnings}` : "$0.00"}{" "}
                     <span className="text-lg text-[var(--muted)] font-normal font-sans">{activeMarket}</span>
                   </span>
                 ) : (
-                  <span className="text-[var(--muted)] text-3xl">•••••••• {activeMarket}</span>
+                  <span className="text-[var(--muted)] tracking-widest text-3xl">•••••••• {activeMarket}</span>
                 )
               ) : (
                 <span className="text-[var(--muted)] text-2xl font-sans">Connect Wallet</span>
@@ -157,31 +171,38 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
             </div>
           </div>
 
+          {/* Reveal / Hide Toggle Controls */}
           {account && (
-            <div className="pt-2">
+            <div className="pt-2 flex items-center justify-center gap-3">
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={onDecryptWinnings}
+                onClick={handleToggleHideShow}
                 disabled={isDecryptingWinnings}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-xs font-bold text-foreground transition-all shadow-sm disabled:opacity-50"
               >
                 {isDecryptingWinnings ? (
                   <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
+                ) : isCurrentlyRevealed ? (
+                  <EyeOff className="w-4 h-4 text-[var(--muted)]" />
                 ) : (
-                  <Key className="w-4 h-4 text-amber-500" />
+                  <Eye className="w-4 h-4 text-amber-500" />
                 )}
                 <span>
-                  {isDecryptingWinnings ? "Decrypting via EIP-712..." : "Authorize Decryption Session"}
+                  {isDecryptingWinnings 
+                    ? "Decrypting via EIP-712..." 
+                    : isCurrentlyRevealed 
+                    ? "Hide Reward" 
+                    : "Show / Reveal Reward"}
                 </span>
               </motion.button>
             </div>
           )}
 
-          {hasWinnings && (
+          {hasWinnings && isCurrentlyRevealed && (
             <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 dark:text-amber-400 text-xs font-bold flex items-center justify-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Congratulations! You won the {activeMarket} Prize Pot!</span>
+              <span>Congratulations! You won +${decryptedWinnings} {activeMarket} in the prize draw!</span>
             </div>
           )}
         </div>
@@ -197,7 +218,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
               className="py-4 px-6 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isLoadingAction ? <RefreshCw className="w-4 h-4 animate-spin text-black" /> : <ArrowDownToLine className="w-4 h-4 text-black" />}
-              <span>Claim Prize Profit to Wallet</span>
+              <span>Claim Prize Profit to Wallet ({activeMarket})</span>
             </motion.button>
 
             <motion.button
@@ -208,7 +229,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
               className="py-4 px-6 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isLoadingAction ? <RefreshCw className="w-4 h-4 animate-spin text-amber-500" /> : <Repeat className="w-4 h-4 text-amber-500" />}
-              <span>Auto-Compound (+Tickets)</span>
+              <span>Auto-Compound (+Tickets in {activeMarket})</span>
             </motion.button>
           </div>
         )}
@@ -231,7 +252,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
           <div className="space-y-2">
             <h4 className="font-bold text-foreground text-xs">EIP-712 User Signature</h4>
             <p className="leading-relaxed">
-              When you click "Authorize Decryption Session", your wallet signs an offchain EIP-712 permission request. The Zama relayer proves your identity and returns your decrypted plaintext balance exclusively to your screen.
+              When you click &quot;Show / Reveal Reward&quot;, your wallet authorizes an offchain EIP-712 session. The Zama relayer proves your identity and returns your decrypted plaintext balance exclusively to your screen.
             </p>
           </div>
         </div>
