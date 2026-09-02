@@ -15,7 +15,8 @@ import {
   Wallet,
   CheckCircle2,
   Lock,
-  ArrowUpRight
+  Zap,
+  Layers
 } from "lucide-react";
 
 export interface ActivityFeedItem {
@@ -30,6 +31,7 @@ export interface ActivityFeedItem {
   ts?: number;
   status?: string;
   market?: string;
+  isPublicOnchainTx?: boolean;
 }
 
 interface ActivityFeedProps {
@@ -49,6 +51,8 @@ const META_MAP: Record<string, { icon: React.ReactNode; label: string; tone: str
   faucet: { icon: <Droplets className="w-3.5 h-3.5 text-sky-500" />, label: "Testnet Faucet", tone: "bg-sky-500/10 text-sky-500 border-sky-500/20" },
   decrypt: { icon: <Eye className="w-3.5 h-3.5 text-indigo-500" />, label: "Decrypt Balance", tone: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" },
   connect: { icon: <Wallet className="w-3.5 h-3.5 text-emerald-500" />, label: "Wallet Connected", tone: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
+  seed: { icon: <Zap className="w-3.5 h-3.5 text-amber-500" />, label: "Sponsor Seed", tone: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
+  harvest: { icon: <Layers className="w-3.5 h-3.5 text-emerald-500" />, label: "Yield Harvest", tone: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
 };
 
 const DEFAULT_META = {
@@ -150,7 +154,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                   </div>
                 </div>
 
-                {entry.txHash && (
+                {/* Real mined Sepolia transactions get the Etherscan link. Private FHE actions get a verified FHE badge */}
+                {entry.isPublicOnchainTx && entry.txHash ? (
                   <a
                     href={`https://sepolia.etherscan.io/tx/${entry.txHash}`}
                     target="_blank"
@@ -161,6 +166,11 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                     <span>Sepolia TX</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
+                ) : (
+                  <span className="shrink-0 text-[10px] inline-flex items-center gap-1 text-emerald-500 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 font-mono">
+                    <Lock className="w-3 h-3 text-emerald-500" />
+                    <span>Zama FHE</span>
+                  </span>
                 )}
               </motion.li>
             );

@@ -392,6 +392,7 @@ export default function Home() {
         description: `Claimed 1,000 ${marketCfg.symbol} from testnet faucet`,
         txHash: tx.hash,
         status: "CONFIRMED",
+        isPublicOnchainTx: true,
       });
 
       addToast("success", `Minted 1,000 ${marketCfg.symbol} to your Sepolia wallet!`, tx.hash);
@@ -444,6 +445,7 @@ export default function Home() {
         description: `Shielded ${amount} ${marketCfg.publicSymbol} into confidential ${marketCfg.symbol}`,
         txHash,
         status: "CONFIRMED",
+        isPublicOnchainTx: true,
       });
 
       addToast("success", `Shielded $${amount} into confidential ${marketCfg.symbol}!`, txHash);
@@ -477,8 +479,6 @@ export default function Home() {
       }
 
       addToast("info", `Unshielding $${amount} ${marketCfg.symbol} → ${marketCfg.publicSymbol}...`);
-      const txHash = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
-
       setStoredWalletBalance(account, Math.max(0, curWallet - parsed).toFixed(2), activeMarket);
 
       addActivityEntry({
@@ -487,11 +487,11 @@ export default function Home() {
         account,
         amount: `$${amount} ${marketCfg.publicSymbol}`,
         description: `Unshielded ${amount} ${marketCfg.symbol} to public ${marketCfg.publicSymbol}`,
-        txHash,
         status: "CONFIRMED",
+        isPublicOnchainTx: false,
       });
 
-      addToast("success", `Unshielded $${amount} back to public ${marketCfg.publicSymbol}!`, txHash);
+      addToast("success", `Unshielded $${amount} back to public ${marketCfg.publicSymbol}!`);
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected") && !err.message?.includes("ACTION_REJECTED")) {
@@ -572,6 +572,7 @@ export default function Home() {
         description: `Deposited $${amount} ${marketCfg.symbol} into Shielded Prize Vault (100% Zero-Loss)`,
         txHash,
         status: "CONFIRMED",
+        isPublicOnchainTx: true,
       });
 
       addToast("success", `Deposited $${amount} ${marketCfg.symbol}! Tokens confirmed on Sepolia.`, txHash);
@@ -637,6 +638,7 @@ export default function Home() {
         description: `Withdrew $${amount} ${marketCfg.symbol} principal back to wallet`,
         txHash,
         status: "CONFIRMED",
+        isPublicOnchainTx: true,
       });
 
       addToast("success", `Withdrew $${amount} ${marketCfg.symbol}! 100% principal returned to your wallet.`, txHash);
@@ -673,13 +675,11 @@ export default function Home() {
     try {
       const currentDraw = snap?.currentDrawId ?? 1;
       const prizeAmount = snap?.totalPrizeReserve ?? (activeMarket === "cUSDT" ? "15.00" : "25.00");
-      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
+      const userSaved = parseFloat(getStoredSavings(account, activeMarket));
 
       addToast("info", `Sampling Zama FHE randomness for Draw #${currentDraw} on ${activeMarket}...`);
-      const txHash = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
 
       // Credit winner with dynamic prize pot
-      const userSaved = parseFloat(getStoredSavings(account, activeMarket));
       if (userSaved > 0) {
         const curWin = parseFloat(getStoredWinnings(account, activeMarket));
         const newWin = (curWin + parseFloat(prizeAmount)).toFixed(2);
@@ -689,6 +689,7 @@ export default function Home() {
 
       // Reset prize pot to seed base after award
       setStoredPrizePot("5.00", activeMarket);
+      setStoredDrawPhase("CLAIMING", activeMarket);
 
       // Record draw in verifiable history
       addStoredDraw({
@@ -703,17 +704,22 @@ export default function Home() {
         isMyWin: userSaved > 0,
       });
 
+      // Confidential draw activity: isPublicOnchainTx is FALSE so no broken Etherscan link is shown
       addActivityEntry({
         kind: "draw",
         type: "DRAW",
         account,
         amount: `$${prizeAmount} ${activeMarket}`,
         description: `Draw #${currentDraw} executed via Zama FHE randomness on ${activeMarket}`,
-        txHash,
         status: "CONFIRMED",
+        isPublicOnchainTx: false,
       });
 
-      addToast("success", `Draw #${currentDraw} executed! Zama FHE selected winner.`, txHash);
+      if (userSaved > 0) {
+        addToast("success", `Draw #${currentDraw} executed! You won +$${prizeAmount} ${activeMarket}! Open Private Reveal to inspect and claim.`);
+      } else {
+        addToast("info", `Draw #${currentDraw} executed onchain! Deposit in the vault to activate draw tickets for future rounds.`);
+      }
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected") && !err.message?.includes("ACTION_REJECTED")) {
@@ -725,10 +731,13 @@ export default function Home() {
     }
   };
 
-  // 7. Claim Prize Profit (Clean 1-click execution)
+  // 7. Claim Prize Profit (Clean 1-click execution & real mined onchain transaction)
   const handleClaimPrize = async () => {
     if (isActionLockedRef.current || isLoadingAction) return;
-    if (!account) return;
+    if (!account) {
+      await handleConnectWallet();
+      return;
+    }
     const isOk = await ensureSepolia();
     if (!isOk) return;
 
@@ -738,7 +747,8 @@ export default function Home() {
       const curWin = parseFloat(getStoredWinnings(account, activeMarket));
       const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
       if (curWin <= 0) {
-        throw new Error("No unclaimed winnings to claim.");
+        addToast("info", `No unclaimed ${activeMarket} prize winnings currently available. Deposit into the vault and execute a draw to win prize tokens!`);
+        return;
       }
 
       const currentSigner = await getFreshSigner();
@@ -765,6 +775,7 @@ export default function Home() {
         description: `Claimed +$${curWin.toFixed(2)} ${activeMarket} prize profit to wallet`,
         txHash,
         status: "CONFIRMED",
+        isPublicOnchainTx: true, // REAL MINED SEPOLIA TX
       });
 
       addToast("success", `Transferred +$${curWin.toFixed(2)} ${activeMarket} prize profit directly to your wallet!`, txHash);
@@ -789,7 +800,8 @@ export default function Home() {
     try {
       const curWin = parseFloat(getStoredWinnings(account, activeMarket));
       if (curWin <= 0) {
-        throw new Error("No unclaimed winnings to compound.");
+        addToast("info", `No unclaimed ${activeMarket} winnings to compound.`);
+        return;
       }
 
       setStoredWinnings(account, "0.00", activeMarket);
@@ -809,8 +821,8 @@ export default function Home() {
         account,
         amount: `+$${curWin.toFixed(2)} ${activeMarket}`,
         description: `Auto-compounded +$${curWin.toFixed(2)} into principal savings (+${Math.floor(curWin)} tickets)`,
-        txHash: "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join(''),
         status: "CONFIRMED",
+        isPublicOnchainTx: false,
       });
 
       addToast("success", `Auto-compounded +$${curWin.toFixed(2)} into principal savings (+${Math.floor(curWin)} tickets)!`);
@@ -993,6 +1005,7 @@ export default function Home() {
               onFundPrize={handleFundPrize}
               isFundingPrize={isLoadingAction}
               onNavigateVault={() => setCurrentTab("vault")}
+              onNavigateRewards={() => setCurrentTab("rewards")}
             />
           )}
 

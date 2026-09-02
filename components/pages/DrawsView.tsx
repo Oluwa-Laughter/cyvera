@@ -17,11 +17,12 @@ import {
   Lock,
   ArrowRight,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Eye,
+  ArrowUpRight
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { FiClock } from "react-icons/fi";
-import { HiTrophy } from "react-icons/hi2";
 import { ActiveMarketId, ZAMA_SEPOLIA_CONFIG } from "@/lib/contracts";
 import { DrawPhase } from "@/lib/store";
 
@@ -58,6 +59,7 @@ interface DrawsViewProps {
   onFundPrize: () => Promise<void>;
   isFundingPrize: boolean;
   onNavigateVault?: () => void;
+  onNavigateRewards?: () => void;
 }
 
 export const DrawsView: React.FC<DrawsViewProps> = ({
@@ -83,6 +85,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   onFundPrize,
   isFundingPrize,
   onNavigateVault,
+  onNavigateRewards,
 }) => {
   const [timeLeft, setTimeLeft] = useState<number>(timeToNextDraw || 60);
 
@@ -101,7 +104,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   const phases = [
     { id: "OPEN", label: "1. Open", desc: "Deposits & tickets active", active: drawPhase === "OPEN" },
     { id: "SNAPSHOT", label: "2. Snapshot", desc: "Encrypted weights locked", active: drawPhase === "SNAPSHOT" },
-    { id: "SELECTING", label: "3. Selection", desc: "FHE.randEuint64() RNG", active: drawPhase === "SELECTING" },
+    { id: "SELECTING", label: "3. Selection", desc: "Zama FHE RNG evaluation", active: drawPhase === "SELECTING" },
     { id: "CLAIMING", label: "4. Claim Window", desc: "Private reveal session open", active: drawPhase === "CLAIMING" },
   ];
 
@@ -119,7 +122,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              cUSDT Draws ($15.00 Pot)
+              cUSDT Draws (${currentPrizePot} Pot)
             </button>
             <button
               onClick={() => onChangeMarket("cUSDC")}
@@ -129,7 +132,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              cUSDC Draws ($25.00 Pot)
+              cUSDC Draws (${currentPrizePot} Pot)
             </button>
           </div>
           <span className="text-[11px] font-bold text-[var(--muted)] hidden sm:inline">
@@ -201,6 +204,34 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
           </div>
         </div>
 
+        {/* Phase 4 Callout Banner (Connects 4-Phase Draws with Private Reveal) */}
+        {drawPhase === "CLAIMING" && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-cyvera-gold text-black font-black shrink-0 shadow-sm">
+                <Gift className="w-4 h-4 text-black" />
+              </div>
+              <div>
+                <strong className="text-foreground font-bold block">
+                  Phase 4 (Claim Window) is Currently Active!
+                </strong>
+                <span className="text-[var(--muted)] text-[11px]">
+                  Prizes are credited as encrypted handles. Open the Private Reveal tab to decrypt and claim your profit to wallet.
+                </span>
+              </div>
+            </div>
+            {onNavigateRewards && (
+              <button
+                onClick={onNavigateRewards}
+                className="px-4 py-2 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shrink-0 shadow-cyvera-glow flex items-center gap-1"
+              >
+                <span>Go to Private Reveal</span>
+                <ChevronRight className="w-3.5 h-3.5 text-black" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
           {!account ? (
@@ -241,48 +272,60 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={onCheckWinnings}
+              onClick={onNavigateRewards || onCheckWinnings}
               disabled={isCheckingWinnings}
               className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
             >
               {isCheckingWinnings ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4 text-amber-500" />}
               <span>Private Prize Reveal</span>
+              <ArrowRight className="w-4 h-4 text-[var(--muted)]" />
             </motion.button>
           )}
         </div>
       </div>
 
-      {/* 3. Privacy & Cryptography Features Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
-        <motion.div whileHover={{ y: -3 }} className="cyvera-card p-6 space-y-2">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 font-bold flex items-center justify-center">
-            <Lock className="w-4 h-4" />
-          </div>
-          <h4 className="font-bold text-foreground text-sm">Encrypted Draw Weights</h4>
-          <p className="text-[var(--muted)] leading-relaxed font-medium">
-            A player’s deposit becomes their draw weight, but that weight stays encrypted in `euint64`. Nobody sees your odds.
-          </p>
-        </motion.div>
+      {/* 3. Detailed Guide: How 4-Phase Draws Connect to Private Reveal */}
+      <div className="cyvera-card p-6 sm:p-8 space-y-6">
+        <div className="flex items-center gap-2 pb-3 border-b border-[var(--card-border)]">
+          <ShieldCheck className="w-5 h-5 text-amber-500" />
+          <h3 className="text-sm font-black uppercase tracking-wide text-foreground">
+            How 4-Phase Draws & Private Reveal Work
+          </h3>
+        </div>
 
-        <motion.div whileHover={{ y: -3 }} className="cyvera-card p-6 space-y-2">
-          <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-500 font-bold flex items-center justify-center">
-            <Zap className="w-4 h-4" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] space-y-2">
+            <span className="text-[10px] font-mono font-bold text-amber-500 uppercase">Phase 1</span>
+            <h4 className="font-bold text-foreground">Open Savings</h4>
+            <p className="text-[var(--muted)] text-[11px] leading-relaxed">
+              Users deposit `cUSDT` or `cUSDC`. Every $1.00 equals 1 confidential draw ticket encrypted in Zama `euint64`. Principal earns lending yield.
+            </p>
           </div>
-          <h4 className="font-bold text-foreground text-sm">FHE.randEuint64() RNG</h4>
-          <p className="text-[var(--muted)] leading-relaxed font-medium">
-            Winner selection runs onchain using Zama's verifiable randomness engine computed over encrypted balances.
-          </p>
-        </motion.div>
 
-        <motion.div whileHover={{ y: -3 }} className="cyvera-card p-6 space-y-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 font-bold flex items-center justify-center">
-            <ShieldCheck className="w-4 h-4" />
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] space-y-2">
+            <span className="text-[10px] font-mono font-bold text-amber-500 uppercase">Phase 2</span>
+            <h4 className="font-bold text-foreground">Snapshot Weights</h4>
+            <p className="text-[var(--muted)] text-[11px] leading-relaxed">
+              At the draw deadline, all encrypted ticket balances are locked in a snapshot. No balances or wallet positions are ever revealed publicly.
+            </p>
           </div>
-          <h4 className="font-bold text-foreground text-sm">Winner-Only Decryption</h4>
-          <p className="text-[var(--muted)] leading-relaxed font-medium">
-            Prizes are credited as encrypted handles. Only the winner can authorize wallet decryption to inspect their prize.
-          </p>
-        </motion.div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] space-y-2">
+            <span className="text-[10px] font-mono font-bold text-purple-500 uppercase">Phase 3</span>
+            <h4 className="font-bold text-foreground">FHE Evaluation</h4>
+            <p className="text-[var(--muted)] text-[11px] leading-relaxed">
+              `FHE.randEuint64()` randomly picks the winning ticket homomorphically onchain. The prize credits directly to `_encryptedWinnings[winner]`.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] space-y-2">
+            <span className="text-[10px] font-mono font-bold text-emerald-500 uppercase">Phase 4</span>
+            <h4 className="font-bold text-foreground">Private Reveal & Claim</h4>
+            <p className="text-[var(--muted)] text-[11px] leading-relaxed">
+              The winner opens the <strong>Private Reveal</strong> tab, signs an offchain EIP-712 session to see their prize, and claims real tokens to their wallet!
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* 4. Recent Executed Draws */}
@@ -299,7 +342,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
           <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-[var(--card-border)] space-y-2">
             <div className="text-xs font-bold text-foreground">Draw #1 In Progress</div>
             <p className="text-[11px] text-[var(--muted)]">
-              Deposit tokens and click "Execute Draw Now" to pick an onchain winner using Zama FHE randomness!
+              Deposit tokens and click &quot;Execute Draw Now&quot; to pick an onchain winner using Zama FHE randomness!
             </p>
           </div>
         ) : (
@@ -308,41 +351,47 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
               <div
                 key={draw.drawId}
                 className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
-                  draw.isMyWin 
-                    ? "bg-amber-500/10 border-amber-500/30 shadow-sm" 
+                  draw.isMyWin
+                    ? "bg-amber-500/10 border-amber-500/30"
                     : "bg-slate-50 dark:bg-slate-800/40 border-[var(--card-border)]"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black ${
-                    draw.isMyWin ? "bg-cyvera-gold text-black" : "bg-slate-200 dark:bg-slate-700 text-foreground"
-                  }`}>
-                    #{draw.drawId}
+                  <div className={`p-2.5 rounded-xl ${draw.isMyWin ? "bg-amber-500 text-black font-black shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-[var(--muted)]"}`}>
+                    <Trophy className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-bold text-foreground">
-                      {new Date(draw.timestamp * 1000).toLocaleTimeString()}
+                    <div className="font-bold text-foreground flex items-center gap-2">
+                      <span>Draw #{draw.drawId}</span>
+                      {draw.isMyWin && (
+                        <span className="text-[10px] bg-amber-500 text-black font-extrabold px-2 py-0.5 rounded-full">
+                          You Won!
+                        </span>
+                      )}
                     </div>
-                    <div className="text-[11px] text-[var(--muted)]">
-                      {draw.totalParticipants} Savers in Draw • Winner:{" "}
-                      <span className="font-mono font-bold text-foreground">
-                        {draw.winner.slice(0, 6)}...{draw.winner.slice(-4)}
-                      </span>
-                    </div>
+                    <span className="text-[11px] text-[var(--muted)]">
+                      {new Date(draw.timestamp * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} • {draw.totalParticipants} Participants
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-center">
+                <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <div className="font-mono font-black text-emerald-500 text-sm">
-                      +${draw.prizeAmount} {activeMarket}
+                    <div className="font-mono font-black text-sm text-foreground">
+                      ${draw.prizeAmount} {draw.market}
                     </div>
-                    <span className="text-[10px] text-[var(--muted)]">Awarded</span>
-                  </div>
-                  {draw.isMyWin && (
-                    <span className="text-[10px] px-2.5 py-1 rounded-full bg-cyvera-gold text-black font-extrabold border border-amber-300">
-                      YOU WON!
+                    <span className="text-[10px] text-emerald-500 font-bold">
+                      {draw.phase}
                     </span>
+                  </div>
+
+                  {draw.isMyWin && onNavigateRewards && (
+                    <button
+                      onClick={onNavigateRewards}
+                      className="px-3 py-1.5 rounded-xl bg-cyvera-gold text-black font-extrabold text-[11px] shadow-sm hover:scale-105 transition-transform"
+                    >
+                      Claim Prize
+                    </button>
                   )}
                 </div>
               </div>

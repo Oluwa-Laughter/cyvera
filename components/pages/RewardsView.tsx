@@ -16,7 +16,9 @@ import {
   Unlock,
   Key,
   Flame,
-  Check
+  Check,
+  ArrowRight,
+  Wallet
 } from "lucide-react";
 import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -133,7 +135,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
               Your Confidential Winnings
             </h2>
             <p className="text-xs text-[var(--muted)] font-medium">
-              The result is not published to the chain as a readable prize amount. Authorize an EIP-712 session to inspect your permitted value.
+              Draw results are stored as encrypted ciphertext handles onchain. Only you can authorize an EIP-712 session to inspect and claim your winnings.
             </p>
           </div>
 
@@ -158,7 +160,7 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
             <div className="text-4xl sm:text-5xl font-black text-foreground mt-1 font-mono">
               {account ? (
                 isCurrentlyRevealed ? (
-                  <span className={hasWinnings ? "text-emerald-500" : "text-foreground"}>
+                  <span className={hasWinnings ? "text-emerald-500 font-black" : "text-foreground"}>
                     {hasWinnings ? `+$${decryptedWinnings}` : "$0.00"}{" "}
                     <span className="text-lg text-[var(--muted)] font-normal font-sans">{activeMarket}</span>
                   </span>
@@ -209,50 +211,82 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
 
         {/* Claim & Auto-Compound Actions */}
         {hasWinnings && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleClaim}
-              disabled={isLoadingAction}
-              className="py-4 px-6 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isLoadingAction ? <RefreshCw className="w-4 h-4 animate-spin text-black" /> : <ArrowDownToLine className="w-4 h-4 text-black" />}
-              <span>Claim Prize Profit to Wallet ({activeMarket})</span>
-            </motion.button>
+          <div className="space-y-3 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleClaim}
+                disabled={isLoadingAction}
+                className="py-4 px-6 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isLoadingAction ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                ) : (
+                  <ArrowDownToLine className="w-4 h-4 text-black" />
+                )}
+                <span>Claim +${decryptedWinnings} {activeMarket} to Wallet</span>
+              </motion.button>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleCompound}
-              disabled={isLoadingAction}
-              className="py-4 px-6 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isLoadingAction ? <RefreshCw className="w-4 h-4 animate-spin text-amber-500" /> : <Repeat className="w-4 h-4 text-amber-500" />}
-              <span>Auto-Compound (+Tickets in {activeMarket})</span>
-            </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleCompound}
+                disabled={isLoadingAction}
+                className="py-4 px-6 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isLoadingAction ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
+                ) : (
+                  <Repeat className="w-4 h-4 text-amber-500" />
+                )}
+                <span>Auto-Compound (+Tickets in {activeMarket})</span>
+              </motion.button>
+            </div>
+            <p className="text-[11px] text-[var(--muted)] text-center font-medium">
+              Claiming transfers the real token profit into your MetaMask wallet on Ethereum Sepolia.
+            </p>
           </div>
         )}
       </div>
 
-      {/* 3. Privacy & Decryption Mechanics */}
+      {/* 3. Educational Breakdown: What is Private Reveal? */}
       <div className="cyvera-card p-6 sm:p-8 space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-[var(--card-border)]">
           <Lock className="w-4 h-4 text-amber-500" />
-          <h3 className="text-sm font-black uppercase tracking-wide text-foreground">Private Reveal Security Architecture</h3>
+          <h3 className="text-sm font-black uppercase tracking-wide text-foreground">
+            What is Private Reveal & How Does It Work?
+          </h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-[var(--muted)] font-medium">
-          <div className="space-y-2">
-            <h4 className="font-bold text-foreground text-xs">How Decryption Works</h4>
-            <p className="leading-relaxed">
-              When a draw concludes, prize winnings are credited directly as an encrypted ciphertext handle `_encryptedWinnings[winner]` onchain. Neither miners, keepers, nor third-party analytics can view what you won.
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-[var(--muted)] font-medium">
+          <div className="space-y-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)]">
+            <div className="flex items-center gap-2 text-foreground font-bold">
+              <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-[10px]">1</div>
+              <span>Encrypted Winning Handle</span>
+            </div>
+            <p className="leading-relaxed text-[11px]">
+              On standard pools, everyone can see who won on Etherscan. On Cyvera, the winning amount is stored as a homomorphic ciphertext `_encryptedWinnings[winner]`. Nobody can see what you won.
             </p>
           </div>
-          <div className="space-y-2">
-            <h4 className="font-bold text-foreground text-xs">EIP-712 User Signature</h4>
-            <p className="leading-relaxed">
-              When you click &quot;Show / Reveal Reward&quot;, your wallet authorizes an offchain EIP-712 session. The Zama relayer proves your identity and returns your decrypted plaintext balance exclusively to your screen.
+
+          <div className="space-y-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)]">
+            <div className="flex items-center gap-2 text-foreground font-bold">
+              <div className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center text-[10px]">2</div>
+              <span>Offchain EIP-712 Decryption</span>
+            </div>
+            <p className="leading-relaxed text-[11px]">
+              When you click &quot;Show / Reveal Reward&quot;, your wallet authorizes an offchain viewing session. The Zama relayer proves your address owns the private key and reveals your decrypted value exclusively to you.
+            </p>
+          </div>
+
+          <div className="space-y-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)]">
+            <div className="flex items-center gap-2 text-foreground font-bold">
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-[10px]">3</div>
+              <span>Zero-Loss Settlement</span>
+            </div>
+            <p className="leading-relaxed text-[11px]">
+              You can click <strong>&quot;Claim to Wallet&quot;</strong> to receive your prize as spendable tokens in your wallet, or <strong>&quot;Auto-Compound&quot;</strong> to add it directly to your vault principal for more tickets.
             </p>
           </div>
         </div>
