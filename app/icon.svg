@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="8" fill="#080B11"/>
+  <!-- Outer Cyber Hexagon -->
+  <path
+    d="M16 3.5L27 9.5V21.5L16 27.5L5 21.5V9.5L16 3.5Z"
+    stroke="#FFD200"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Inner Encrypted Keyway & Prism -->
+  <path
+    d="M16 8L22 11.5V19.5L16 23L10 19.5V11.5L16 8Z"
+    fill="url(#cyvera-grad)"
+    opacity="0.9"
+  />
+  <circle cx="16" cy="15.5" r="2" fill="#080B11" stroke="#FFD200" stroke-width="1.2" />
+  <defs>
+    <linearGradient id="cyvera-grad" x1="10" y1="8" x2="22" y2="23" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD200" />
+      <stop offset="1" stop-color="#F59E0B" />
+    </linearGradient>
+  </defs>
+</svg>

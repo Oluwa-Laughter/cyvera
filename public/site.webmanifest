@@ -1,0 +1,16 @@
+{
+  "name": "Cyvera | Confidential Prize Savings Protocol",
+  "short_name": "Cyvera",
+  "description": "Production-ready confidential prize savings protocol powered by Zama FHEVM on Ethereum Sepolia.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080B11",
+  "theme_color": "#FFD200",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
