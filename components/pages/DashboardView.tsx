@@ -19,7 +19,7 @@ import {
   Flame,
   Layers,
   Lock,
-  Zap
+  Wallet
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { AppPageTab } from "@/components/SidebarNav";
@@ -193,10 +193,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               )}
             </div>
 
-            {account && decryptedBalance !== null && hasWinnings && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                ${savedNum.toFixed(2)} Saved Principal + <strong className="text-amber-500 font-extrabold">+${winNum.toFixed(2)} Prize Profit</strong>
-              </p>
+            {account && (
+              <div className="flex items-center gap-4 text-xs pt-1">
+                <span className="text-[var(--muted)] flex items-center gap-1.5 font-medium">
+                  <Wallet className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Wallet Balance:</span>
+                  <strong className="font-mono text-foreground font-bold">${walletBalance || "0.00"} {activeMarket}</strong>
+                </span>
+
+                <button
+                  onClick={onOpenFaucet}
+                  className="text-amber-500 hover:underline font-bold text-[11px]"
+                >
+                  + Mint Free {activeMarket}
+                </button>
+              </div>
             )}
           </div>
 
@@ -251,55 +262,51 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--card-border)] space-y-1">
             <span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wide flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-amber-500" />
-              <span>Liquidity Hunt Boost</span>
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Annual Yield (APY)</span>
             </span>
-            <div className="text-2xl font-black text-amber-500">
-              {savedNum >= 500 ? "2.5x Boost" : savedNum >= 100 ? "1.8x Boost" : savedNum >= 25 ? "1.25x Boost" : "1.0x Base"}
+            <div className="text-2xl font-black text-emerald-500 dark:text-emerald-400 font-mono">
+              {marketCfg.apy}
             </div>
-            <p className="text-[10px] text-[var(--muted)] font-medium">Time-weighted reward accounting</p>
+            <p className="text-[10px] text-[var(--muted)] font-medium">100% feeds the prize pot</p>
           </div>
         </div>
       </div>
 
-      {/* 3. Quick Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <motion.div 
+      {/* 3. Next Actions Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <motion.div
           whileHover={{ y: -3 }}
-          onClick={() => onNavigateTab("vault")}
-          className="cyvera-card p-6 cursor-pointer space-y-2 group"
+          onClick={() => onNavigateTab("draws")}
+          className="cyvera-card p-6 cursor-pointer flex items-center justify-between group"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 font-bold">
-                <PiggyBank className="w-5 h-5" />
-              </div>
-              <h3 className="font-black text-foreground text-sm">Shield & Save Vault</h3>
+          <div className="flex items-center gap-4">
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
+              <Trophy className="w-6 h-6" />
             </div>
-            <ChevronRight className="w-4 h-4 text-[var(--muted)] group-hover:translate-x-1 transition-transform" />
+            <div>
+              <h4 className="text-sm font-black text-foreground">4-Phase Verifiable Draws</h4>
+              <p className="text-xs text-[var(--muted)] font-medium">Inspect draw progress & verify Zama FHE randomness</p>
+            </div>
           </div>
-          <p className="text-xs text-[var(--muted)] leading-relaxed font-medium">
-            Shield tokens into confidential cUSDT / cUSDC and deposit into the no-loss prize vault.
-          </p>
+          <ChevronRight className="w-5 h-5 text-[var(--muted)] group-hover:text-foreground group-hover:translate-x-1 transition-all" />
         </motion.div>
 
-        <motion.div 
+        <motion.div
           whileHover={{ y: -3 }}
-          onClick={() => onNavigateTab("earn")}
-          className="cyvera-card p-6 cursor-pointer space-y-2 group"
+          onClick={() => onNavigateTab("rewards")}
+          className="cyvera-card p-6 cursor-pointer flex items-center justify-between group"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-purple-500/10 text-purple-500 font-bold">
-                <Flame className="w-5 h-5 text-purple-500" />
-              </div>
-              <h3 className="font-black text-foreground text-sm">Confidential Liquidity Hunt</h3>
+          <div className="flex items-center gap-4">
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+              <Gift className="w-6 h-6" />
             </div>
-            <ChevronRight className="w-4 h-4 text-[var(--muted)] group-hover:translate-x-1 transition-transform" />
+            <div>
+              <h4 className="text-sm font-black text-foreground">Private Prize Reveal</h4>
+              <p className="text-xs text-[var(--muted)] font-medium">Authorize EIP-712 session to claim or auto-compound</p>
+            </div>
           </div>
-          <p className="text-xs text-[var(--muted)] leading-relaxed font-medium">
-            Earn time-weighted protocol incentives and confidential draw multipliers on encrypted TVL.
-          </p>
+          <ChevronRight className="w-5 h-5 text-[var(--muted)] group-hover:text-foreground group-hover:translate-x-1 transition-all" />
         </motion.div>
       </div>
     </div>

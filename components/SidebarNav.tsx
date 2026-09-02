@@ -44,7 +44,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     { id: "earn", label: "Liquidity Hunt", icon: <Flame className="w-4 h-4" />, badge: "Earn" },
     { id: "rewards", label: "Private Reveal", icon: <Trophy className="w-4 h-4" /> },
     { id: "activity", label: "Activity Feed", icon: <History className="w-4 h-4" /> },
-    { id: "how-it-works", label: "Architecture", icon: <BookOpen className="w-4 h-4" /> },
+    { id: "how-it-works", label: "How It Works", icon: <BookOpen className="w-4 h-4" /> },
   ];
 
   return (
@@ -132,12 +132,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           >
             <div className="flex items-center gap-2">
               <Droplets className="w-4 h-4 text-amber-500" />
-              <span>Get Free cUSDT</span>
+              <span>Get Free cUSDT / cUSDC</span>
             </div>
             <span className="text-[10px] bg-cyvera-gold text-black px-1.5 py-0.5 rounded-full font-extrabold">+1000</span>
           </motion.button>
 
-          {/* Back to Landing */}
+          {/* Back to Home */}
           <button
             onClick={() => {
               onNavigateHome();
@@ -146,7 +146,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             className="w-full flex items-center gap-2 px-4 py-2 rounded-2xl text-[var(--muted)] hover:text-foreground transition-all text-[11px]"
           >
             <Home className="w-3.5 h-3.5" />
-            <span>Landing Page</span>
+            <span>Home Page</span>
           </button>
         </div>
       </aside>

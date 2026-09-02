@@ -9,8 +9,8 @@ import {
   CONTRACT_ADDRESSES,
   ZAMA_SEPOLIA_CONFIG,
   MOCK_ERC20_ABI,
-  AURA_PRIZE_POOL_ABI,
-  MOCK_YIELD_SOURCE_ABI,
+  CYVERA_PRIZE_POOL_ABI,
+  CYVERA_YIELD_SOURCE_ABI,
 } from "./contracts";
 import {
   getStoredSavings,
@@ -33,8 +33,8 @@ export const SEPOLIA_CHAIN_ID = 11155111;
 export const SEPOLIA_HEX_CHAIN_ID = "0xaa36a7";
 
 const SEPOLIA_RPCS = [
-  "https://1rpc.io/sepolia",
   "https://ethereum-sepolia-rpc.publicnode.com",
+  "https://1rpc.io/sepolia",
   "https://rpc.sepolia.org",
   "https://rpc2.sepolia.org",
 ];
@@ -111,17 +111,19 @@ export async function fetchLiveProtocolState(
   if (userAccount) {
     try {
       const [tokBal, ethBal] = await Promise.all([
-        token.balanceOf(userAccount).catch(() => 0n),
-        provider.getBalance(userAccount).catch(() => 0n),
+        token.balanceOf(userAccount).catch(() => null),
+        provider.getBalance(userAccount).catch(() => null),
       ]);
-      onchainWalletBal = tokBal;
-      onchainNativeEthBal = ethBal;
-      if (tokBal > 0n) {
-        setStoredWalletBalance(userAccount, ethers.formatUnits(tokBal, marketCfg.decimals), market);
+      if (tokBal !== null) {
+        onchainWalletBal = tokBal;
+        const formatted = ethers.formatUnits(tokBal, marketCfg.decimals);
+        setStoredWalletBalance(userAccount, formatted, market);
+      }
+      if (ethBal !== null) {
+        onchainNativeEthBal = ethBal;
       }
     } catch {
-      onchainWalletBal = 0n;
-      onchainNativeEthBal = 0n;
+      // Fallback to storage
     }
   }
 
@@ -140,7 +142,10 @@ export async function fetchLiveProtocolState(
   const storedLastDraw = getStoredLastDrawTime(market);
   const storedLhPoints = getStoredLiquidityHuntPoints(userAccount || null);
 
-  const effectiveWalletBal = onchainWalletBal > 0n ? ethers.formatUnits(onchainWalletBal, marketCfg.decimals) : storedWallet;
+  const effectiveWalletBal = onchainWalletBal > 0n 
+    ? ethers.formatUnits(onchainWalletBal, marketCfg.decimals) 
+    : (storedWallet || "0.00");
+
   const userSavedNum = parseFloat(storedSaved);
   const now = Math.floor(Date.now() / 1000);
   const drawInterval = 60; // 1-minute test cycle

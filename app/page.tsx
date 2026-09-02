@@ -182,7 +182,7 @@ export default function Home() {
 
   useEffect(() => {
     refreshProtocolState();
-    const interval = setInterval(refreshProtocolState, 6000);
+    const interval = setInterval(refreshProtocolState, 5000);
     return () => clearInterval(interval);
   }, [refreshProtocolState]);
 
@@ -208,7 +208,12 @@ export default function Home() {
       const net = await res.provider.getNetwork();
       setChainId(Number(net.chainId));
       addToast("success", `Connected wallet ${res.account.slice(0, 6)}...${res.account.slice(-4)}`);
-      refreshProtocolState();
+      
+      // Immediately refresh live onchain snapshot
+      const liveSnapshot = await fetchLiveProtocolState(res.account, activeMarket);
+      setSnap(liveSnapshot);
+      setDecryptedBalance(getStoredSavings(res.account, activeMarket));
+      setDecryptedWinnings(getStoredWinnings(res.account, activeMarket));
     } catch (err: any) {
       if (!err.message?.includes("rejected")) {
         addToast("error", err.message || "Failed to connect wallet.");
@@ -216,7 +221,7 @@ export default function Home() {
     } finally {
       setIsConnecting(false);
     }
-  }, [addToast, refreshProtocolState]);
+  }, [activeMarket, addToast]);
 
   // Disconnect Wallet
   const handleDisconnectWallet = useCallback(async () => {
@@ -278,7 +283,7 @@ export default function Home() {
     }, 350);
   }, [account, activeMarket, addToast]);
 
-  // 1. Faucet Claim (Sepolia)
+  // 1. Faucet Claim (Sepolia - Works for cUSDT & cUSDC)
   const handleClaimFaucet = async (targetMarket: ActiveMarketId = activeMarket) => {
     if (!account || !signer) {
       await handleConnectWallet();
@@ -291,13 +296,17 @@ export default function Home() {
     try {
       const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[targetMarket];
       const token = new ethers.Contract(marketCfg.underlying, MOCK_ERC20_ABI, signer);
+      const mintAmount = ethers.parseUnits("1000", marketCfg.decimals);
+
       addToast("info", `Confirm mint of 1,000 ${marketCfg.symbol} in your wallet...`);
       
       let tx;
       try {
+        // Direct ERC20 mint to account
+        tx = await token.mint(account, mintAmount, { gasLimit: 150000 });
+      } catch (mintErr) {
+        // Fallback to faucet() if supported
         tx = await token.faucet({ gasLimit: 150000 });
-      } catch {
-        tx = await token.mint(account, ethers.parseUnits("1000", marketCfg.decimals), { gasLimit: 150000 });
       }
 
       addToast("info", `Minting 1,000 ${marketCfg.symbol} on Sepolia...`, tx.hash);
@@ -821,6 +830,7 @@ export default function Home() {
           onOpenFaucet={() => setIsFaucetOpen(true)}
           walletBalance={snap?.userWalletBalance ?? "0.00"}
           nativeEthBalance={snap?.userNativeEthBalance ?? "0.0000"}
+          activeMarket={activeMarket}
           isWrongNetwork={chainId !== null && chainId !== SEPOLIA_CHAIN_ID}
           theme={theme}
           onToggleTheme={handleToggleTheme}
@@ -1014,7 +1024,7 @@ const TAB_TITLES: Record<AppPageTab, { title: string; subtitle: string }> = {
     subtitle: "Verified onchain audit log of your deposits, withdrawals, draws, and claims",
   },
   "how-it-works": {
-    title: "Architecture & Mechanics",
+    title: "How It Works",
     subtitle: "How Cyvera preserves capital and delivers confidential onchain prize draws",
   },
 };

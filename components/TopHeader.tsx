@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
-import { Menu, Wallet, Droplets, RefreshCw, LogOut, Sun, Moon, Shield } from "lucide-react";
+import { Menu, Wallet, Droplets, RefreshCw, LogOut, Sun, Moon } from "lucide-react";
 import { motion } from "framer-motion";
 import { AuraLogo } from "@/components/AuraLogo";
+import { ActiveMarketId } from "@/lib/contracts";
 
 interface TopHeaderProps {
   pageTitle: string;
@@ -16,6 +17,7 @@ interface TopHeaderProps {
   onOpenFaucet: () => void;
   walletBalance: string;
   nativeEthBalance?: string;
+  activeMarket?: ActiveMarketId;
   isWrongNetwork?: boolean;
   theme?: "dark" | "light";
   onToggleTheme?: () => void;
@@ -32,6 +34,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onOpenFaucet,
   walletBalance,
   nativeEthBalance,
+  activeMarket = "cUSDT",
   isWrongNetwork = false,
   theme = "dark",
   onToggleTheme,
@@ -104,9 +107,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         {account ? (
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex flex-col items-end px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-[var(--card-border)] rounded-2xl">
-              <span className="text-[10px] text-[var(--muted)] font-mono">Balance:</span>
+              <span className="text-[10px] text-[var(--muted)] font-mono">Wallet Balance:</span>
               <span className="text-xs font-mono font-black text-foreground">
-                ${walletBalance} <span className="text-[10px] font-normal text-[var(--muted)]">cUSDT</span>
+                ${walletBalance || "0.00"}{" "}
+                <span className="text-[10px] font-normal text-[var(--muted)]">{activeMarket}</span>
               </span>
             </div>
 
