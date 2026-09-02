@@ -68,7 +68,7 @@ export const HowItWorksView: React.FC<HowItWorksViewProps> = ({ onEnterVault }) 
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider text-amber-500">
-                Cyvera Architecture
+                Protocol Mechanics
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 font-extrabold border border-emerald-500/20">
                 100% Zero-Loss
