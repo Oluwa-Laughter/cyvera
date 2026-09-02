@@ -128,7 +128,7 @@ export const connectInjectedWallet = async (forcePrompt: boolean = true): Promis
  */
 export const disconnectInjectedWallet = async (): Promise<void> => {
   if (typeof window !== "undefined") {
-    localStorage.setItem("aurapool_disconnected", "true");
+    localStorage.setItem("cyvera_disconnected", "true");
   }
   const ethereum = getInjectedProvider();
   if (ethereum) {

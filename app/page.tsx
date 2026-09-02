@@ -236,6 +236,69 @@ export default function Home() {
     addToast("info", "Wallet disconnected.");
   }, [addToast]);
 
+  // Auto-detect existing authorized wallet connection on mount
+  useEffect(() => {
+    if (!mounted) return;
+    const trySilentConnect = async () => {
+      if (typeof window === "undefined") return;
+      if (localStorage.getItem("cyvera_disconnected") === "true") return;
+
+      const ethereum = getInjectedProvider();
+      if (!ethereum) return;
+
+      try {
+        const accounts: string[] = await ethereum.request({ method: "eth_accounts" });
+        if (accounts && accounts.length > 0) {
+          const bp = new ethers.BrowserProvider(ethereum);
+          const signerInstance = await bp.getSigner().catch(() => null);
+          setAccount(accounts[0]);
+          setProvider(bp);
+          setSigner(signerInstance);
+          const net = await bp.getNetwork().catch(() => null);
+          if (net) setChainId(Number(net.chainId));
+
+          const liveSnapshot = await fetchLiveProtocolState(accounts[0], activeMarket);
+          setSnap(liveSnapshot);
+          setDecryptedBalance(getStoredSavings(accounts[0], activeMarket));
+          setDecryptedWinnings(getStoredWinnings(accounts[0], activeMarket));
+        }
+      } catch (err) {
+        console.warn("Silent connect warning:", err);
+      }
+    };
+    trySilentConnect();
+  }, [mounted, activeMarket]);
+
+  // Wallet event listeners for accountsChanged and chainChanged
+  useEffect(() => {
+    const ethereum = getInjectedProvider();
+    if (!ethereum || !ethereum.on) return;
+
+    const onAccountsChanged = (accounts: string[]) => {
+      if (!accounts || accounts.length === 0) {
+        handleDisconnectWallet();
+      } else {
+        setAccount(accounts[0]);
+        refreshProtocolState();
+      }
+    };
+
+    const onChainChanged = (chainIdHex: string) => {
+      setChainId(parseInt(chainIdHex, 16));
+      refreshProtocolState();
+    };
+
+    ethereum.on("accountsChanged", onAccountsChanged);
+    ethereum.on("chainChanged", onChainChanged);
+
+    return () => {
+      if (ethereum.removeListener) {
+        ethereum.removeListener("accountsChanged", onAccountsChanged);
+        ethereum.removeListener("chainChanged", onChainChanged);
+      }
+    };
+  }, [handleDisconnectWallet, refreshProtocolState]);
+
   // Ensure Sepolia
   const ensureSepolia = useCallback(async (): Promise<boolean> => {
     const ethereum = getInjectedProvider();
@@ -313,7 +376,7 @@ export default function Home() {
       await tx.wait(1);
 
       const onchainBal: bigint = await token.balanceOf(account);
-      const formatted = ethers.formatUnits(onchainBal, marketCfg.decimals);
+      const formatted = parseFloat(ethers.formatUnits(onchainBal, marketCfg.decimals)).toFixed(2);
       setStoredWalletBalance(account, formatted, targetMarket);
 
       addActivityEntry({
@@ -452,7 +515,7 @@ export default function Home() {
       const onchainBal: bigint = await token.balanceOf(account).catch(() => 0n);
       if (onchainBal < needed) {
         throw new Error(
-          `Insufficient ${marketCfg.symbol} on Sepolia. Your wallet has ${ethers.formatUnits(onchainBal, marketCfg.decimals)} ${marketCfg.symbol}. Click 'Get Free Tokens' first!`
+          `Insufficient ${marketCfg.symbol} on Sepolia. Your wallet has ${parseFloat(ethers.formatUnits(onchainBal, marketCfg.decimals)).toFixed(2)} ${marketCfg.symbol}. Click 'Get Free Tokens' first!`
         );
       }
 
@@ -490,7 +553,7 @@ export default function Home() {
 
       // Refresh onchain wallet balance
       const newOnchainBal = await token.balanceOf(account).catch(() => 0n);
-      setStoredWalletBalance(account, ethers.formatUnits(newOnchainBal, marketCfg.decimals), activeMarket);
+      setStoredWalletBalance(account, parseFloat(ethers.formatUnits(newOnchainBal, marketCfg.decimals)).toFixed(2), activeMarket);
 
       // Increase TVL & Liquidity Hunt Points
       const currentTVL = parseFloat(getStoredTVL(activeMarket));
@@ -561,7 +624,7 @@ export default function Home() {
 
       // Refresh onchain wallet balance
       const newOnchainBal = await token.balanceOf(account).catch(() => 0n);
-      setStoredWalletBalance(account, ethers.formatUnits(newOnchainBal, marketCfg.decimals), activeMarket);
+      setStoredWalletBalance(account, parseFloat(ethers.formatUnits(newOnchainBal, marketCfg.decimals)).toFixed(2), activeMarket);
 
       // Decrease TVL
       const currentTVL = parseFloat(getStoredTVL(activeMarket));
@@ -701,7 +764,7 @@ export default function Home() {
       setDecryptedWinnings("0.00");
 
       const newOnchainBal = await token.balanceOf(account).catch(() => 0n);
-      setStoredWalletBalance(account, ethers.formatUnits(newOnchainBal, marketCfg.decimals), activeMarket);
+      setStoredWalletBalance(account, parseFloat(ethers.formatUnits(newOnchainBal, marketCfg.decimals)).toFixed(2), activeMarket);
 
       addActivityEntry({
         kind: "claim",
@@ -798,7 +861,10 @@ export default function Home() {
           setCurrentTab("how-it-works");
         }}
         account={account}
+        walletBalance={snap?.userWalletBalance ?? "0.00"}
+        activeMarket={activeMarket}
         onConnect={handleConnectWallet}
+        onDisconnect={handleDisconnectWallet}
         isConnecting={isConnecting}
         theme={theme}
         onToggleTheme={handleToggleTheme}

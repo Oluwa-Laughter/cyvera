@@ -32,24 +32,16 @@ import {
 export const SEPOLIA_CHAIN_ID = 11155111;
 export const SEPOLIA_HEX_CHAIN_ID = "0xaa36a7";
 
-const SEPOLIA_RPCS = [
+export const SEPOLIA_RPCS = [
   "https://ethereum-sepolia-rpc.publicnode.com",
   "https://1rpc.io/sepolia",
   "https://rpc.sepolia.org",
   "https://rpc2.sepolia.org",
 ];
 
-export const getPublicProvider = (): ethers.JsonRpcProvider => {
-  return new ethers.JsonRpcProvider(SEPOLIA_RPCS[0], undefined, { staticNetwork: true });
-};
-
-export const getBestProvider = (): ethers.Provider => {
-  if (typeof window !== "undefined" && (window as any).ethereum) {
-    try {
-      return new ethers.BrowserProvider((window as any).ethereum);
-    } catch {}
-  }
-  return getPublicProvider();
+export const getPublicProvider = (index = 0): ethers.JsonRpcProvider => {
+  const url = SEPOLIA_RPCS[index % SEPOLIA_RPCS.length];
+  return new ethers.JsonRpcProvider(url, undefined, { staticNetwork: true });
 };
 
 export interface DrawRecordView {
@@ -96,38 +88,80 @@ export interface ProtocolSnapshot {
 
 const ZERO = "0x" + "00".repeat(32);
 
+/**
+ * Robust onchain reader that tries multiple Sepolia RPCs to guarantee
+ * accurate token and native balance queries without relying on wallet extension state.
+ */
+async function querySepoliaBalances(userAccount: string) {
+  const usdtCfg = ZAMA_SEPOLIA_CONFIG.markets["cUSDT"];
+  const usdcCfg = ZAMA_SEPOLIA_CONFIG.markets["cUSDC"];
+
+  for (let i = 0; i < SEPOLIA_RPCS.length; i++) {
+    try {
+      const provider = getPublicProvider(i);
+      const usdtContract = new ethers.Contract(usdtCfg.underlying, MOCK_ERC20_ABI, provider);
+      const usdcContract = new ethers.Contract(usdcCfg.underlying, MOCK_ERC20_ABI, provider);
+
+      const [usdtBal, usdcBal, ethBal] = await Promise.all([
+        usdtContract.balanceOf(userAccount),
+        usdcContract.balanceOf(userAccount),
+        provider.getBalance(userAccount),
+      ]);
+
+      const formattedUsdt = parseFloat(ethers.formatUnits(usdtBal, usdtCfg.decimals)).toFixed(2);
+      const formattedUsdc = parseFloat(ethers.formatUnits(usdcBal, usdcCfg.decimals)).toFixed(2);
+      const formattedEth = parseFloat(ethers.formatEther(ethBal)).toFixed(4);
+
+      // Save both market balances to storage immediately
+      setStoredWalletBalance(userAccount, formattedUsdt, "cUSDT");
+      setStoredWalletBalance(userAccount, formattedUsdc, "cUSDC");
+
+      return {
+        usdt: formattedUsdt,
+        usdc: formattedUsdc,
+        eth: formattedEth,
+      };
+    } catch (err) {
+      console.warn(`Sepolia RPC ${SEPOLIA_RPCS[i]} query error:`, err);
+    }
+  }
+
+  // If public RPCs timed out, try Injected browser provider if on Sepolia
+  if (typeof window !== "undefined" && (window as any).ethereum) {
+    try {
+      const bp = new ethers.BrowserProvider((window as any).ethereum);
+      const net = await bp.getNetwork().catch(() => null);
+      if (net && Number(net.chainId) === SEPOLIA_CHAIN_ID) {
+        const usdtContract = new ethers.Contract(usdtCfg.underlying, MOCK_ERC20_ABI, bp);
+        const usdcContract = new ethers.Contract(usdcCfg.underlying, MOCK_ERC20_ABI, bp);
+        const [u, c, e] = await Promise.all([
+          usdtContract.balanceOf(userAccount),
+          usdcContract.balanceOf(userAccount),
+          bp.getBalance(userAccount),
+        ]);
+        const formattedUsdt = parseFloat(ethers.formatUnits(u, usdtCfg.decimals)).toFixed(2);
+        const formattedUsdc = parseFloat(ethers.formatUnits(c, usdcCfg.decimals)).toFixed(2);
+        const formattedEth = parseFloat(ethers.formatEther(e)).toFixed(4);
+        setStoredWalletBalance(userAccount, formattedUsdt, "cUSDT");
+        setStoredWalletBalance(userAccount, formattedUsdc, "cUSDC");
+        return { usdt: formattedUsdt, usdc: formattedUsdc, eth: formattedEth };
+      }
+    } catch {}
+  }
+
+  return null;
+}
+
 export async function fetchLiveProtocolState(
   userAccount?: string | null,
   market: ActiveMarketId = "cUSDT"
 ): Promise<ProtocolSnapshot> {
-  const provider = getBestProvider();
   const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[market];
-  const tokenAddr = marketCfg.underlying;
-  const token = new ethers.Contract(tokenAddr, MOCK_ERC20_ABI, provider);
 
-  let onchainWalletBal: bigint = 0n;
-  let onchainNativeEthBal: bigint = 0n;
-
+  let liveBalances: { usdt: string; usdc: string; eth: string } | null = null;
   if (userAccount) {
-    try {
-      const [tokBal, ethBal] = await Promise.all([
-        token.balanceOf(userAccount).catch(() => null),
-        provider.getBalance(userAccount).catch(() => null),
-      ]);
-      if (tokBal !== null) {
-        onchainWalletBal = tokBal;
-        const formatted = ethers.formatUnits(tokBal, marketCfg.decimals);
-        setStoredWalletBalance(userAccount, formatted, market);
-      }
-      if (ethBal !== null) {
-        onchainNativeEthBal = ethBal;
-      }
-    } catch {
-      // Fallback to storage
-    }
+    liveBalances = await querySepoliaBalances(userAccount);
   }
-
-  const userNativeEthBalance = parseFloat(ethers.formatEther(onchainNativeEthBal)).toFixed(4);
 
   const storedSaved = getStoredSavings(userAccount || null, market);
   const storedShielded = getStoredShieldedBalance(userAccount || null, market);
@@ -142,9 +176,15 @@ export async function fetchLiveProtocolState(
   const storedLastDraw = getStoredLastDrawTime(market);
   const storedLhPoints = getStoredLiquidityHuntPoints(userAccount || null);
 
-  const effectiveWalletBal = onchainWalletBal > 0n 
-    ? ethers.formatUnits(onchainWalletBal, marketCfg.decimals) 
-    : (storedWallet || "0.00");
+  let effectiveWalletBal = "0.00";
+  let effectiveEthBal = "0.0000";
+
+  if (liveBalances) {
+    effectiveWalletBal = market === "cUSDT" ? liveBalances.usdt : liveBalances.usdc;
+    effectiveEthBal = liveBalances.eth;
+  } else if (storedWallet) {
+    effectiveWalletBal = parseFloat(storedWallet).toFixed(2);
+  }
 
   const userSavedNum = parseFloat(storedSaved);
   const now = Math.floor(Date.now() / 1000);
@@ -176,7 +216,7 @@ export async function fetchLiveProtocolState(
     userWalletBalance: effectiveWalletBal,
     userPublicWalletBalance: storedPublicWallet,
     userShieldedBalance: storedShielded,
-    userNativeEthBalance,
+    userNativeEthBalance: effectiveEthBal,
     userShieldedBalanceHandle: ZERO,
     userUnclaimedWinnings: storedWin,
     userEncryptedWinningsHandle: ZERO,

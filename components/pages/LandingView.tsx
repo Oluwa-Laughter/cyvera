@@ -34,7 +34,9 @@ import {
   HelpCircle,
   Clock,
   Award,
-  Wallet
+  Wallet,
+  LogOut,
+  RefreshCw
 } from "lucide-react";
 import { FaShieldAlt } from "react-icons/fa";
 import { ActiveMarketId, ZAMA_SEPOLIA_CONFIG } from "@/lib/contracts";
@@ -43,7 +45,10 @@ interface LandingViewProps {
   onEnterApp: (tab?: "dashboard" | "vault" | "draws" | "earn" | "rewards" | "activity" | "how-it-works", initialAmount?: string) => void;
   onOpenHowItWorks?: () => void;
   account?: string | null;
+  walletBalance?: string;
+  activeMarket?: ActiveMarketId;
   onConnect?: () => void;
+  onDisconnect?: () => void;
   isConnecting?: boolean;
   theme?: "dark" | "light";
   onToggleTheme?: () => void;
@@ -52,8 +57,11 @@ interface LandingViewProps {
 export const LandingView: React.FC<LandingViewProps> = ({
   onEnterApp,
   account,
+  walletBalance = "0.00",
+  activeMarket = "cUSDT",
   onConnect,
-  isConnecting,
+  onDisconnect,
+  isConnecting = false,
   theme = "dark",
   onToggleTheme,
 }) => {
@@ -63,6 +71,10 @@ export const LandingView: React.FC<LandingViewProps> = ({
   const apyRate = selectedMarket === "cUSDT" ? 0.085 : 0.12;
   const estimatedYield = (parsedDeposit * apyRate).toFixed(2);
   const estimatedTickets = Math.floor(parsedDeposit);
+
+  const formatAddress = (addr: string) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -89,14 +101,14 @@ export const LandingView: React.FC<LandingViewProps> = ({
   return (
     <div className="min-h-screen flex flex-col justify-between bg-background text-foreground transition-colors duration-300">
       {/* 1. Top Header Navigation */}
-      <header className="w-full bg-[var(--header-bg)] backdrop-blur-md border-b border-[var(--card-border)] sticky top-0 z-40 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-sm">
-        <div onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="cursor-pointer">
+      <header className="w-full bg-[var(--header-bg)] backdrop-blur-md border-b border-[var(--card-border)] sticky top-0 z-40 px-3 sm:px-8 py-3.5 flex items-center justify-between shadow-sm">
+        <div onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="cursor-pointer shrink-0">
           <AuraLogo size="md" />
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4 font-medium text-xs">
           {/* Section Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 font-semibold text-[var(--muted)]">
+          <nav className="hidden lg:flex items-center gap-1 font-semibold text-[var(--muted)]">
             <button
               onClick={() => scrollToSection("how-it-works")}
               className="px-3.5 py-1.5 rounded-full hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -130,7 +142,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.92 }}
               onClick={onToggleTheme}
-              className="p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-slate-700 dark:text-amber-400 transition-colors"
+              className="p-2 sm:p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-slate-700 dark:text-amber-400 transition-colors shrink-0"
               title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
               aria-label="Toggle Theme"
             >
@@ -142,15 +154,53 @@ export const LandingView: React.FC<LandingViewProps> = ({
             </motion.button>
           )}
 
+          {/* Wallet State in Home Header */}
+          {account ? (
+            <div className="flex items-center gap-2">
+              <div className="flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-amber-500/30 rounded-xl sm:rounded-2xl">
+                <span className="text-[9px] sm:text-[10px] text-[var(--muted)] font-mono flex items-center gap-1">
+                  <Wallet className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-500" />
+                  <span>Wallet:</span>
+                </span>
+                <span className="text-[11px] sm:text-xs font-mono font-black text-foreground">
+                  ${walletBalance || "0.00"}{" "}
+                  <span className="text-[9px] sm:text-[10px] font-bold text-amber-500">{activeMarket}</span>
+                </span>
+              </div>
+
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] font-mono text-xs text-foreground">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span>{formatAddress(account)}</span>
+              </div>
+            </div>
+          ) : (
+            onConnect && (
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={onConnect}
+                disabled={isConnecting}
+                className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold transition-all text-xs"
+              >
+                {isConnecting ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Wallet className="w-3.5 h-3.5 text-amber-500" />
+                )}
+                <span>{isConnecting ? "Connecting..." : "Connect"}</span>
+              </motion.button>
+            )
+          )}
+
           {/* Launch App Button */}
           <motion.button
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => onEnterApp("dashboard")}
-            className="flex items-center gap-2 px-5 sm:px-6 py-2.5 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold text-xs uppercase tracking-wider shadow-cyvera-glow transition-all"
+            className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold text-xs uppercase tracking-wider shadow-cyvera-glow transition-all shrink-0"
           >
             <span>Launch App</span>
-            <ArrowRight className="w-4 h-4 text-black" />
+            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
           </motion.button>
         </div>
       </header>
@@ -264,6 +314,19 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   Simulate your deposit to preview draw tickets and yield generation before launching the app.
                 </p>
               </div>
+
+              {/* Wallet Balance Callout */}
+              {account && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between text-xs">
+                  <span className="text-[var(--muted)] font-medium flex items-center gap-1.5">
+                    <Wallet className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Your Connected Balance:</span>
+                  </span>
+                  <span className="font-mono font-black text-foreground">
+                    ${walletBalance || "0.00"} {activeMarket}
+                  </span>
+                </div>
+              )}
 
               {/* Slider */}
               <div className="space-y-2 text-xs font-medium">
