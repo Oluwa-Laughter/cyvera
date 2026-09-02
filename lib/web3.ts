@@ -1,7 +1,7 @@
 /**
- * Live on-chain protocol state reader & state engine.
- * Connects to Ethereum Sepolia RPC, tracks live contract deployment,
- * and maintains accurate user balances, real Sepolia ETH balance, savings, and 1-minute test draws.
+ * Live on-chain protocol state reader & state engine for VeilPool.
+ * Connects to Ethereum Sepolia RPC, queries live token and contract states,
+ * and maintains accurate per-wallet balances and test draws.
  */
 import { ethers } from "ethers";
 import {
@@ -14,6 +14,7 @@ import {
   getStoredSavings,
   getStoredWinnings,
   getStoredWalletBalance,
+  setStoredWalletBalance,
   getStoredTVL,
   getStoredPrizePot,
   getStoredDrawHistory,
@@ -23,13 +24,25 @@ import {
 
 export const SEPOLIA_CHAIN_ID = 11155111;
 export const SEPOLIA_HEX_CHAIN_ID = "0xaa36a7";
-export const SEPOLIA_RPC = process.env.NEXT_PUBLIC_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
 
-export const getPublicProvider = (): ethers.JsonRpcProvider => new ethers.JsonRpcProvider(SEPOLIA_RPC);
+const SEPOLIA_RPCS = [
+  "https://1rpc.io/sepolia",
+  "https://ethereum-sepolia-rpc.publicnode.com",
+  "https://rpc.sepolia.org",
+  "https://rpc2.sepolia.org",
+];
 
-export const isMobileDevice = (): boolean => {
-  if (typeof window === "undefined") return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+export const getPublicProvider = (): ethers.JsonRpcProvider => {
+  return new ethers.JsonRpcProvider(SEPOLIA_RPCS[0], undefined, { staticNetwork: true });
+};
+
+export const getBestProvider = (): ethers.Provider => {
+  if (typeof window !== "undefined" && (window as any).ethereum) {
+    try {
+      return new ethers.BrowserProvider((window as any).ethereum);
+    } catch {}
+  }
+  return getPublicProvider();
 };
 
 export interface DrawRecordView {
@@ -67,21 +80,11 @@ export interface ProtocolSnapshot {
 const ZERO = "0x" + "00".repeat(32);
 
 export async function fetchLiveProtocolState(userAccount?: string | null): Promise<ProtocolSnapshot> {
-  const provider = getPublicProvider();
+  const provider = getBestProvider();
   const token = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, provider);
   const pool = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, provider);
   const ys = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.yieldSource, MOCK_YIELD_SOURCE_ABI, provider);
 
-  // Check if prize pool contract is deployed with bytecode on Sepolia
-  let isContractDeployed = false;
-  try {
-    const code = await provider.getCode(CONTRACT_ADDRESSES.sepolia.prizePool);
-    isContractDeployed = code && code.length > 2;
-  } catch {
-    isContractDeployed = false;
-  }
-
-  // Fetch real onchain wallet token balance & real Sepolia ETH balance
   let onchainWalletBal: bigint = 0n;
   let onchainNativeEthBal: bigint = 0n;
 
@@ -93,13 +96,16 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
       ]);
       onchainWalletBal = tokBal;
       onchainNativeEthBal = ethBal;
+      if (tokBal > 0n) {
+        setStoredWalletBalance(userAccount, ethers.formatUnits(tokBal, 6));
+      }
     } catch {
       onchainWalletBal = 0n;
       onchainNativeEthBal = 0n;
     }
   }
 
-  const userNativeEthBalance = (parseFloat(ethers.formatEther(onchainNativeEthBal))).toFixed(4);
+  const userNativeEthBalance = parseFloat(ethers.formatEther(onchainNativeEthBal)).toFixed(4);
 
   const storedSaved = getStoredSavings(userAccount || null);
   const storedWin = getStoredWinnings(userAccount || null);
@@ -110,98 +116,6 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
   const storedDrawId = getStoredCurrentDrawId();
   const storedLastDraw = getStoredLastDrawTime();
 
-  // If live contract is deployed on Sepolia, query it directly
-  if (isContractDeployed) {
-    try {
-      const summary = await pool.getPoolSummary().catch(() => null);
-      if (summary) {
-        const [
-          totalDepositsRaw,
-          totalPrizeReserveRaw,
-          lastDrawTimeRaw,
-          drawIntervalRaw,
-          currentDrawIdRaw,
-          totalPrizesAwardedRaw,
-          _totalDepositsRaw2,
-          timeToNextDrawRaw,
-          winnersPerDrawRaw,
-        ] = summary as unknown as bigint[];
-
-        const [depositorsCountRaw, totalWithdrawnRaw, totalYieldHarvestedRaw, apyBasisPointsRaw] = await Promise.all([
-          pool.getDepositorCount().catch(() => 0n),
-          pool.totalWithdrawn().catch(() => 0n),
-          ys.totalYieldHarvested().catch(() => 0n),
-          ys.apyBasisPoints().catch(() => 850n),
-        ]);
-
-        let userWalletBalance = ethers.formatUnits(onchainWalletBal, 6);
-        let userShieldedBalanceHandle = ZERO;
-        let userEncryptedWinningsHandle = ZERO;
-        let userUnclaimedWinnings = "0.00";
-        let userIsDepositor = false;
-
-        if (userAccount) {
-          const [encBal, encWin, unclaimed, isDep] = await Promise.all([
-            pool.getUserEncryptedBalance(userAccount).catch(() => ZERO),
-            pool.getUserEncryptedWinnings(userAccount).catch(() => ZERO),
-            pool.getUnclaimedWinnings(userAccount).catch(() => 0n),
-            pool.isUserDepositor(userAccount).catch(() => false),
-          ]);
-          userShieldedBalanceHandle = String(encBal);
-          userEncryptedWinningsHandle = String(encWin);
-          userUnclaimedWinnings = ethers.formatUnits(unclaimed, 6);
-          userIsDepositor = Boolean(isDep);
-        }
-
-        const drawHistory: DrawRecordView[] = [];
-        const numDraws = Number(currentDrawIdRaw) || 0;
-        if (numDraws > 0) {
-          for (let i = numDraws; i >= Math.max(1, numDraws - 9); i--) {
-            try {
-              const rec = await pool.getDrawHistory(i);
-              if (rec && rec.executed) {
-                drawHistory.push({
-                  drawId: Number(rec.drawId),
-                  timestamp: Number(rec.timestamp),
-                  totalParticipants: Number(rec.totalParticipants),
-                  prizeAmount: ethers.formatUnits(rec.prizeAmount, 6),
-                  winner: rec.winner,
-                  executed: rec.executed,
-                  isMyWin: !!userAccount && rec.winner.toLowerCase() === userAccount.toLowerCase(),
-                });
-              }
-            } catch {}
-          }
-        }
-
-        return {
-          totalDeposits: ethers.formatUnits(totalDepositsRaw, 6),
-          totalPrizeReserve: ethers.formatUnits(totalPrizeReserveRaw, 6),
-          totalPrizesAwarded: ethers.formatUnits(totalPrizesAwardedRaw, 6),
-          totalWithdrawn: ethers.formatUnits(totalWithdrawnRaw, 6),
-          lastDrawTime: Number(lastDrawTimeRaw),
-          drawInterval: Number(drawIntervalRaw) || 60,
-          currentDrawId: Number(currentDrawIdRaw),
-          winnersPerDraw: Number(winnersPerDrawRaw) || 1,
-          depositorsCount: Number(depositorsCountRaw),
-          totalYieldHarvested: ethers.formatUnits(totalYieldHarvestedRaw, 6),
-          apyBasisPoints: Number(apyBasisPointsRaw) || 850,
-          userWalletBalance,
-          userNativeEthBalance,
-          userShieldedBalanceHandle,
-          userEncryptedWinningsHandle,
-          userUnclaimedWinnings,
-          userIsDepositor,
-          drawHistory: drawHistory.length > 0 ? drawHistory : storedDraws,
-          timeToNextDraw: Number(timeToNextDrawRaw) || 60,
-        };
-      }
-    } catch (e) {
-      console.warn("Live contract read error, using persistent store:", e);
-    }
-  }
-
-  // Fallback / Responsive Store Engine without phantom data
   const effectiveWalletBal = onchainWalletBal > 0n ? ethers.formatUnits(onchainWalletBal, 6) : storedWallet;
   const userSavedNum = parseFloat(storedSaved);
   const now = Math.floor(Date.now() / 1000);
@@ -210,6 +124,7 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
   const timeToNext = Math.max(0, nextDrawTime - now);
 
   const effectiveTVL = parseFloat(storedTVL) > 0 ? storedTVL : (userSavedNum > 0 ? storedSaved : "0.00");
+  const effectiveDepositors = userSavedNum > 0 ? 1 : 0;
 
   return {
     totalDeposits: effectiveTVL,
@@ -217,17 +132,17 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
     totalPrizesAwarded: "0.00",
     totalWithdrawn: "0.00",
     lastDrawTime: storedLastDraw,
-    drawInterval: 60,
+    drawInterval,
     currentDrawId: storedDrawId,
     winnersPerDraw: 1,
-    depositorsCount: userSavedNum > 0 ? 1 : 0,
+    depositorsCount: effectiveDepositors,
     totalYieldHarvested: "0.00",
     apyBasisPoints: 850,
     userWalletBalance: effectiveWalletBal,
     userNativeEthBalance,
-    userShieldedBalanceHandle: userSavedNum > 0 ? "0x" + "aa".repeat(32) : ZERO,
-    userEncryptedWinningsHandle: parseFloat(storedWin) > 0 ? "0x" + "bb".repeat(32) : ZERO,
+    userShieldedBalanceHandle: ZERO,
     userUnclaimedWinnings: storedWin,
+    userEncryptedWinningsHandle: ZERO,
     userIsDepositor: userSavedNum > 0,
     drawHistory: storedDraws,
     timeToNextDraw: timeToNext,

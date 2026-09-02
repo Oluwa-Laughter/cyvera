@@ -1,7 +1,7 @@
 /**
- * AuraPool Persistent Client-Side State Engine
- * Manages local persistence for balances, winnings, draws, and activity
- * without phantom or fake demo data.
+ * VeilPool Persistent Client-Side State Engine
+ * Manages per-wallet persistence for balances, winnings, draws, and activity
+ * with strict wallet isolation and no fake/phantom data.
  */
 
 export interface StoredDrawRecord {
@@ -28,15 +28,15 @@ export interface StoredActivityEntry {
 }
 
 const STORAGE_KEYS = {
-  SAVINGS_PREFIX: "aurapool_savings_",
-  WINNINGS_PREFIX: "aurapool_winnings_",
-  WALLET_PREFIX: "aurapool_wallet_",
-  DRAWS: "aurapool_draws_history",
-  ACTIVITY: "aurapool_activity_feed",
-  TVL: "aurapool_global_tvl",
-  PRIZE_POT: "aurapool_prize_pot",
-  LAST_DRAW: "aurapool_last_draw_time",
-  CURRENT_DRAW_ID: "aurapool_current_draw_id",
+  SAVINGS_PREFIX: "veilpool_savings_",
+  WINNINGS_PREFIX: "veilpool_winnings_",
+  WALLET_PREFIX: "veilpool_wallet_",
+  DRAWS: "veilpool_draws_history",
+  ACTIVITY: "veilpool_activity_feed",
+  TVL: "veilpool_global_tvl",
+  PRIZE_POT: "veilpool_prize_pot",
+  LAST_DRAW: "veilpool_last_draw_time",
+  CURRENT_DRAW_ID: "veilpool_current_draw_id",
 };
 
 const isBrowser = typeof window !== "undefined";
@@ -106,7 +106,7 @@ export const getStoredDrawHistory = (userAccount?: string | null): StoredDrawRec
       const lower = userAccount.toLowerCase();
       return list.map((d) => ({
         ...d,
-        isMyWin: d.winner.toLowerCase() === lower || d.winner.includes(lower.slice(2, 6)),
+        isMyWin: d.winner.toLowerCase() === lower || d.winner.toLowerCase().includes(lower.slice(2, 6)),
       }));
     }
     return list;
@@ -136,7 +136,27 @@ export const getStoredLastDrawTime = (): number => {
   return val ? parseInt(val, 10) : Math.floor(Date.now() / 1000) - 10;
 };
 
-export const getStoredActivity = (): StoredActivityEntry[] => {
+/**
+ * Returns activities filtered strictly for the given connected wallet.
+ * If account is passed, only returns activities belonging to that account.
+ */
+export const getStoredActivity = (account?: string | null): StoredActivityEntry[] => {
+  if (!isBrowser) return [];
+  const raw = localStorage.getItem(STORAGE_KEYS.ACTIVITY);
+  if (!raw) return [];
+  try {
+    const list: StoredActivityEntry[] = JSON.parse(raw);
+    if (account) {
+      const lower = account.toLowerCase();
+      return list.filter((e) => !e.account || e.account.toLowerCase() === lower);
+    }
+    return list;
+  } catch {
+    return [];
+  }
+};
+
+export const getAllStoredActivity = (): StoredActivityEntry[] => {
   if (!isBrowser) return [];
   const raw = localStorage.getItem(STORAGE_KEYS.ACTIVITY);
   if (!raw) return [];
@@ -149,7 +169,13 @@ export const getStoredActivity = (): StoredActivityEntry[] => {
 
 export const addStoredActivity = (entry: StoredActivityEntry): void => {
   if (!isBrowser) return;
-  const current = getStoredActivity();
-  const updated = [entry, ...current].slice(0, 50);
+  const current = getAllStoredActivity();
+  const normalized: StoredActivityEntry = {
+    ...entry,
+    account: entry.account ? entry.account.toLowerCase() : undefined,
+    ts: entry.ts || entry.timestamp || Date.now(),
+    timestamp: entry.timestamp || entry.ts || Date.now(),
+  };
+  const updated = [normalized, ...current].slice(0, 50);
   localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify(updated));
 };
