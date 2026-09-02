@@ -1,7 +1,7 @@
 {
-  "name": "aurapool",
+  "name": "cyvera",
   "version": "1.0.0",
-  "description": "AuraPool: Confidential No-Loss Prize Savings Protocol powered by Zama FHE",
+  "description": "Cyvera: Confidential No-Loss Prize Savings Protocol powered by Zama FHEVM",
   "private": true,
   "scripts": {
     "dev": "next dev",

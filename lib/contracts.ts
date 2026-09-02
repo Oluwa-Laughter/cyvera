@@ -1,5 +1,5 @@
 /**
- * VeilPool: Confidential No-Loss Prize Savings Protocol
+ * Cyvera: Confidential No-Loss Prize Savings Protocol
  * Powered by Zama FHEVM & ERC-7984 Confidential Tokens
  */
 import { ethers } from "ethers";

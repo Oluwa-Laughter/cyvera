@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Menu, Wallet, Droplets, RefreshCw, LogOut } from "lucide-react";
+import { Menu, Wallet, Droplets, RefreshCw, LogOut, Sun, Moon, Shield } from "lucide-react";
+import { motion } from "framer-motion";
 import { AuraLogo } from "@/components/AuraLogo";
 
 interface TopHeaderProps {
@@ -16,6 +17,8 @@ interface TopHeaderProps {
   walletBalance: string;
   nativeEthBalance?: string;
   isWrongNetwork?: boolean;
+  theme?: "dark" | "light";
+  onToggleTheme?: () => void;
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({
@@ -30,18 +33,20 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   walletBalance,
   nativeEthBalance,
   isWrongNetwork = false,
+  theme = "dark",
+  onToggleTheme,
 }) => {
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
   return (
-    <header className="w-full bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-8 py-4 flex items-center justify-between shadow-sm">
+    <header className="w-full bg-[var(--header-bg)] backdrop-blur-md border-b border-[var(--card-border)] sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-sm transition-colors duration-200">
       {/* Left: Mobile Trigger & Title */}
       <div className="flex items-center gap-4">
         <button
           onClick={onOpenMobileNav}
-          className="lg:hidden p-2.5 rounded-2xl bg-slate-100 text-slate-700 hover:text-black border border-slate-200 transition-colors"
+          className="lg:hidden p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-black dark:hover:text-white border border-[var(--card-border)] transition-colors"
           aria-label="Open menu"
         >
           <Menu className="w-5 h-5" />
@@ -52,78 +57,84 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         </div>
 
         <div className="hidden sm:block">
-          <h1 className="text-xl font-black text-black tracking-tight">{pageTitle}</h1>
-          <p className="text-xs text-slate-500 font-medium">{pageSubtitle}</p>
+          <h1 className="text-xl font-black text-foreground tracking-tight">{pageTitle}</h1>
+          <p className="text-xs text-[var(--muted)] font-medium">{pageSubtitle}</p>
         </div>
       </div>
 
-      {/* Right: Network, Balance, Wallet / Disconnect */}
-      <div className="flex items-center gap-2.5 font-medium text-xs">
+      {/* Right: Network, Balance, Theme Toggle, Wallet / Disconnect */}
+      <div className="flex items-center gap-2 sm:gap-3 text-xs font-semibold">
         {/* Network Badge */}
-        <div className={`hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full border ${
-          isWrongNetwork
-            ? "bg-rose-50 border-rose-300 text-rose-800"
-            : "bg-emerald-50 border-emerald-200 text-emerald-800"
-        }`}>
-          <div className={`w-2 h-2 rounded-full animate-pulse ${isWrongNetwork ? "bg-rose-500" : "bg-emerald-500"}`} />
-          <span>{isWrongNetwork ? "Wrong Network" : "Sepolia"}</span>
+        <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-[var(--card-border)] text-[var(--muted)] font-mono">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[11px] font-bold text-foreground">Sepolia</span>
         </div>
 
-        {/* Balance Capsule */}
-        {account && (
-          <div className="flex items-center gap-1.5">
-            {nativeEthBalance && (
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-mono text-[11px] font-bold">
-                <span className="text-slate-400">Sepolia:</span>
-                <span className="font-extrabold text-black">{nativeEthBalance} ETH</span>
-              </div>
+        {/* Testnet Faucet Button */}
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={onOpenFaucet}
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-500 dark:text-amber-400 font-bold transition-all shadow-sm"
+        >
+          <Droplets className="w-3.5 h-3.5 text-amber-500" />
+          <span className="hidden sm:inline">Get Tokens</span>
+          <span className="sm:hidden">Faucet</span>
+        </motion.button>
+
+        {/* Theme Toggle Button */}
+        {onToggleTheme && (
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={onToggleTheme}
+            className="p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-slate-700 dark:text-amber-400 transition-colors"
+            title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+            aria-label="Toggle Theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-700" />
             )}
-            <button
-              onClick={onOpenFaucet}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 transition-all border border-amber-200 active:scale-95 font-bold"
-              title="Click to get free testnet tokens"
-            >
-              <span className="text-amber-600">cUSDT:</span>
-              <span className="font-black text-black">${walletBalance}</span>
-            </button>
-          </div>
+          </motion.button>
         )}
 
-        {/* Connected Wallet Pill + Explicit Disconnect Button */}
+        {/* Wallet Connection */}
         {account ? (
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-full border border-slate-200">
-            <div className="flex items-center gap-2 px-3 py-1 text-slate-800 font-mono text-[11px] font-bold">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>{formatAddress(account)}</span>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex flex-col items-end px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-[var(--card-border)] rounded-2xl">
+              <span className="text-[10px] text-[var(--muted)] font-mono">Balance:</span>
+              <span className="text-xs font-mono font-black text-foreground">
+                ${walletBalance} <span className="text-[10px] font-normal text-[var(--muted)]">cUSDT</span>
+              </span>
             </div>
 
             <button
               onClick={onDisconnect}
-              className="flex items-center gap-1 px-3 py-1 rounded-full bg-white hover:bg-rose-50 hover:text-rose-600 text-slate-600 transition-all border border-slate-200 shadow-sm active:scale-95 font-bold"
-              title="Disconnect Wallet"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-400 border border-[var(--card-border)] text-foreground font-mono transition-colors group"
+              title="Click to disconnect"
             >
-              <LogOut className="w-3.5 h-3.5 text-rose-500" />
-              <span className="hidden sm:inline">Disconnect</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>{formatAddress(account)}</span>
+              <LogOut className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-rose-500" />
             </button>
           </div>
         ) : (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={onConnect}
             disabled={isConnecting}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold transition-all shadow-aura-yellow disabled:opacity-50 active:scale-95"
+            className="flex items-center gap-2 px-5 py-2 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold shadow-cyvera-glow transition-all disabled:opacity-50"
           >
             {isConnecting ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin text-black" />
-                <span>Connecting...</span>
-              </>
+              <RefreshCw className="w-4 h-4 animate-spin text-black" />
             ) : (
-              <>
-                <Wallet className="w-4 h-4 text-black" />
-                <span>Connect Wallet</span>
-              </>
+              <Wallet className="w-4 h-4 text-black" />
             )}
-          </button>
+            <span>{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
+          </motion.button>
         )}
       </div>
     </header>

@@ -29,6 +29,8 @@ import {
 import { fetchLiveProtocolState, SEPOLIA_CHAIN_ID, ProtocolSnapshot } from "@/lib/web3";
 import { connectInjectedWallet, disconnectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
 import {
+  getStoredTheme,
+  setStoredTheme,
   getStoredSavings,
   setStoredSavings,
   getStoredShieldedBalance,
@@ -67,16 +69,37 @@ export type ActivityEntry = StoredActivityEntry;
 const TOAST_LIMIT = 5;
 
 export default function Home() {
-  // Routing & Market
+  // Routing, Market, Theme
   const [currentView, setCurrentView] = useState<"landing" | "app">("landing");
   const [currentTab, setCurrentTab] = useState<AppPageTab>("dashboard");
   const [activeMarket, setActiveMarket] = useState<ActiveMarketId>("cUSDT");
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [initialDepositAmount, setInitialDepositAmount] = useState("");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    const savedTheme = getStoredTheme();
+    setTheme(savedTheme);
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const handleToggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      setStoredTheme(next);
+      if (next === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      return next;
+    });
   }, []);
 
   // Wallet
@@ -176,7 +199,7 @@ export default function Home() {
     setIsConnecting(true);
     try {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("veilpool_disconnected");
+        localStorage.removeItem("cyvera_disconnected");
       }
       const res = await connectInjectedWallet(true);
       setAccount(res.account);
@@ -768,13 +791,15 @@ export default function Home() {
         account={account}
         onConnect={handleConnectWallet}
         isConnecting={isConnecting}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
     );
   }
 
   // Render App Dashboard
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased">
+    <div className="min-h-screen bg-background text-foreground flex flex-col antialiased transition-colors duration-300">
       <SidebarNav
         currentTab={currentTab}
         onSelectTab={(tab) => setCurrentTab(tab)}
@@ -797,11 +822,13 @@ export default function Home() {
           walletBalance={snap?.userWalletBalance ?? "0.00"}
           nativeEthBalance={snap?.userNativeEthBalance ?? "0.0000"}
           isWrongNetwork={chainId !== null && chainId !== SEPOLIA_CHAIN_ID}
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
         />
 
         <main className="flex-1 p-4 sm:p-8 max-w-5xl w-full mx-auto animate-in fade-in duration-200 space-y-6">
           {chainId !== null && chainId !== SEPOLIA_CHAIN_ID && (
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-center justify-between text-xs font-bold">
+            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-400 flex items-center justify-between text-xs font-bold">
               <span>Your wallet is not connected to Ethereum Sepolia.</span>
               <button
                 onClick={ensureSepolia}
@@ -984,8 +1011,8 @@ const TAB_TITLES: Record<AppPageTab, { title: string; subtitle: string }> = {
     subtitle: "Verified onchain audit log of your deposits, withdrawals, draws, and claims",
   },
   "how-it-works": {
-    title: "How It Works",
-    subtitle: "The No-Loss prize savings model explained in 4 simple steps",
+    title: "Architecture & Mechanics",
+    subtitle: "How Cyvera preserves capital and delivers confidential onchain prize draws",
   },
 };
 
@@ -1001,16 +1028,16 @@ function ToastViewport({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: num
             exit={{ opacity: 0, scale: 0.95 }}
             className={`pointer-events-auto p-4 rounded-2xl shadow-xl border flex items-start gap-3 text-xs ${
               toast.type === "success"
-                ? "bg-white border-emerald-300 text-emerald-950"
+                ? "bg-slate-900 border-emerald-500/40 text-emerald-300"
                 : toast.type === "error"
-                ? "bg-white border-rose-300 text-rose-950"
-                : "bg-white border-slate-300 text-slate-900"
+                ? "bg-slate-900 border-rose-500/40 text-rose-300"
+                : "bg-slate-900 border-amber-500/40 text-slate-100"
             }`}
           >
             <div className="shrink-0 mt-0.5">
-              {toast.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-              {toast.type === "error" && <AlertTriangle className="w-4 h-4 text-rose-600" />}
-              {toast.type === "info" && <Info className="w-4 h-4 text-slate-600" />}
+              {toast.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+              {toast.type === "error" && <AlertTriangle className="w-4 h-4 text-rose-400" />}
+              {toast.type === "info" && <Info className="w-4 h-4 text-amber-400" />}
             </div>
             <div className="flex-1">
               <p className="font-bold leading-relaxed">{toast.message}</p>
@@ -1019,14 +1046,14 @@ function ToastViewport({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: num
                   href={`https://sepolia.etherscan.io/tx/${toast.txHash}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[10px] text-slate-400 hover:text-black flex items-center gap-1 mt-1 underline"
+                  className="text-[10px] text-amber-400/80 hover:text-amber-300 flex items-center gap-1 mt-1 underline"
                 >
                   <span>View on Etherscan</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               )}
             </div>
-            <button onClick={() => dismiss(toast.id)} className="text-slate-400 hover:text-black">
+            <button onClick={() => dismiss(toast.id)} className="text-slate-400 hover:text-white">
               <X className="w-3.5 h-3.5" />
             </button>
           </motion.div>

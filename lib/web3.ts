@@ -1,5 +1,5 @@
 /**
- * Live on-chain protocol state reader & state engine for VeilPool.
+ * Live on-chain protocol state reader & state engine for Cyvera.
  * Connects to Ethereum Sepolia RPC, tracks dual markets (cUSDT & cUSDC),
  * and maintains per-market balances, shielding, and 4-phase draw states.
  */

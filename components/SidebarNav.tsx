@@ -16,6 +16,7 @@ import {
   Lock,
   Flame
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export type AppPageTab = "dashboard" | "vault" | "draws" | "earn" | "rewards" | "activity" | "how-it-works";
 
@@ -43,7 +44,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     { id: "earn", label: "Liquidity Hunt", icon: <Flame className="w-4 h-4" />, badge: "Earn" },
     { id: "rewards", label: "Private Reveal", icon: <Trophy className="w-4 h-4" /> },
     { id: "activity", label: "Activity Feed", icon: <History className="w-4 h-4" /> },
-    { id: "how-it-works", label: "How It Works", icon: <BookOpen className="w-4 h-4" /> },
+    { id: "how-it-works", label: "Architecture", icon: <BookOpen className="w-4 h-4" /> },
   ];
 
   return (
@@ -52,32 +53,32 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       {isOpenMobile && (
         <div 
           onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden animate-in fade-in"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden animate-in fade-in"
         />
       )}
 
       {/* Sidebar Navigation */}
       <aside className={`
-        fixed top-0 bottom-0 left-0 z-50 w-72 bg-white border-r border-slate-200 flex flex-col justify-between p-6 transition-transform duration-300 ease-in-out shadow-sm
+        fixed top-0 bottom-0 left-0 z-50 w-72 bg-[var(--card-bg)] border-r border-[var(--card-border)] flex flex-col justify-between p-6 transition-all duration-300 ease-in-out shadow-sm
         ${isOpenMobile ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
         <div>
           {/* Brand Header */}
-          <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+          <div className="flex items-center justify-between pb-6 border-b border-[var(--card-border)]">
             <div onClick={onNavigateHome} className="cursor-pointer">
               <AuraLogo size="md" />
             </div>
             <button 
               onClick={onCloseMobile}
-              className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-600 hover:text-black"
+              className="lg:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-foreground"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Tagline */}
-          <div className="mt-4 px-3 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center gap-2 font-medium">
-            <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+          {/* Slogan */}
+          <div className="mt-4 px-3 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-[var(--card-border)] text-[11px] text-[var(--muted)] flex items-center gap-2 font-medium">
+            <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
             <span>Confidential No-Loss Prize Savings</span>
           </div>
 
@@ -95,8 +96,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   className={`
                     w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-200 relative
                     ${isActive 
-                      ? "bg-aura-yellow text-black font-extrabold shadow-aura-yellow" 
-                      : "text-slate-600 hover:text-black hover:bg-slate-100"}
+                      ? "bg-cyvera-gold text-black font-black shadow-cyvera-glow" 
+                      : "text-[var(--muted)] hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800/60"}
                   `}
                 >
                   <div className="flex items-center gap-3 relative z-10">
@@ -106,7 +107,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
                   {item.badge && (
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold relative z-10 ${
-                      isActive ? "bg-black text-white" : "bg-amber-100 text-amber-900"
+                      isActive ? "bg-black text-white" : "bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20"
                     }`}>
                       {item.badge}
                     </span>
@@ -118,21 +119,23 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         </div>
 
         {/* Bottom Actions */}
-        <div className="space-y-2.5 pt-6 border-t border-slate-100 text-xs">
+        <div className="space-y-2.5 pt-6 border-t border-[var(--card-border)] text-xs">
           {/* Free Test Tokens */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               onOpenFaucet();
               onCloseMobile();
             }}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold transition-all active:scale-95"
+            className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-500 dark:text-amber-400 font-bold transition-all shadow-sm"
           >
             <div className="flex items-center gap-2">
-              <Droplets className="w-4 h-4 text-amber-600" />
+              <Droplets className="w-4 h-4 text-amber-500" />
               <span>Get Free cUSDT</span>
             </div>
-            <span className="text-[10px] bg-aura-yellow text-black px-1.5 py-0.5 rounded-full font-extrabold">+1000</span>
-          </button>
+            <span className="text-[10px] bg-cyvera-gold text-black px-1.5 py-0.5 rounded-full font-extrabold">+1000</span>
+          </motion.button>
 
           {/* Back to Landing */}
           <button
@@ -140,7 +143,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               onNavigateHome();
               onCloseMobile();
             }}
-            className="w-full flex items-center gap-2 px-4 py-2 rounded-2xl text-slate-400 hover:text-slate-700 transition-all text-[11px]"
+            className="w-full flex items-center gap-2 px-4 py-2 rounded-2xl text-[var(--muted)] hover:text-foreground transition-all text-[11px]"
           >
             <Home className="w-3.5 h-3.5" />
             <span>Landing Page</span>

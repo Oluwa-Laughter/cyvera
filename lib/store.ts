@@ -1,5 +1,5 @@
 /**
- * VeilPool Persistent State Engine
+ * Cyvera Persistent State Engine
  * Manages dual markets (cUSDT & cUSDC), token shielding balances,
  * 4-phase verifiable draw state machine, and liquidity hunt accounting.
  */
@@ -34,22 +34,35 @@ export interface StoredActivityEntry {
 }
 
 const STORAGE_KEYS = {
-  SAVINGS_PREFIX: "veilpool_savings_",
-  SHIELDED_PREFIX: "veilpool_shielded_",
-  WINNINGS_PREFIX: "veilpool_winnings_",
-  WALLET_PREFIX: "veilpool_wallet_",
-  PUBLIC_WALLET_PREFIX: "veilpool_pubwallet_",
-  DRAWS: "veilpool_draws_history",
-  ACTIVITY: "veilpool_activity_feed",
-  TVL_PREFIX: "veilpool_tvl_",
-  PRIZE_POT_PREFIX: "veilpool_pot_",
-  LAST_DRAW_PREFIX: "veilpool_lastdraw_",
-  CURRENT_DRAW_ID_PREFIX: "veilpool_drawid_",
-  DRAW_PHASE_PREFIX: "veilpool_phase_",
-  LIQUIDITY_HUNT_POINTS_PREFIX: "veilpool_lh_points_",
+  SAVINGS_PREFIX: "cyvera_savings_",
+  SHIELDED_PREFIX: "cyvera_shielded_",
+  WINNINGS_PREFIX: "cyvera_winnings_",
+  WALLET_PREFIX: "cyvera_wallet_",
+  PUBLIC_WALLET_PREFIX: "cyvera_pubwallet_",
+  DRAWS: "cyvera_draws_history",
+  ACTIVITY: "cyvera_activity_feed",
+  TVL_PREFIX: "cyvera_tvl_",
+  PRIZE_POT_PREFIX: "cyvera_pot_",
+  LAST_DRAW_PREFIX: "cyvera_lastdraw_",
+  CURRENT_DRAW_ID_PREFIX: "cyvera_drawid_",
+  DRAW_PHASE_PREFIX: "cyvera_phase_",
+  LIQUIDITY_HUNT_POINTS_PREFIX: "cyvera_lh_points_",
+  THEME: "cyvera_theme",
 };
 
 const isBrowser = typeof window !== "undefined";
+
+// Theme Storage
+export const getStoredTheme = (): "dark" | "light" => {
+  if (!isBrowser) return "dark";
+  const val = localStorage.getItem(STORAGE_KEYS.THEME);
+  return val === "light" ? "light" : "dark";
+};
+
+export const setStoredTheme = (theme: "dark" | "light"): void => {
+  if (!isBrowser) return;
+  localStorage.setItem(STORAGE_KEYS.THEME, theme);
+};
 
 // Active Market Storage
 export const getStoredSavings = (account: string | null, market: ActiveMarketId = "cUSDT"): string => {

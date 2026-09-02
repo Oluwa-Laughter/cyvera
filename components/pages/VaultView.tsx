@@ -142,76 +142,78 @@ export const VaultView: React.FC<VaultViewProps> = ({
   };
 
   return (
-    <div className="space-y-8 w-full max-w-3xl mx-auto text-black">
+    <div className="space-y-8 w-full max-w-3xl mx-auto text-foreground">
       {/* 1. Market Switcher Banner */}
-      <div className="flex items-center justify-between p-2 rounded-2xl bg-white border border-slate-200 shadow-sm">
+      <div className="flex items-center justify-between p-2 rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)] shadow-sm">
         <div className="flex items-center gap-1 text-xs font-bold">
           <button
             onClick={() => onChangeMarket("cUSDT")}
             className={`px-4 py-2 rounded-xl transition-all ${
               activeMarket === "cUSDT" 
-                ? "bg-aura-yellow text-black font-black shadow-sm" 
-                : "text-slate-500 hover:text-black"
+                ? "bg-cyvera-gold text-black font-black shadow-cyvera-glow" 
+                : "text-[var(--muted)] hover:text-foreground"
             }`}
           >
-            cUSDT Prize Vault (8.50% APY)
+            cUSDT Vault (8.50% APY)
           </button>
           <button
             onClick={() => onChangeMarket("cUSDC")}
             className={`px-4 py-2 rounded-xl transition-all ${
               activeMarket === "cUSDC" 
-                ? "bg-aura-yellow text-black font-black shadow-sm" 
-                : "text-slate-500 hover:text-black"
+                ? "bg-cyvera-gold text-black font-black shadow-cyvera-glow" 
+                : "text-[var(--muted)] hover:text-foreground"
             }`}
           >
-            cUSDC Prize Vault (12.00% APY)
+            cUSDC Vault (12.00% APY)
           </button>
         </div>
 
         <button
           onClick={handleAddToken}
-          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700"
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-bold text-foreground transition-colors"
         >
-          {isTokenAdded ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <PlusCircle className="w-3.5 h-3.5 text-slate-500" />}
+          {isTokenAdded ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <PlusCircle className="w-3.5 h-3.5 text-[var(--muted)]" />}
           <span>Add {marketCfg.symbol} to MetaMask</span>
         </button>
       </div>
 
       {/* 2. Main Vault Card */}
-      <div className="aura-card p-6 sm:p-10 bg-white border border-slate-200 shadow-aura-md space-y-6">
+      <div className="cyvera-card p-6 sm:p-10 space-y-6">
         {/* Vault Header Details */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[var(--card-border)]">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-500">Shielded Prize Vault</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-200">
+              <span className="text-xs font-black uppercase tracking-wider text-[var(--muted)]">Shielded Prize Vault</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 font-extrabold border border-emerald-500/20">
                 {marketCfg.apy} APY Stream
               </span>
             </div>
-            <h2 className="text-2xl font-black text-black">{marketCfg.name}</h2>
-            <p className="text-xs text-slate-500 font-medium">
+            <h2 className="text-2xl font-black text-foreground">{marketCfg.name}</h2>
+            <p className="text-xs text-[var(--muted)] font-medium">
               Deposit {marketCfg.symbol} tokens to enter recurring prize draws. 100% principal safe with zero loss.
             </p>
           </div>
 
-          <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-right min-w-[140px]">
-            <span className="text-[10px] font-bold text-amber-900 uppercase">Prize Pot</span>
-            <div className="text-lg font-black text-amber-950">${totalPrizeReserve} <span className="text-xs font-normal">{marketCfg.symbol}</span></div>
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-right min-w-[140px]">
+            <span className="text-[10px] font-bold text-amber-500 uppercase">Prize Pot</span>
+            <div className="text-lg font-black text-foreground font-mono">
+              ${totalPrizeReserve} <span className="text-xs font-normal text-[var(--muted)]">{marketCfg.symbol}</span>
+            </div>
           </div>
         </div>
 
         {/* Section Selector: [ Save / Withdraw ] vs [ Shield / Unshield Converter ] */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 text-xs font-bold">
+        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-[var(--card-border)] text-xs font-bold">
           <button
             type="button"
             onClick={() => setActiveSection("save")}
             className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
               activeSection === "save"
-                ? "bg-white text-black font-black shadow-sm"
-                : "text-slate-500 hover:text-black"
+                ? "bg-white dark:bg-slate-900 text-foreground font-black shadow-sm"
+                : "text-[var(--muted)] hover:text-foreground"
             }`}
           >
-            <PiggyBank className="w-4 h-4 text-amber-600" />
+            <PiggyBank className="w-4 h-4 text-amber-500" />
             <span>Deposit / Withdraw</span>
           </button>
           <button
@@ -219,11 +221,11 @@ export const VaultView: React.FC<VaultViewProps> = ({
             onClick={() => setActiveSection("shield")}
             className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
               activeSection === "shield"
-                ? "bg-white text-black font-black shadow-sm"
-                : "text-slate-500 hover:text-black"
+                ? "bg-white dark:bg-slate-900 text-foreground font-black shadow-sm"
+                : "text-[var(--muted)] hover:text-foreground"
             }`}
           >
-            <Shield className="w-4 h-4 text-indigo-600" />
+            <Shield className="w-4 h-4 text-cyan-500" />
             <span>Token Shielding Converter</span>
           </button>
         </div>
@@ -232,12 +234,12 @@ export const VaultView: React.FC<VaultViewProps> = ({
         {activeSection === "save" && (
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Action Sub-Tabs */}
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold">
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setActiveTab("deposit")}
                 className={`py-2 rounded-lg transition-all ${
-                  activeTab === "deposit" ? "bg-aura-yellow text-black font-black" : "text-slate-500"
+                  activeTab === "deposit" ? "bg-cyvera-gold text-black font-black shadow-sm" : "text-[var(--muted)]"
                 }`}
               >
                 Deposit (Enter Draws)
@@ -246,7 +248,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                 type="button"
                 onClick={() => setActiveTab("withdraw")}
                 className={`py-2 rounded-lg transition-all ${
-                  activeTab === "withdraw" ? "bg-aura-yellow text-black font-black" : "text-slate-500"
+                  activeTab === "withdraw" ? "bg-cyvera-gold text-black font-black shadow-sm" : "text-[var(--muted)]"
                 }`}
               >
                 Withdraw (100% Zero-Loss)
@@ -254,24 +256,24 @@ export const VaultView: React.FC<VaultViewProps> = ({
             </div>
 
             {/* Balances Display */}
-            <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+            <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--card-border)] text-xs">
               <div>
-                <span className="text-slate-400 block text-[11px] font-medium">Wallet Balance:</span>
-                <strong className="text-black font-mono font-bold text-sm">${walletBalance} {marketCfg.symbol}</strong>
+                <span className="text-[var(--muted)] block text-[11px] font-medium">Wallet Balance:</span>
+                <strong className="text-foreground font-mono font-bold text-sm">${walletBalance} {marketCfg.symbol}</strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[11px] font-medium">Saved in Vault:</span>
+                <span className="text-[var(--muted)] block text-[11px] font-medium">Saved in Vault:</span>
                 <div className="flex items-center gap-2">
-                  <strong className="text-emerald-800 font-mono font-black text-sm">
+                  <strong className="text-emerald-500 font-mono font-black text-sm">
                     {decryptedBalance !== null ? `$${decryptedBalance}` : "••••••••"} {marketCfg.symbol}
                   </strong>
                   {account && (
                     <button
                       type="button"
                       onClick={onDecryptBalance}
-                      className="text-slate-400 hover:text-black p-1"
+                      className="text-[var(--muted)] hover:text-foreground p-1"
                     >
-                      {decryptedBalance !== null ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-amber-600" />}
+                      {decryptedBalance !== null ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-amber-500" />}
                     </button>
                   )}
                 </div>
@@ -281,13 +283,13 @@ export const VaultView: React.FC<VaultViewProps> = ({
             {/* Input Form */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-bold">
-                <label className="text-slate-700">
+                <label className="text-foreground">
                   {activeTab === "deposit" ? "Amount to Deposit:" : "Amount to Withdraw:"}
                 </label>
                 <button
                   type="button"
                   onClick={handleMax}
-                  className="text-amber-800 hover:underline text-[11px]"
+                  className="text-amber-500 hover:underline text-[11px]"
                 >
                   Use Max
                 </button>
@@ -301,9 +303,9 @@ export const VaultView: React.FC<VaultViewProps> = ({
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-300 font-mono text-lg font-black text-black focus:outline-none focus:border-amber-500"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-[var(--card-border)] font-mono text-lg font-black text-foreground focus:outline-none focus:border-amber-500"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--muted)] font-mono">
                   {marketCfg.symbol}
                 </span>
               </div>
@@ -315,7 +317,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                     key={val}
                     type="button"
                     onClick={() => handleQuickPreset(val)}
-                    className="flex-1 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold"
+                    className="flex-1 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground text-xs font-bold transition-colors"
                   >
                     +${val}
                   </button>
@@ -325,24 +327,28 @@ export const VaultView: React.FC<VaultViewProps> = ({
 
             {/* Submit Button */}
             {!account ? (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={onConnect}
-                className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs uppercase tracking-wider shadow-aura-yellow active:scale-95"
+                className="w-full py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow"
               >
                 Connect Wallet
-              </button>
+              </motion.button>
             ) : (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isLoadingAction}
-                className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs uppercase tracking-wider shadow-aura-yellow flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                className="w-full py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isLoadingAction && <RefreshCw className="w-4 h-4 animate-spin" />}
+                {isLoadingAction && <RefreshCw className="w-4 h-4 animate-spin text-black" />}
                 <span>
                   {activeTab === "deposit" ? `Confirm Deposit of $${amount} ${marketCfg.symbol}` : `Withdraw $${amount} ${marketCfg.symbol}`}
                 </span>
-              </button>
+              </motion.button>
             )}
           </form>
         )}
@@ -350,12 +356,12 @@ export const VaultView: React.FC<VaultViewProps> = ({
         {/* Section 2: Shield / Unshield Converter */}
         {activeSection === "shield" && (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold">
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setShieldTab("shield")}
                 className={`py-2 rounded-lg transition-all ${
-                  shieldTab === "shield" ? "bg-aura-yellow text-black font-black" : "text-slate-500"
+                  shieldTab === "shield" ? "bg-cyvera-gold text-black font-black shadow-sm" : "text-[var(--muted)]"
                 }`}
               >
                 Shield ({marketCfg.publicSymbol} → {marketCfg.symbol})
@@ -364,30 +370,30 @@ export const VaultView: React.FC<VaultViewProps> = ({
                 type="button"
                 onClick={() => setShieldTab("unshield")}
                 className={`py-2 rounded-lg transition-all ${
-                  shieldTab === "unshield" ? "bg-aura-yellow text-black font-black" : "text-slate-500"
+                  shieldTab === "unshield" ? "bg-cyvera-gold text-black font-black shadow-sm" : "text-[var(--muted)]"
                 }`}
               >
                 Unshield ({marketCfg.symbol} → {marketCfg.publicSymbol})
               </button>
             </div>
 
-            <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200 text-xs text-indigo-950 space-y-2">
+            <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-600 dark:text-cyan-400 space-y-2">
               <div className="flex items-center gap-2 font-bold">
-                <Shield className="w-4 h-4 text-indigo-600" />
-                <span>ERC-7984 Confidential Token Shielding</span>
+                <Shield className="w-4 h-4" />
+                <span>ERC-7984 Confidential Token Standard</span>
               </div>
-              <p className="text-indigo-900 leading-relaxed font-medium">
-                Shielding converts public ERC-20 tokens into encrypted confidential integers. Nobody can view your balance or track transfers on public explorers.
+              <p className="text-[var(--muted)] leading-relaxed font-medium">
+                Shielding converts public ERC-20 tokens into encrypted confidential integers. Nobody can view your balance or track transactions on public explorers.
               </p>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-bold">
-                <label className="text-slate-700">Amount to Convert:</label>
+                <label className="text-foreground">Amount to Convert:</label>
                 <button
                   type="button"
                   onClick={handleMax}
-                  className="text-amber-800 hover:underline text-[11px]"
+                  className="text-amber-500 hover:underline text-[11px]"
                 >
                   Use Max
                 </button>
@@ -401,33 +407,37 @@ export const VaultView: React.FC<VaultViewProps> = ({
                   value={shieldAmount}
                   onChange={(e) => setShieldAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-300 font-mono text-lg font-black text-black focus:outline-none focus:border-amber-500"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-[var(--card-border)] font-mono text-lg font-black text-foreground focus:outline-none focus:border-amber-500"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--muted)] font-mono">
                   {shieldTab === "shield" ? marketCfg.publicSymbol : marketCfg.symbol}
                 </span>
               </div>
             </div>
 
             {!account ? (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={onConnect}
-                className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs uppercase tracking-wider shadow-aura-yellow active:scale-95"
+                className="w-full py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow"
               >
                 Connect Wallet
-              </button>
+              </motion.button>
             ) : (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isLoadingAction}
-                className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs uppercase tracking-wider shadow-aura-yellow flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                className="w-full py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isLoadingAction && <RefreshCw className="w-4 h-4 animate-spin" />}
+                {isLoadingAction && <RefreshCw className="w-4 h-4 animate-spin text-black" />}
                 <span>
                   {shieldTab === "shield" ? `Shield $${shieldAmount} ${marketCfg.publicSymbol} → ${marketCfg.symbol}` : `Unshield $${shieldAmount} ${marketCfg.symbol} → ${marketCfg.publicSymbol}`}
                 </span>
-              </button>
+              </motion.button>
             )}
           </form>
         )}

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "VeilPool | Confidential No-Loss Prize Savings",
-  description: "A production-ready confidential version of PoolTogether powered by Zama FHE on Ethereum Sepolia. Save tokens with zero loss, keep balances strictly encrypted, and win yield-backed prize draws.",
+  title: "Cyvera | Confidential No-Loss Prize Savings Protocol",
+  description: "Production-ready confidential prize savings protocol powered by Zama FHEVM on Ethereum Sepolia. Save tokens with zero loss, keep balances strictly encrypted, and win yield-backed onchain draws.",
   icons: {
     icon: "/favicon.ico",
   },
@@ -15,8 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased min-h-screen bg-[#F8FAFC] text-black">
+    <html lang="en" className="dark">
+      <body className="antialiased min-h-screen">
         {children}
       </body>
     </html>

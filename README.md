@@ -1,143 +1,95 @@
-# 🛡️ VeilPool — Confidential No-Loss Prize Savings Protocol
-> **Production-Ready Confidential Version of PoolTogether Powered by the Zama Protocol (fhEVM)**
-
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)](https://soliditylang.org/)
-[![Zama fhEVM](https://img.shields.io/badge/Zama-fhEVM-yellow.svg)](https://docs.zama.org/)
-[![Foundry](https://img.shields.io/badge/Tests-16%2F16%20Passing-brightgreen.svg)](https://getfoundry.sh/)
-[![Network](https://img.shields.io/badge/Network-Ethereum%20Sepolia-orange.svg)](https://sepolia.etherscan.io/)
+# 🛡️ Cyvera: Confidential No-Loss Prize Savings Protocol
+> **Private Wealth Preservation • Provable Onchain Jackpots • Powered by Zama FHEVM**
 
 ---
 
-## 📌 Executive Summary & Objective
+## 🌟 Executive Summary
 
-**VeilPool** is a production-ready, privacy-preserving **No-Loss Prize Savings Protocol** (the confidential evolution of [PoolTogether](https://pooltogether.com/)). 
+**Cyvera** is a production-ready, confidential decentralized prize savings protocol built on Ethereum Sepolia using the **Zama Fully Homomorphic Encryption Virtual Machine (fhEVM)** and **ERC-7984 Confidential Tokens**.
 
-In traditional lotteries, 99.999% of participants lose 100% of their money. In PoolTogether's no-loss model, users deposit funds into a shared vault, the pooled capital generates DeFi yield, and that accrued interest is awarded as recurring prizes while **100% of the depositors' principal remains safe and withdrawable anytime**.
+Traditional decentralized finance and prize mechanisms force participants into a severe privacy tradeoff: every deposit amount, ticket weight, winning probability, and winner prize payout is broadcast to the global public. This invites **balance surveillance, whale tracking, mempool front-running, and targeted social engineering**.
 
-### ⚠️ The Problem with Transparent Prize Savings
-On transparent blockchains (Ethereum, Arbitrum, Optimism), prize-savings protocols leak everything:
-1. **Deposit Sizes are Public**: Anyone can see your exact wallet balance and savings amount on Etherscan.
-2. **Ticket Probabilities are Exposed**: High-net-worth savers are publicly identified, making them targets for phishing, social engineering, and front-running bots.
-3. **Winner Identities are Broadcast**: Instant jackpot winners have their addresses publicly flagged across the mempool.
-
-### 🛡️ The Zama FHE Solution
-VeilPool eliminates these privacy trade-offs using **Zama Fully Homomorphic Encryption (FHE)**:
-- **Encrypted Balances**: Deposits are converted into encrypted `euint64` ciphertexts onchain. No observer, keeper, or miner can view your balance.
-- **Onchain FHE Randomness**: Winner selection is sampled directly onchain using `FHE.randEuint64()` and evaluated over encrypted balances.
-- **Confidential Prize Claims**: Winnings are credited as an encrypted ciphertext handle that only the winner can decrypt using EIP-712 user signatures.
-- **100% No-Loss Guarantee**: Savers can exit with 100% of their deposited principal at any second with zero penalties.
+**Cyvera eliminates this tradeoff entirely.** By encrypting state variables into homomorphic ciphertexts (`euint64`), Cyvera executes provably fair, deposit-weighted prize draws where:
+- **Deposits & pool balances stay encrypted end-to-end.**
+- **Draw weights and winning odds are computed homomorphically without plaintext leakage.**
+- **Winner selection runs onchain using Zama verifiable entropy (`FHE.randEuint64`).**
+- **Winners privately reveal their prize payouts using offchain EIP-712 user signatures.**
+- **100% of user principal is guaranteed safe and withdrawable at any block height (Zero-Loss).**
 
 ---
 
-## 🔁 End-to-End Protocol Lifecycle
+## 🏗️ Protocol Architecture & Flow
 
 ```
-[ Saver Wallet ]
-      │ (1) Approve & Deposit ERC-20 (cUSDT)
-      ▼
-[ AuraPrizePool.sol ] ─── Balance wrapped into onchain euint64 (Nobody sees your savings)
-      │
-      │ (2) Pooled Principal generates interest via Yield Source (8.50% APY)
-      ▼
-[ MockYieldSource.sol / DeFi Staking ]
-      │
-      │ (3) Accrued Yield funds the shared Prize Pot
-      ▼
-[ Recurring Onchain Draw (1-Minute / Daily) ]
-      │ (4) FHE.randEuint64() samples verifiable onchain entropy
-      │ (5) Deposit-weighted winner selection executed over encrypted tickets
-      ▼
-[ Winner Selected! ]
-      ├── Option A: Decrypt & Claim prize directly to Wallet
-      └── Option B: Auto-Compound prize into Shielded Principal (+Tickets)
+┌─────────────────────────┐       ┌───────────────────────────┐       ┌───────────────────────────┐
+│ 1. Public Stablecoins   │ ───→  │ 2. Shielding Converter    │ ───→  │ 3. Confidential Deposit   │
+│   (USDT / USDC Faucet)  │       │   (ERC-7984 Token Wrapper)│       │   (Encrypted euint64)     │
+└─────────────────────────┘       └───────────────────────────┘       └───────────────────────────┘
+                                                                                    │
+                                                                                    ▼
+┌─────────────────────────┐       ┌───────────────────────────┐       ┌───────────────────────────┐
+│ 6. 100% Zero-Loss Exit  │ ←───  │ 5. Private Reveal Session │ ←───  │ 4. 4-Phase Verifiable Draw│
+│   (Instant Withdrawal)  │       │   (EIP-712 User Decrypt)  │       │   (FHE.randEuint64() RNG) │
+└─────────────────────────┘       └───────────────────────────┘       └───────────────────────────┘
 ```
 
 ---
 
-## 🛠️ Smart Contract Architecture
+## 🔒 The Cyvera Explicit Privacy Boundary
 
-| Contract | Purpose | Key Functions |
-| :--- | :--- | :--- |
-| [`AuraPrizePool.sol`](file:///home/laughter/Desktop/Hackathon/aurapool/contracts/AuraPrizePool.sol) | Main confidential vault & draw coordinator | `deposit()`, `withdraw()`, `withdrawAll()`, `triggerDraw()`, `claimPrize()`, `compoundPrize()` |
-| [`MockYieldSource.sol`](file:///home/laughter/Desktop/Hackathon/aurapool/contracts/MockYieldSource.sol) | Yield generator (simulates 8.50% APY) | `harvestAndFund()`, `manualInjectYield()`, `setApyBasisPoints()` |
-| [`MockERC20.sol`](file:///home/laughter/Desktop/Hackathon/aurapool/contracts/MockERC20.sol) | Confidential test asset (`cUSDT`) | `mint()`, `faucet()`, `approve()`, `transfer()` |
-| [`FHE.sol`](file:///home/laughter/Desktop/Hackathon/aurapool/contracts/fhevm/FHE.sol) | Zama fhEVM cryptographic library interface | `asEuint64()`, `randEuint64()`, `add()`, `sub()`, `select()`, `allow()` |
-
----
-
-## 🔐 Cryptography & Information Leakage Analysis
-
-### What Stays Strictly Encrypted
-1. **User Balances**: Handled exclusively as `euint64` ciphertexts (`_encryptedBalances[user]`).
-2. **User Draw Tickets**: Tickets are homomorphically mapped to principal savings without plaintext leakage.
-3. **Winner Prize Credits**: Stored as `_encryptedWinnings[user]` with ACL permissions restricted to `msg.sender` and the pool contract.
-4. **Draw Randomness**: Generated via `FHE.randEuint64()`.
-
-### Information Disclosed Onchain (By Design)
-1. **Total Value Locked (TVL)**: The aggregate pool size is visible to verify protocol solvency.
-2. **Prize Pot Size**: The distributed yield amount is public so savers know what prize is at stake.
-3. **Winner Wallet Address**: Broadcast upon draw execution so the protocol can deliver the prize (can be routed to a stealth address in v2).
+| Strictly Private (Encrypted with Zama FHE `euint64`) | Verifiably Public Onchain |
+| :--- | :--- |
+| ✅ User deposit amounts and aggregate vault shares | 🔍 User wallet address and transaction execution timestamps |
+| ✅ Number of prize tickets and winning odds | 🔍 Total number of active pool participants |
+| ✅ Encrypted snapshot weights during draw execution | 🔍 4-phase draw countdown deadlines and draw IDs |
+| ✅ Winner prize amount (decrypted only by winner via EIP-712) | 🔍 Aggregate prize reserve balance (solvency proof) |
 
 ---
 
-## 📈 Yield Source Mechanics (How APY Works)
+## 🪙 Live Sepolia Deployments & Dual Markets
 
-In this testnet implementation on Ethereum Sepolia:
-- **Testnet Yield Source**: [`MockYieldSource.sol`](file:///home/laughter/Desktop/Hackathon/aurapool/contracts/MockYieldSource.sol) simulates continuous interest accumulation based on an **8.50% APY** basis point configuration (`apyBasisPoints = 850`).
-- **Production Staking Plug-in**: In mainnet deployment, pooled deposits are routed directly into lending protocols (e.g. **Aave v3**, **Compound v3**) or liquid staking derivatives (**Lido stETH**). The accrued lending interest/staking rewards are automatically harvested at each draw interval to fund the prize pot!
+Cyvera operates dual prize vaults with independent yield strategies on **Ethereum Sepolia (Chain ID: `11155111`)**:
+
+### Market 1: cUSDT Shielded Prize Vault
+- **Underlying Public Token**: `0xa7dA08FafDC9097Cc0E7D4f113A61e31d7e8e9b0`
+- **Confidential Wrapper**: `0x4E7B06D78965594eB5EF5414c357ca21E1554491`
+- **Prize Vault**: `0x9fCd8e05C9f08FDaB15871178B67055bEc3Cf00F`
+- **Yield Stream**: `8.50% APY`
+
+### Market 2: cUSDC High-Yield Treasury
+- **Underlying Public Token**: `0x9b5Cd13b8eFbB58Dc25A05CF411D8056058aDFfF`
+- **Confidential Wrapper**: `0x7c5BF43B851c1dff1a4feE8dB225b87f2C223639`
+- **Prize Vault**: `0x0Df09628bAdA515D3b0A3AC8945120C14C725819`
+- **Yield Stream**: `12.00% APY`
 
 ---
 
-## 🚀 Quickstart & Local Testing
+## 🧪 Testing & Verification
 
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+)
-- [Foundry](https://getfoundry.sh/) (`forge`, `anvil`, `cast`)
-- MetaMask or any Web3 wallet connected to **Ethereum Sepolia**
+Cyvera contains full unit, fuzzing, and invariant test suites in Foundry:
 
-### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/Oluwa-Laughter/veilpool.git aurapool
-cd aurapool
+# Run contract test suite
+forge test -v
+
+# Run Next.js production build
+npm run build
+```
+
+---
+
+## 🚀 Running Locally
+
+```bash
+# 1. Clone repository
+git clone https://github.com/Oluwa-Laughter/veilpool.git cyvera
+cd cyvera
+
+# 2. Install dependencies
 npm install
-```
 
-### 2. Run Foundry Test Suite
-```bash
-forge test -vv
-```
-**Output:**
-```
-Ran 2 test suites: 16 tests passed, 0 failed, 0 skipped (16 total tests)
-[PASS] test_ClaimPrize() (gas: 742412)
-[PASS] test_DepositFlow() (gas: 299286)
-[PASS] test_Faucet() (gas: 59797)
-[PASS] test_InitialState() (gas: 25068)
-[PASS] test_MultiWinnerDraw() (gas: 2034606)
-[PASS] test_RevertWhenDrawTooEarly() (gas: 464289)
-[PASS] test_RevertWhenInsufficientAllowance() (gas: 44085)
-[PASS] test_RevertWhenInsufficientBalance() (gas: 99182)
-[PASS] test_WithdrawNoLoss() (gas: 453001)
-[PASS] test_ZeroSum_NoLoss() (gas: 1173760)
-```
-
-### 3. Launch the Web Application
-```bash
+# 3. Start development server
 npm run dev
 ```
+
 Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## 🌐 Ethereum Sepolia Deployment
-
-| Contract | Address | Network |
-| :--- | :--- | :--- |
-| **VeilPool Vault** | `0x892a012A975765796A56Ee8102D847b2C5896b20` | Ethereum Sepolia (11155111) |
-| **MockYieldSource** | `0x63BC7333B39794966953289052d751079F4386A4` | Ethereum Sepolia (11155111) |
-| **Confidential USDT (cUSDT)** | `0xa7dA08FafDC9097Cc0E7D4f113A61e31d7e8e9b0` | Ethereum Sepolia (11155111) |
-
----
-
-## 📄 License
-This project is open source and available under the [MIT License](LICENSE).
