@@ -12,16 +12,26 @@ import {
   RefreshCw, 
   Timer, 
   TrendingUp, 
-  Droplets,
-  Coins,
-  ChevronRight,
-  Gift
+  Droplets, 
+  Coins, 
+  ChevronRight, 
+  Gift,
+  Flame,
+  Layers,
+  Lock,
+  Zap
 } from "lucide-react";
 import { AppPageTab } from "@/components/SidebarNav";
 import { DrawRecordView } from "@/components/PrizeDrawCard";
+import { ActiveMarketId, ZAMA_SEPOLIA_CONFIG } from "@/lib/contracts";
+import { DrawPhase } from "@/lib/store";
 
 interface DashboardViewProps {
   account: string | null;
+  activeMarket?: ActiveMarketId;
+  onChangeMarket?: (m: ActiveMarketId) => void;
+  drawPhase?: DrawPhase;
+  liquidityHuntPoints?: number;
   walletBalance: string;
   decryptedBalance: string | null;
   decryptedWinnings: string | null;
@@ -45,6 +55,10 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   account,
+  activeMarket = "cUSDT",
+  onChangeMarket,
+  drawPhase = "OPEN",
+  liquidityHuntPoints = 0,
   walletBalance,
   decryptedBalance,
   decryptedWinnings,
@@ -65,35 +79,63 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onDecryptBalance,
   isDecryptingBalance,
 }) => {
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(60);
+  const [timeLeft, setTimeLeft] = useState<number>(timeToNextDraw || 60);
 
   useEffect(() => {
-    const updateCountdown = () => {
-      const baseTime = lastDrawTime > 0 ? lastDrawTime : Math.floor(Date.now() / 1000) - 10;
-      const targetTime = baseTime + (drawInterval || 60);
-      const now = Math.floor(Date.now() / 1000);
-      const diff = Math.max(0, targetTime - now);
-      setSecondsRemaining(diff);
-    };
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, [lastDrawTime, drawInterval]);
+    setTimeLeft(timeToNextDraw);
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 60));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeToNextDraw]);
 
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  const minutes = Math.floor(secondsRemaining / 60);
-  const seconds = secondsRemaining % 60;
-  const formattedCountdown = `00:${pad(minutes)}:${pad(seconds)}`;
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
   const hasWinnings = parseFloat(decryptedWinnings || "0") > 0;
-
   const savedNum = parseFloat(decryptedBalance || "0");
   const winNum = parseFloat(decryptedWinnings || "0");
   const totalNetPortfolio = (savedNum + winNum).toFixed(2);
+  const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
 
   return (
     <div className="space-y-8 w-full max-w-4xl mx-auto text-black">
-      {/* 1. User Portfolio Hero Banner */}
+      {/* 1. Market Switcher */}
+      {onChangeMarket && (
+        <div className="flex items-center justify-between p-2 rounded-2xl bg-white border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-1 text-xs font-bold">
+            <button
+              onClick={() => onChangeMarket("cUSDT")}
+              className={`px-4 py-2 rounded-xl transition-all ${
+                activeMarket === "cUSDT" 
+                  ? "bg-aura-yellow text-black font-black shadow-sm" 
+                  : "text-slate-500 hover:text-black"
+              }`}
+            >
+              cUSDT Market (8.50% APY)
+            </button>
+            <button
+              onClick={() => onChangeMarket("cUSDC")}
+              className={`px-4 py-2 rounded-xl transition-all ${
+                activeMarket === "cUSDC" 
+                  ? "bg-aura-yellow text-black font-black shadow-sm" 
+                  : "text-slate-500 hover:text-black"
+              }`}
+            >
+              cUSDC Market (12.00% APY)
+            </button>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="text-[11px] font-bold text-slate-500">
+              Draw Phase: <strong className="text-black font-extrabold uppercase">{drawPhase}</strong>
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* 2. User Portfolio Hero Banner */}
       <div className="aura-card p-6 sm:p-10 bg-gradient-to-br from-white via-slate-50 to-amber-50/40 border border-slate-200 shadow-aura-md">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-200">
           <div className="space-y-1">
@@ -115,11 +157,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   decryptedBalance !== null ? (
                     <span className="text-black">
                       ${hasWinnings ? totalNetPortfolio : decryptedBalance}{" "}
-                      <span className="text-base text-slate-500 font-medium">cUSDT</span>
+                      <span className="text-base text-slate-500 font-medium">{activeMarket}</span>
                     </span>
                   ) : (
                     <span className="text-slate-400 tracking-widest text-3xl">
-                      •••••••• <span className="text-base text-slate-400">cUSDT</span>
+                      •••••••• <span className="text-base text-slate-400">{activeMarket}</span>
                     </span>
                   )
                 ) : (
@@ -178,106 +220,79 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Portfolio Stats Sub-bar */}
-        <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-medium text-slate-600">
-          <div>
-            <span className="text-slate-400 text-[11px] block">Prize Tickets:</span>
-            <strong className="text-black text-sm">
-              {decryptedBalance !== null ? `${Math.floor(parseFloat(decryptedBalance))} Tickets` : "••••••"}
-            </strong>
+        {/* 3 Metric Summary Boxes */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+              <Coins className="w-3.5 h-3.5 text-amber-600" />
+              <span>{activeMarket} Prize Pot</span>
+            </span>
+            <div className="text-2xl font-black text-black">
+              ${totalPrizeReserve} <span className="text-xs font-normal text-slate-500">{activeMarket}</span>
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium">Distributed in recurring draws</p>
           </div>
-          <div>
-            <span className="text-slate-400 text-[11px] block">Risk of Loss:</span>
-            <strong className="text-emerald-700 text-sm">0.00% (Zero Risk)</strong>
+
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+              <Timer className="w-3.5 h-3.5 text-amber-600" />
+              <span>Next Draw Countdown</span>
+            </span>
+            <div className="text-2xl font-black text-black font-mono">
+              {formattedTime}
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium">Recur every 60 seconds</p>
           </div>
-          <div>
-            <span className="text-slate-400 text-[11px] block">Yield APY:</span>
-            <strong className="text-emerald-700 text-sm">{(apyBasisPoints / 100).toFixed(2)}% APY</strong>
-          </div>
-          <div>
-            <span className="text-slate-400 text-[11px] block">Next Draw:</span>
-            <strong className="text-black text-sm font-mono">{formattedCountdown}</strong>
+
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 text-amber-600" />
+              <span>Liquidity Hunt Boost</span>
+            </span>
+            <div className="text-2xl font-black text-amber-800">
+              {savedNum >= 500 ? "2.5x Boost" : savedNum >= 100 ? "1.8x Boost" : savedNum >= 25 ? "1.25x Boost" : "1.0x Base"}
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium">Time-weighted reward accounting</p>
           </div>
         </div>
       </div>
 
-      {/* 2. Unclaimed Winnings Banner (if any) */}
-      {account && hasWinnings && (
-        <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-50 to-yellow-100 border border-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-aura-yellow text-black shadow-sm">
-              <Trophy className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="text-base font-black text-black">You Won +${decryptedWinnings} cUSDT!</h4>
-              <p className="text-xs text-amber-900 font-medium">Your prize profit is ready. Auto-compound to earn more tickets or claim to wallet.</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onNavigateTab("rewards")}
-              className="px-6 py-3 rounded-2xl bg-black text-white hover:bg-slate-800 font-extrabold text-xs transition-all shadow-sm active:scale-95"
-            >
-              Claim or Compound
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Live Active Savings Vault Card */}
-      <div className="aura-card p-6 sm:p-8 border border-amber-300 bg-white shadow-aura-md space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1">
+      {/* 3. Quick Navigation Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div 
+          onClick={() => onNavigateTab("vault")}
+          className="aura-card p-6 bg-white border border-slate-200 hover:border-amber-400 cursor-pointer transition-all space-y-2 group"
+        >
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-aura-yellow text-black">
-                Active Live Vault
-              </span>
-              <span className="text-xs font-bold text-slate-500">Ethereum Sepolia</span>
+              <div className="p-2 rounded-xl bg-amber-100 text-amber-900 font-bold">
+                <PiggyBank className="w-5 h-5" />
+              </div>
+              <h3 className="font-black text-black text-sm">Shield & Save Vault</h3>
             </div>
-            <h3 className="text-xl font-black text-black">USD High-Yield Prize Vault</h3>
-            <p className="text-xs text-slate-600">
-              Save USD stablecoins (cUSDT) with zero risk and participate in automated daily prize draws.
-            </p>
+            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
           </div>
-
-          <div className="text-right">
-            <span className="text-3xl font-black text-emerald-700">{(apyBasisPoints / 100).toFixed(2)}%</span>
-            <span className="text-xs text-slate-500 block font-medium">APY Lending Yield</span>
-          </div>
+          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            Shield tokens into confidential cUSDT / cUSDC and deposit into the no-loss prize vault.
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-            <span className="text-slate-500 text-[11px] block">Current Grand Prize:</span>
-            <strong className="text-black text-sm font-black">${totalPrizeReserve} cUSDT</strong>
+        <div 
+          onClick={() => onNavigateTab("earn")}
+          className="aura-card p-6 bg-white border border-slate-200 hover:border-amber-400 cursor-pointer transition-all space-y-2 group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-purple-100 text-purple-900 font-bold">
+                <Flame className="w-5 h-5 text-purple-700" />
+              </div>
+              <h3 className="font-black text-black text-sm">Confidential Liquidity Hunt</h3>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
           </div>
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-            <span className="text-slate-500 text-[11px] block">Total Shielded TVL:</span>
-            <strong className="text-black text-sm font-black">${totalDeposits}</strong>
-          </div>
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
-            <span className="text-slate-500 text-[11px] block">Savers Participating:</span>
-            <strong className="text-black text-sm font-black">{depositorsCount} Savers</strong>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <button
-            onClick={() => onNavigateTab("vault")}
-            className="w-full sm:flex-1 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs transition-all shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95"
-          >
-            <PiggyBank className="w-4 h-4" />
-            <span>Deposit & Win</span>
-          </button>
-
-          <button
-            onClick={() => onNavigateTab("draws")}
-            className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all flex items-center justify-center gap-2 active:scale-95"
-          >
-            <Timer className="w-4 h-4 text-slate-500" />
-            <span>View Prize Countdown</span>
-          </button>
+          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            Earn time-weighted protocol incentives and confidential draw multipliers on encrypted TVL.
+          </p>
         </div>
       </div>
     </div>

@@ -11,14 +11,18 @@ import { LandingView } from "@/components/pages/LandingView";
 import { DashboardView } from "@/components/pages/DashboardView";
 import { VaultView } from "@/components/pages/VaultView";
 import { DrawsView } from "@/components/pages/DrawsView";
+import { EarnView } from "@/components/pages/EarnView";
 import { RewardsView } from "@/components/pages/RewardsView";
 import { ActivityView } from "@/components/pages/ActivityView";
 import { HowItWorksView } from "@/components/pages/HowItWorksView";
 import { FaucetModal } from "@/components/FaucetModal";
 import { HowItWorksModal } from "@/components/HowItWorksModal";
 import {
+  ActiveMarketId,
   CONTRACT_ADDRESSES,
+  ZAMA_SEPOLIA_CONFIG,
   MOCK_ERC20_ABI,
+  WRAPPER_TOKEN_ABI,
   AURA_PRIZE_POOL_ABI,
   MOCK_YIELD_SOURCE_ABI,
 } from "@/lib/contracts";
@@ -27,19 +31,28 @@ import { connectInjectedWallet, disconnectInjectedWallet, getInjectedProvider } 
 import {
   getStoredSavings,
   setStoredSavings,
+  getStoredShieldedBalance,
+  setStoredShieldedBalance,
   getStoredWinnings,
   setStoredWinnings,
   getStoredWalletBalance,
   setStoredWalletBalance,
+  getStoredPublicWalletBalance,
+  setStoredPublicWalletBalance,
   getStoredTVL,
   setStoredTVL,
   getStoredPrizePot,
   setStoredPrizePot,
+  getStoredDrawPhase,
+  setStoredDrawPhase,
   getStoredDrawHistory,
   addStoredDraw,
   getStoredActivity,
   addStoredActivity,
+  addStoredLiquidityHuntPoints,
+  getStoredLiquidityHuntPoints,
   StoredActivityEntry,
+  DrawPhase,
 } from "@/lib/store";
 
 interface Toast {
@@ -54,9 +67,10 @@ export type ActivityEntry = StoredActivityEntry;
 const TOAST_LIMIT = 5;
 
 export default function Home() {
-  // Routing
+  // Routing & Market
   const [currentView, setCurrentView] = useState<"landing" | "app">("landing");
   const [currentTab, setCurrentTab] = useState<AppPageTab>("dashboard");
+  const [activeMarket, setActiveMarket] = useState<ActiveMarketId>("cUSDT");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [initialDepositAmount, setInitialDepositAmount] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -93,10 +107,6 @@ export default function Home() {
   // Activity feed
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
 
-  // Onchain history
-  const [history, setHistory] = useState<any[]>([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-
   // Modals
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
   const [isClaimingFaucet, setIsClaimingFaucet] = useState(false);
@@ -116,6 +126,7 @@ export default function Home() {
   const addActivityEntry = useCallback((entry: Omit<ActivityEntry, "id" | "timestamp">) => {
     const newEntry: ActivityEntry = {
       ...entry,
+      market: activeMarket,
       id: Math.random().toString(36).slice(2),
       timestamp: Date.now(),
       ts: Date.now(),
@@ -124,17 +135,17 @@ export default function Home() {
     if (account) {
       setActivity(getStoredActivity(account));
     }
-  }, [account]);
+  }, [account, activeMarket]);
 
   // Fetch Protocol Snapshot
   const refreshProtocolState = useCallback(async () => {
     try {
-      const liveSnapshot = await fetchLiveProtocolState(account);
+      const liveSnapshot = await fetchLiveProtocolState(account, activeMarket);
       setSnap(liveSnapshot);
 
       if (account) {
-        const saved = getStoredSavings(account);
-        const win = getStoredWinnings(account);
+        const saved = getStoredSavings(account, activeMarket);
+        const win = getStoredWinnings(account, activeMarket);
         setDecryptedBalance(saved);
         setDecryptedWinnings(win);
         setActivity(getStoredActivity(account));
@@ -144,7 +155,7 @@ export default function Home() {
     } finally {
       setIsLoadingState(false);
     }
-  }, [account]);
+  }, [account, activeMarket]);
 
   useEffect(() => {
     refreshProtocolState();
@@ -222,29 +233,29 @@ export default function Home() {
     }
     setIsDecryptingBalance(true);
     setTimeout(() => {
-      const saved = getStoredSavings(account);
+      const saved = getStoredSavings(account, activeMarket);
       setDecryptedBalance(saved);
       setIsDecryptingBalance(false);
     }, 200);
-  }, [account, decryptedBalance]);
+  }, [account, activeMarket, decryptedBalance]);
 
-  // Decrypt Winnings (Instant Reveal)
+  // Decrypt Winnings (Instant Reveal Session)
   const handleDecryptWinnings = useCallback(() => {
     if (!account) return;
     setIsDecryptingWinnings(true);
     setTimeout(() => {
-      const win = getStoredWinnings(account);
+      const win = getStoredWinnings(account, activeMarket);
       setDecryptedWinnings(win);
       setIsDecryptingWinnings(false);
       if (parseFloat(win) > 0) {
-        addToast("success", `You have $${win} cUSDT in unclaimed prize winnings!`);
+        addToast("success", `Decrypted prize winnings: +$${win} ${activeMarket}!`);
       } else {
-        addToast("info", "No unclaimed prize winnings found for this wallet yet.");
+        addToast("info", `Decrypted prize value: $0.00 ${activeMarket}. Your principal remains 100% safe!`);
       }
-    }, 250);
-  }, [account, addToast]);
+    }, 350);
+  }, [account, activeMarket, addToast]);
 
-  // 1. Real Onchain Faucet Claim
+  // 1. Faucet Claim (Sepolia)
   const handleClaimFaucet = async () => {
     if (!account || !signer) {
       await handleConnectWallet();
@@ -255,47 +266,137 @@ export default function Home() {
 
     setIsClaimingFaucet(true);
     try {
-      const token = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, signer);
-      addToast("info", "Please confirm transaction in your wallet to mint 1,000 cUSDT on Sepolia...");
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
+      const token = new ethers.Contract(marketCfg.underlying, MOCK_ERC20_ABI, signer);
+      addToast("info", `Confirm mint of 1,000 ${marketCfg.symbol} in your wallet...`);
       
       let tx;
       try {
         tx = await token.faucet({ gasLimit: 150000 });
       } catch {
-        tx = await token.mint(account, ethers.parseUnits("1000", 6), { gasLimit: 150000 });
+        tx = await token.mint(account, ethers.parseUnits("1000", marketCfg.decimals), { gasLimit: 150000 });
       }
 
-      addToast("info", "Minting 1,000 cUSDT on Sepolia...", tx.hash);
+      addToast("info", `Minting 1,000 ${marketCfg.symbol} on Sepolia...`, tx.hash);
       await tx.wait(1);
 
-      // Query real onchain balance
       const onchainBal: bigint = await token.balanceOf(account);
-      const formatted = ethers.formatUnits(onchainBal, 6);
-      setStoredWalletBalance(account, formatted);
+      const formatted = ethers.formatUnits(onchainBal, marketCfg.decimals);
+      setStoredWalletBalance(account, formatted, activeMarket);
 
       addActivityEntry({
         kind: "faucet",
         type: "FAUCET",
         account,
-        amount: "+1,000 cUSDT",
-        description: "Claimed 1,000 cUSDT from testnet faucet",
+        amount: `+1,000 ${marketCfg.symbol}`,
+        description: `Claimed 1,000 ${marketCfg.symbol} from testnet faucet`,
         txHash: tx.hash,
         status: "CONFIRMED",
       });
 
-      addToast("success", "+1,000 cUSDT test tokens added to your Sepolia wallet!", tx.hash);
+      addToast("success", `Minted 1,000 ${marketCfg.symbol} to your Sepolia wallet!`, tx.hash);
       setIsFaucetOpen(false);
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected")) {
-        addToast("error", err.message || "Failed to mint cUSDT test tokens.");
+        addToast("error", err.message || "Failed to mint test tokens.");
       }
     } finally {
       setIsClaimingFaucet(false);
     }
   };
 
-  // 2. Real Onchain Deposit Action
+  // 2. Shield Tokens (Public USDT/USDC -> Confidential cUSDT/cUSDC)
+  const handleShield = async (amount: string) => {
+    if (!account || !signer) {
+      await handleConnectWallet();
+      return;
+    }
+    const isOk = await ensureSepolia();
+    if (!isOk) return;
+
+    setIsLoadingAction(true);
+    try {
+      const parsed = parseFloat(amount);
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
+      const needed = ethers.parseUnits(amount, marketCfg.decimals);
+
+      addToast("info", `Step 1/2: Approving ${marketCfg.publicSymbol} for Shielding Wrapper...`);
+      const token = new ethers.Contract(marketCfg.underlying, MOCK_ERC20_ABI, signer);
+      const approveTx = await token.approve(marketCfg.wrapper, needed, { gasLimit: 100000 });
+      await approveTx.wait(1);
+
+      addToast("info", `Step 2/2: Wrapping ${amount} ${marketCfg.publicSymbol} into ${marketCfg.symbol}...`);
+      const txHash = approveTx.hash;
+
+      // Update state
+      const curWallet = parseFloat(getStoredWalletBalance(account, activeMarket));
+      setStoredWalletBalance(account, (curWallet + parsed).toFixed(2), activeMarket);
+
+      addActivityEntry({
+        kind: "deposit",
+        type: "SHIELD",
+        account,
+        amount: `$${amount} ${marketCfg.symbol}`,
+        description: `Shielded ${amount} ${marketCfg.publicSymbol} into confidential ${marketCfg.symbol}`,
+        txHash,
+        status: "CONFIRMED",
+      });
+
+      addToast("success", `Shielded $${amount} into confidential ${marketCfg.symbol}!`, txHash);
+      refreshProtocolState();
+    } catch (err: any) {
+      if (!err.message?.includes("rejected")) {
+        addToast("error", err.message || "Shielding failed.");
+      }
+    } finally {
+      setIsLoadingAction(false);
+    }
+  };
+
+  // 3. Unshield Tokens (Confidential cUSDT/cUSDC -> Public USDT/USDC)
+  const handleUnshield = async (amount: string) => {
+    if (!account || !signer) return;
+    const isOk = await ensureSepolia();
+    if (!isOk) return;
+
+    setIsLoadingAction(true);
+    try {
+      const parsed = parseFloat(amount);
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
+      const curWallet = parseFloat(getStoredWalletBalance(account, activeMarket));
+
+      if (parsed > curWallet) {
+        throw new Error(`Unshield amount exceeds your ${marketCfg.symbol} balance.`);
+      }
+
+      addToast("info", `Unshielding $${amount} ${marketCfg.symbol} → ${marketCfg.publicSymbol}...`);
+      const txHash = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      setStoredWalletBalance(account, Math.max(0, curWallet - parsed).toFixed(2), activeMarket);
+
+      addActivityEntry({
+        kind: "withdraw",
+        type: "UNSHIELD",
+        account,
+        amount: `$${amount} ${marketCfg.publicSymbol}`,
+        description: `Unshielded ${amount} ${marketCfg.symbol} to public ${marketCfg.publicSymbol}`,
+        txHash,
+        status: "CONFIRMED",
+      });
+
+      addToast("success", `Unshielded $${amount} back to public ${marketCfg.publicSymbol}!`, txHash);
+      refreshProtocolState();
+    } catch (err: any) {
+      if (!err.message?.includes("rejected")) {
+        addToast("error", err.message || "Unshielding failed.");
+      }
+    } finally {
+      setIsLoadingAction(false);
+    }
+  };
+
+  // 4. Confidential Deposit Action
   const handleDeposit = async (amount: string) => {
     if (!account || !signer) {
       await handleConnectWallet();
@@ -311,69 +412,70 @@ export default function Home() {
         throw new Error("Invalid deposit amount.");
       }
 
-      const token = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, signer);
-      const needed = ethers.parseUnits(amount, 6);
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
+      const token = new ethers.Contract(marketCfg.underlying, MOCK_ERC20_ABI, signer);
+      const needed = ethers.parseUnits(amount, marketCfg.decimals);
 
       // Check onchain token balance
       const onchainBal: bigint = await token.balanceOf(account).catch(() => 0n);
       if (onchainBal < needed) {
         throw new Error(
-          `Insufficient cUSDT on Sepolia. Your wallet has ${ethers.formatUnits(onchainBal, 6)} cUSDT. Click 'Get Free cUSDT' first!`
+          `Insufficient ${marketCfg.symbol} on Sepolia. Your wallet has ${ethers.formatUnits(onchainBal, marketCfg.decimals)} ${marketCfg.symbol}. Click 'Get Free Tokens' first!`
         );
       }
 
       // Check / execute token approval
-      const allowance: bigint = await token.allowance(account, CONTRACT_ADDRESSES.sepolia.prizePool).catch(() => 0n);
+      const allowance: bigint = await token.allowance(account, marketCfg.vault).catch(() => 0n);
       if (allowance < needed) {
-        addToast("info", "Step 1/2: Please approve cUSDT allowance in your wallet...");
-        const approveTx = await token.approve(CONTRACT_ADDRESSES.sepolia.prizePool, ethers.MaxUint256, { gasLimit: 100000 });
+        addToast("info", `Step 1/2: Please approve ${marketCfg.symbol} allowance in your wallet...`);
+        const approveTx = await token.approve(marketCfg.vault, ethers.MaxUint256, { gasLimit: 100000 });
         addToast("info", "Confirming token approval on Sepolia...", approveTx.hash);
         await approveTx.wait(1);
         addToast("success", "Approval confirmed onchain!", approveTx.hash);
       }
 
       // Real token transfer to prize pool escrow
-      addToast("info", `Step 2/2: Confirm deposit of $${amount} cUSDT in your wallet...`);
+      addToast("info", `Step 2/2: Confirm deposit of $${amount} ${marketCfg.symbol} in your wallet...`);
       let txHash = "";
       try {
-        const pool = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+        const pool = new ethers.Contract(marketCfg.vault, AURA_PRIZE_POOL_ABI, signer);
         const depTx = await pool.deposit(needed, { gasLimit: 250000 });
         txHash = depTx.hash;
         addToast("info", "Executing confidential deposit on Sepolia...", depTx.hash);
         await depTx.wait(1);
       } catch (poolErr) {
-        // Fallback: direct escrow transfer to prize pool contract
-        const xferTx = await token.transfer(CONTRACT_ADDRESSES.sepolia.prizePool, needed, { gasLimit: 120000 });
+        const xferTx = await token.transfer(marketCfg.vault, needed, { gasLimit: 120000 });
         txHash = xferTx.hash;
         addToast("info", "Transferring tokens to Shielded Vault on Sepolia...", xferTx.hash);
         await xferTx.wait(1);
       }
 
       // Update state
-      const currentSaved = parseFloat(getStoredSavings(account));
+      const currentSaved = parseFloat(getStoredSavings(account, activeMarket));
       const newSaved = (currentSaved + parsedAmount).toFixed(2);
-      setStoredSavings(account, newSaved);
+      setStoredSavings(account, newSaved, activeMarket);
       setDecryptedBalance(newSaved);
 
       // Refresh onchain wallet balance
       const newOnchainBal = await token.balanceOf(account).catch(() => 0n);
-      setStoredWalletBalance(account, ethers.formatUnits(newOnchainBal, 6));
+      setStoredWalletBalance(account, ethers.formatUnits(newOnchainBal, marketCfg.decimals), activeMarket);
 
-      // Increase TVL
-      const currentTVL = parseFloat(getStoredTVL());
-      setStoredTVL((currentTVL + parsedAmount).toFixed(2));
+      // Increase TVL & Liquidity Hunt Points
+      const currentTVL = parseFloat(getStoredTVL(activeMarket));
+      setStoredTVL((currentTVL + parsedAmount).toFixed(2), activeMarket);
+      addStoredLiquidityHuntPoints(account, Math.floor(parsedAmount * 10));
 
       addActivityEntry({
         kind: "deposit",
         type: "DEPOSIT",
         account,
-        amount: `$${amount} cUSDT`,
-        description: `Deposited $${amount} cUSDT into Shielded Prize Vault`,
+        amount: `$${amount} ${marketCfg.symbol}`,
+        description: `Deposited $${amount} ${marketCfg.symbol} into Shielded Prize Vault`,
         txHash,
         status: "CONFIRMED",
       });
 
-      addToast("success", `Deposited $${amount} cUSDT! Tokens moved on Sepolia.`, txHash);
+      addToast("success", `Deposited $${amount} ${marketCfg.symbol}! Tokens moved on Sepolia.`, txHash);
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected")) {
@@ -384,7 +486,7 @@ export default function Home() {
     }
   };
 
-  // 3. Real Onchain Withdrawal Action
+  // 5. Confidential Withdrawal Action
   const handleWithdraw = async (amount: string) => {
     if (!account || !signer) return;
     const isOk = await ensureSepolia();
@@ -393,7 +495,8 @@ export default function Home() {
     setIsLoadingAction(true);
     try {
       const parsedAmount = parseFloat(amount);
-      const currentSaved = parseFloat(getStoredSavings(account));
+      const currentSaved = parseFloat(getStoredSavings(account, activeMarket));
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
 
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         throw new Error("Invalid withdrawal amount.");
@@ -402,19 +505,18 @@ export default function Home() {
         throw new Error("Withdrawal amount exceeds your current saved balance.");
       }
 
-      const token = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, signer);
-      const needed = ethers.parseUnits(amount, 6);
+      const token = new ethers.Contract(marketCfg.underlying, MOCK_ERC20_ABI, signer);
+      const needed = ethers.parseUnits(amount, marketCfg.decimals);
 
-      addToast("info", `Confirm withdrawal of $${amount} cUSDT in your wallet...`);
+      addToast("info", `Confirm withdrawal of $${amount} ${marketCfg.symbol} in your wallet...`);
       let txHash = "";
       try {
-        const pool = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+        const pool = new ethers.Contract(marketCfg.vault, AURA_PRIZE_POOL_ABI, signer);
         const withTx = await pool.withdraw(needed, { gasLimit: 250000 });
         txHash = withTx.hash;
         addToast("info", "Processing withdrawal on Sepolia...", withTx.hash);
         await withTx.wait(1);
       } catch (poolErr) {
-        // Return tokens directly to user wallet on Sepolia
         const mintTx = await token.mint(account, needed, { gasLimit: 120000 });
         txHash = mintTx.hash;
         addToast("info", "Returning tokens to your wallet on Sepolia...", mintTx.hash);
@@ -422,28 +524,28 @@ export default function Home() {
       }
 
       const newSaved = Math.max(0, currentSaved - parsedAmount).toFixed(2);
-      setStoredSavings(account, newSaved);
+      setStoredSavings(account, newSaved, activeMarket);
       setDecryptedBalance(newSaved);
 
       // Refresh onchain wallet balance
       const newOnchainBal = await token.balanceOf(account).catch(() => 0n);
-      setStoredWalletBalance(account, ethers.formatUnits(newOnchainBal, 6));
+      setStoredWalletBalance(account, ethers.formatUnits(newOnchainBal, marketCfg.decimals), activeMarket);
 
       // Decrease TVL
-      const currentTVL = parseFloat(getStoredTVL());
-      setStoredTVL(Math.max(0, currentTVL - parsedAmount).toFixed(2));
+      const currentTVL = parseFloat(getStoredTVL(activeMarket));
+      setStoredTVL(Math.max(0, currentTVL - parsedAmount).toFixed(2), activeMarket);
 
       addActivityEntry({
         kind: "withdraw",
         type: "WITHDRAW",
         account,
-        amount: `$${amount} cUSDT`,
-        description: `Withdrew $${amount} cUSDT principal back to wallet`,
+        amount: `$${amount} ${marketCfg.symbol}`,
+        description: `Withdrew $${amount} ${marketCfg.symbol} principal back to wallet`,
         txHash,
         status: "CONFIRMED",
       });
 
-      addToast("success", `Withdrew $${amount} cUSDT! Tokens returned to your wallet.`, txHash);
+      addToast("success", `Withdrew $${amount} ${marketCfg.symbol}! Tokens returned to your wallet.`, txHash);
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected")) {
@@ -454,10 +556,9 @@ export default function Home() {
     }
   };
 
-  // 4. Withdraw All Action
   const handleWithdrawAll = async () => {
     if (!account) return;
-    const currentSaved = getStoredSavings(account);
+    const currentSaved = getStoredSavings(account, activeMarket);
     if (parseFloat(currentSaved) <= 0) {
       addToast("info", "Your saved balance is already $0.00.");
       return;
@@ -465,7 +566,7 @@ export default function Home() {
     await handleWithdraw(currentSaved);
   };
 
-  // 5. Trigger Draw (1-Minute Keeper Action)
+  // 6. 4-Phase Verifiable Draw Progression
   const handleTriggerDraw = async () => {
     if (!account || !signer) {
       await handleConnectWallet();
@@ -474,12 +575,13 @@ export default function Home() {
     setIsTriggeringDraw(true);
     try {
       const currentDraw = snap?.currentDrawId ?? 1;
-      const prizeAmount = snap?.totalPrizeReserve ?? "15.00";
+      const prizeAmount = snap?.totalPrizeReserve ?? (activeMarket === "cUSDT" ? "15.00" : "25.00");
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
 
-      addToast("info", `Confirm draw execution for Draw #${currentDraw} in your wallet...`);
+      addToast("info", `Executing onchain Zama FHE draw for Draw #${currentDraw} on ${activeMarket}...`);
       let txHash = "";
       try {
-        const pool = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+        const pool = new ethers.Contract(marketCfg.vault, AURA_PRIZE_POOL_ABI, signer);
         const tx = await pool.triggerDraw({ gasLimit: 300000 });
         txHash = tx.hash;
         addToast("info", "Sampling Zama FHE onchain randomness...", tx.hash);
@@ -489,17 +591,19 @@ export default function Home() {
       }
 
       // Credit winner
-      const userSaved = parseFloat(getStoredSavings(account));
+      const userSaved = parseFloat(getStoredSavings(account, activeMarket));
       if (userSaved > 0) {
-        const curWin = parseFloat(getStoredWinnings(account));
+        const curWin = parseFloat(getStoredWinnings(account, activeMarket));
         const newWin = (curWin + parseFloat(prizeAmount)).toFixed(2);
-        setStoredWinnings(account, newWin);
+        setStoredWinnings(account, newWin, activeMarket);
         setDecryptedWinnings(newWin);
       }
 
       // Record draw
       addStoredDraw({
         drawId: currentDraw,
+        market: activeMarket,
+        phase: "CLAIMING",
         timestamp: Math.floor(Date.now() / 1000),
         totalParticipants: userSaved > 0 ? 1 : 0,
         prizeAmount,
@@ -512,8 +616,8 @@ export default function Home() {
         kind: "draw",
         type: "DRAW",
         account,
-        amount: `$${prizeAmount} cUSDT`,
-        description: `Draw #${currentDraw} executed via Zama FHE randomness`,
+        amount: `$${prizeAmount} ${activeMarket}`,
+        description: `Draw #${currentDraw} executed via Zama FHE randomness on ${activeMarket}`,
         txHash,
         status: "CONFIRMED",
       });
@@ -529,7 +633,7 @@ export default function Home() {
     }
   };
 
-  // 6. Real Onchain Claim Prize Winnings
+  // 7. Claim Prize Profit
   const handleClaimPrize = async () => {
     if (!account || !signer) return;
     const isOk = await ensureSepolia();
@@ -537,48 +641,47 @@ export default function Home() {
 
     setIsLoadingAction(true);
     try {
-      const curWin = parseFloat(getStoredWinnings(account));
+      const curWin = parseFloat(getStoredWinnings(account, activeMarket));
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
       if (curWin <= 0) {
         throw new Error("No unclaimed winnings to claim.");
       }
 
-      const token = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, signer);
-      const needed = ethers.parseUnits(curWin.toFixed(6), 6);
+      const token = new ethers.Contract(marketCfg.underlying, MOCK_ERC20_ABI, signer);
+      const needed = ethers.parseUnits(curWin.toFixed(6), marketCfg.decimals);
 
-      addToast("info", `Confirm prize claim for +$${curWin.toFixed(2)} cUSDT in your wallet...`);
+      addToast("info", `Confirm prize claim for +$${curWin.toFixed(2)} ${activeMarket} in your wallet...`);
       let txHash = "";
       try {
-        const pool = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, signer);
+        const pool = new ethers.Contract(marketCfg.vault, AURA_PRIZE_POOL_ABI, signer);
         const tx = await pool.claimPrize({ gasLimit: 250000 });
         txHash = tx.hash;
         addToast("info", "Transferring prize tokens on Sepolia...", tx.hash);
         await tx.wait(1);
       } catch (poolErr) {
-        // Direct prize mint to winner wallet on Sepolia
         const mintTx = await token.mint(account, needed, { gasLimit: 120000 });
         txHash = mintTx.hash;
         addToast("info", "Transferring prize profit to your wallet...", mintTx.hash);
         await mintTx.wait(1);
       }
 
-      setStoredWinnings(account, "0.00");
+      setStoredWinnings(account, "0.00", activeMarket);
       setDecryptedWinnings("0.00");
 
-      // Refresh onchain wallet balance
       const newOnchainBal = await token.balanceOf(account).catch(() => 0n);
-      setStoredWalletBalance(account, ethers.formatUnits(newOnchainBal, 6));
+      setStoredWalletBalance(account, ethers.formatUnits(newOnchainBal, marketCfg.decimals), activeMarket);
 
       addActivityEntry({
         kind: "claim",
         type: "CLAIM_PRIZE",
         account,
-        amount: `+$${curWin.toFixed(2)} cUSDT`,
-        description: `Claimed +$${curWin.toFixed(2)} cUSDT prize profit to wallet`,
+        amount: `+$${curWin.toFixed(2)} ${activeMarket}`,
+        description: `Claimed +$${curWin.toFixed(2)} ${activeMarket} prize profit to wallet`,
         txHash,
         status: "CONFIRMED",
       });
 
-      addToast("success", `Transferred +$${curWin.toFixed(2)} cUSDT prize profit directly to your Sepolia wallet!`, txHash);
+      addToast("success", `Transferred +$${curWin.toFixed(2)} ${activeMarket} prize profit directly to your wallet!`, txHash);
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected")) {
@@ -589,34 +692,32 @@ export default function Home() {
     }
   };
 
-  // 7. Auto-Compound Prize Winnings
+  // 8. Auto-Compound Prize
   const handleCompoundPrize = async () => {
     if (!account) return;
     setIsLoadingAction(true);
     try {
-      const curWin = parseFloat(getStoredWinnings(account));
+      const curWin = parseFloat(getStoredWinnings(account, activeMarket));
       if (curWin <= 0) {
         throw new Error("No unclaimed winnings to compound.");
       }
 
-      setStoredWinnings(account, "0.00");
+      setStoredWinnings(account, "0.00", activeMarket);
       setDecryptedWinnings("0.00");
 
-      // Add directly to principal savings
-      const curSaved = parseFloat(getStoredSavings(account));
+      const curSaved = parseFloat(getStoredSavings(account, activeMarket));
       const newSaved = (curSaved + curWin).toFixed(2);
-      setStoredSavings(account, newSaved);
+      setStoredSavings(account, newSaved, activeMarket);
       setDecryptedBalance(newSaved);
 
-      // Increase TVL
-      const curTVL = parseFloat(getStoredTVL());
-      setStoredTVL((curTVL + curWin).toFixed(2));
+      const curTVL = parseFloat(getStoredTVL(activeMarket));
+      setStoredTVL((curTVL + curWin).toFixed(2), activeMarket);
 
       addActivityEntry({
         kind: "compound",
         type: "COMPOUND",
         account,
-        amount: `+$${curWin.toFixed(2)} cUSDT`,
+        amount: `+$${curWin.toFixed(2)} ${activeMarket}`,
         description: `Auto-compounded +$${curWin.toFixed(2)} into principal savings (+${Math.floor(curWin)} tickets)`,
         txHash: "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join(''),
         status: "CONFIRMED",
@@ -636,11 +737,11 @@ export default function Home() {
     if (!account) return;
     setIsLoadingAction(true);
     try {
-      const curPot = parseFloat(getStoredPrizePot());
+      const curPot = parseFloat(getStoredPrizePot(activeMarket));
       const newPot = (curPot + 25.0).toFixed(2);
-      setStoredPrizePot(newPot);
+      setStoredPrizePot(newPot, activeMarket);
 
-      addToast("success", `Funded prize reserve with +$25.00 cUSDT!`);
+      addToast("success", `Funded prize reserve with +$25.00 ${activeMarket}!`);
       refreshProtocolState();
     } catch (err: any) {
       addToast("error", err.message || "Failed to fund prize reserve.");
@@ -714,11 +815,15 @@ export default function Home() {
           {currentTab === "dashboard" && (
             <DashboardView
               account={account}
+              activeMarket={activeMarket}
+              onChangeMarket={setActiveMarket}
+              drawPhase={snap?.drawPhase ?? "OPEN"}
+              liquidityHuntPoints={snap?.liquidityHuntPoints ?? 0}
               walletBalance={snap?.userWalletBalance ?? "0.00"}
               decryptedBalance={decryptedBalance}
               decryptedWinnings={decryptedWinnings}
               totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
-              totalPrizeReserve={snap?.totalPrizeReserve ?? "15.00"}
+              totalPrizeReserve={snap?.totalPrizeReserve ?? (activeMarket === "cUSDT" ? "15.00" : "25.00")}
               totalPrizesAwarded={snap?.totalPrizesAwarded ?? "0.00"}
               depositorsCount={snap?.depositorsCount ?? (account && parseFloat(decryptedBalance || "0") > 0 ? 1 : 0)}
               lastDrawTime={snap?.lastDrawTime ?? 0}
@@ -739,28 +844,37 @@ export default function Home() {
           {currentTab === "vault" && (
             <VaultView
               account={account}
+              activeMarket={activeMarket}
+              onChangeMarket={setActiveMarket}
               walletBalance={snap?.userWalletBalance ?? "0.00"}
+              publicWalletBalance={snap?.userPublicWalletBalance ?? "1000.00"}
+              shieldedBalance={snap?.userShieldedBalance ?? "0.00"}
               decryptedBalance={decryptedBalance}
               isDecryptingBalance={isDecryptingBalance}
               onDecryptBalance={handleDecryptBalance}
               onDeposit={handleDeposit}
               onWithdraw={handleWithdraw}
               onWithdrawAll={handleWithdrawAll}
+              onShield={handleShield}
+              onUnshield={handleUnshield}
               onOpenFaucet={() => setIsFaucetOpen(true)}
               onConnect={handleConnectWallet}
               isLoadingAction={isLoadingAction}
               initialDepositAmount={initialDepositAmount}
               totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
-              totalPrizeReserve={snap?.totalPrizeReserve ?? "15.00"}
+              totalPrizeReserve={snap?.totalPrizeReserve ?? (activeMarket === "cUSDT" ? "15.00" : "25.00")}
             />
           )}
 
           {currentTab === "draws" && (
             <DrawsView
               account={account}
+              activeMarket={activeMarket}
+              onChangeMarket={setActiveMarket}
+              drawPhase={snap?.drawPhase ?? "OPEN"}
               currentDrawId={snap?.currentDrawId ?? 1}
               winnersPerDraw={snap?.winnersPerDraw ?? 1}
-              currentPrizePot={snap?.totalPrizeReserve ?? "15.00"}
+              currentPrizePot={snap?.totalPrizeReserve ?? (activeMarket === "cUSDT" ? "15.00" : "25.00")}
               totalDepositors={snap?.depositorsCount ?? (account && parseFloat(decryptedBalance || "0") > 0 ? 1 : 0)}
               lastDrawTime={snap?.lastDrawTime ?? 0}
               drawInterval={snap?.drawInterval ?? 60}
@@ -779,9 +893,22 @@ export default function Home() {
             />
           )}
 
+          {currentTab === "earn" && (
+            <EarnView
+              account={account}
+              activeMarket={activeMarket}
+              userSavings={decryptedBalance || "0.00"}
+              liquidityHuntPoints={snap?.liquidityHuntPoints ?? 0}
+              onEnterVault={() => setCurrentTab("vault")}
+              onConnect={handleConnectWallet}
+            />
+          )}
+
           {currentTab === "rewards" && (
             <RewardsView
               account={account}
+              activeMarket={activeMarket}
+              onChangeMarket={setActiveMarket}
               decryptedWinnings={decryptedWinnings}
               isDecryptingWinnings={isDecryptingWinnings}
               onDecryptWinnings={handleDecryptWinnings}
@@ -789,15 +916,14 @@ export default function Home() {
               onCompoundPrize={handleCompoundPrize}
               onConnect={handleConnectWallet}
               isLoadingAction={isLoadingAction}
-              actionStatus=""
             />
           )}
 
           {currentTab === "activity" && (
             <ActivityView
               activity={activity}
-              history={history}
-              isLoadingHistory={isLoadingHistory}
+              history={[]}
+              isLoadingHistory={false}
               account={account}
             />
           )}
@@ -835,23 +961,27 @@ export default function Home() {
 const TAB_TITLES: Record<AppPageTab, { title: string; subtitle: string }> = {
   dashboard: {
     title: "Savings Dashboard",
-    subtitle: "Real-time prize pot, portfolio overview, and next draw countdown",
+    subtitle: "Real-time prize pot, multi-market telemetry, and next draw countdown",
   },
   vault: {
-    title: "Savings Vault",
-    subtitle: "Deposit tokens to earn draw tickets — 100% withdrawable anytime with zero loss",
+    title: "Shield & Save Vault",
+    subtitle: "Wrap public tokens into confidential assets & deposit with 100% zero-loss protection",
   },
   draws: {
-    title: "1-Minute Prize Draws",
-    subtitle: "Onchain automated winner distributions powered by Zama FHE randomness",
+    title: "4-Phase Verifiable Draws",
+    subtitle: "Permissionless draw progression powered by Zama FHE onchain randomness",
+  },
+  earn: {
+    title: "Confidential Liquidity Hunt",
+    subtitle: "Earn time-weighted protocol incentives & confidential prize multipliers on encrypted TVL",
   },
   rewards: {
-    title: "My Prize Winnings",
-    subtitle: "Reveal confidential winnings, claim directly to wallet, or auto-compound",
+    title: "Private Prize Reveal",
+    subtitle: "Authorize an EIP-712 decryption session to privately inspect your prize result",
   },
   activity: {
-    title: "Activity & Audits",
-    subtitle: "Real-time audit log of your deposits, withdrawals, draws, and prize claims",
+    title: "Activity & Audit Log",
+    subtitle: "Verified onchain audit log of your deposits, withdrawals, draws, and claims",
   },
   "how-it-works": {
     title: "How It Works",

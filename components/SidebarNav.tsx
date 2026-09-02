@@ -13,10 +13,11 @@ import {
   Home,
   ShieldCheck,
   History,
-  Lock
+  Lock,
+  Flame
 } from "lucide-react";
 
-export type AppPageTab = "dashboard" | "vault" | "draws" | "rewards" | "activity" | "how-it-works";
+export type AppPageTab = "dashboard" | "vault" | "draws" | "earn" | "rewards" | "activity" | "how-it-works";
 
 interface SidebarNavProps {
   currentTab: AppPageTab;
@@ -37,9 +38,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 }) => {
   const navItems: { id: AppPageTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: "vault", label: "Savings Vault", icon: <PiggyBank className="w-4 h-4" />, badge: "8.5%" },
-    { id: "draws", label: "Prize Draws", icon: <Dices className="w-4 h-4" />, badge: "1-Min" },
-    { id: "rewards", label: "My Winnings", icon: <Trophy className="w-4 h-4" /> },
+    { id: "vault", label: "Shield & Save", icon: <PiggyBank className="w-4 h-4" />, badge: "Vault" },
+    { id: "draws", label: "4-Phase Draws", icon: <Dices className="w-4 h-4" />, badge: "1-Min" },
+    { id: "earn", label: "Liquidity Hunt", icon: <Flame className="w-4 h-4" />, badge: "Earn" },
+    { id: "rewards", label: "Private Reveal", icon: <Trophy className="w-4 h-4" /> },
     { id: "activity", label: "Activity Feed", icon: <History className="w-4 h-4" /> },
     { id: "how-it-works", label: "How It Works", icon: <BookOpen className="w-4 h-4" /> },
   ];

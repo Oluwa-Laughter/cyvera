@@ -1,11 +1,16 @@
 /**
- * VeilPool Persistent Client-Side State Engine
- * Manages per-wallet persistence for balances, winnings, draws, and activity
- * with strict wallet isolation and no fake/phantom data.
+ * VeilPool Persistent State Engine
+ * Manages dual markets (cUSDT & cUSDC), token shielding balances,
+ * 4-phase verifiable draw state machine, and liquidity hunt accounting.
  */
+import { ActiveMarketId } from "./contracts";
+
+export type DrawPhase = "OPEN" | "SNAPSHOT" | "SELECTING" | "CLAIMING";
 
 export interface StoredDrawRecord {
   drawId: number;
+  market: ActiveMarketId;
+  phase: DrawPhase;
   timestamp: number;
   totalParticipants: number;
   prizeAmount: string;
@@ -20,6 +25,7 @@ export interface StoredActivityEntry {
   timestamp?: number;
   kind?: string;
   type?: string;
+  market?: ActiveMarketId;
   description?: string;
   account?: string;
   amount?: string;
@@ -29,87 +35,133 @@ export interface StoredActivityEntry {
 
 const STORAGE_KEYS = {
   SAVINGS_PREFIX: "veilpool_savings_",
+  SHIELDED_PREFIX: "veilpool_shielded_",
   WINNINGS_PREFIX: "veilpool_winnings_",
   WALLET_PREFIX: "veilpool_wallet_",
+  PUBLIC_WALLET_PREFIX: "veilpool_pubwallet_",
   DRAWS: "veilpool_draws_history",
   ACTIVITY: "veilpool_activity_feed",
-  TVL: "veilpool_global_tvl",
-  PRIZE_POT: "veilpool_prize_pot",
-  LAST_DRAW: "veilpool_last_draw_time",
-  CURRENT_DRAW_ID: "veilpool_current_draw_id",
+  TVL_PREFIX: "veilpool_tvl_",
+  PRIZE_POT_PREFIX: "veilpool_pot_",
+  LAST_DRAW_PREFIX: "veilpool_lastdraw_",
+  CURRENT_DRAW_ID_PREFIX: "veilpool_drawid_",
+  DRAW_PHASE_PREFIX: "veilpool_phase_",
+  LIQUIDITY_HUNT_POINTS_PREFIX: "veilpool_lh_points_",
 };
 
 const isBrowser = typeof window !== "undefined";
 
-export const getStoredSavings = (account: string | null): string => {
+// Active Market Storage
+export const getStoredSavings = (account: string | null, market: ActiveMarketId = "cUSDT"): string => {
   if (!isBrowser || !account) return "0.00";
-  const val = localStorage.getItem(STORAGE_KEYS.SAVINGS_PREFIX + account.toLowerCase());
+  const val = localStorage.getItem(`${STORAGE_KEYS.SAVINGS_PREFIX}${market}_${account.toLowerCase()}`);
   return val !== null ? val : "0.00";
 };
 
-export const setStoredSavings = (account: string | null, amount: string): void => {
+export const setStoredSavings = (account: string | null, amount: string, market: ActiveMarketId = "cUSDT"): void => {
   if (!isBrowser || !account) return;
-  localStorage.setItem(STORAGE_KEYS.SAVINGS_PREFIX + account.toLowerCase(), amount);
+  localStorage.setItem(`${STORAGE_KEYS.SAVINGS_PREFIX}${market}_${account.toLowerCase()}`, amount);
 };
 
-export const getStoredWinnings = (account: string | null): string => {
+// Shielded Balance (Wrapped in confidential cUSDT/cUSDC ready to deposit)
+export const getStoredShieldedBalance = (account: string | null, market: ActiveMarketId = "cUSDT"): string => {
   if (!isBrowser || !account) return "0.00";
-  const val = localStorage.getItem(STORAGE_KEYS.WINNINGS_PREFIX + account.toLowerCase());
+  const val = localStorage.getItem(`${STORAGE_KEYS.SHIELDED_PREFIX}${market}_${account.toLowerCase()}`);
   return val !== null ? val : "0.00";
 };
 
-export const setStoredWinnings = (account: string | null, amount: string): void => {
+export const setStoredShieldedBalance = (account: string | null, amount: string, market: ActiveMarketId = "cUSDT"): void => {
   if (!isBrowser || !account) return;
-  localStorage.setItem(STORAGE_KEYS.WINNINGS_PREFIX + account.toLowerCase(), amount);
+  localStorage.setItem(`${STORAGE_KEYS.SHIELDED_PREFIX}${market}_${account.toLowerCase()}`, amount);
 };
 
-export const getStoredWalletBalance = (account: string | null): string => {
+// Winnings
+export const getStoredWinnings = (account: string | null, market: ActiveMarketId = "cUSDT"): string => {
   if (!isBrowser || !account) return "0.00";
-  const val = localStorage.getItem(STORAGE_KEYS.WALLET_PREFIX + account.toLowerCase());
+  const val = localStorage.getItem(`${STORAGE_KEYS.WINNINGS_PREFIX}${market}_${account.toLowerCase()}`);
   return val !== null ? val : "0.00";
 };
 
-export const setStoredWalletBalance = (account: string | null, amount: string): void => {
+export const setStoredWinnings = (account: string | null, amount: string, market: ActiveMarketId = "cUSDT"): void => {
   if (!isBrowser || !account) return;
-  localStorage.setItem(STORAGE_KEYS.WALLET_PREFIX + account.toLowerCase(), amount);
+  localStorage.setItem(`${STORAGE_KEYS.WINNINGS_PREFIX}${market}_${account.toLowerCase()}`, amount);
 };
 
-export const getStoredTVL = (): string => {
+// Confidential Token Wallet Balance
+export const getStoredWalletBalance = (account: string | null, market: ActiveMarketId = "cUSDT"): string => {
+  if (!isBrowser || !account) return "0.00";
+  const val = localStorage.getItem(`${STORAGE_KEYS.WALLET_PREFIX}${market}_${account.toLowerCase()}`);
+  return val !== null ? val : "0.00";
+};
+
+export const setStoredWalletBalance = (account: string | null, amount: string, market: ActiveMarketId = "cUSDT"): void => {
+  if (!isBrowser || !account) return;
+  localStorage.setItem(`${STORAGE_KEYS.WALLET_PREFIX}${market}_${account.toLowerCase()}`, amount);
+};
+
+// Public Token Wallet Balance (unshielded USDT/USDC)
+export const getStoredPublicWalletBalance = (account: string | null, market: ActiveMarketId = "cUSDT"): string => {
+  if (!isBrowser || !account) return "1000.00";
+  const val = localStorage.getItem(`${STORAGE_KEYS.PUBLIC_WALLET_PREFIX}${market}_${account.toLowerCase()}`);
+  return val !== null ? val : "1000.00";
+};
+
+export const setStoredPublicWalletBalance = (account: string | null, amount: string, market: ActiveMarketId = "cUSDT"): void => {
+  if (!isBrowser || !account) return;
+  localStorage.setItem(`${STORAGE_KEYS.PUBLIC_WALLET_PREFIX}${market}_${account.toLowerCase()}`, amount);
+};
+
+// TVL & Prize Pot
+export const getStoredTVL = (market: ActiveMarketId = "cUSDT"): string => {
   if (!isBrowser) return "0.00";
-  const val = localStorage.getItem(STORAGE_KEYS.TVL);
+  const val = localStorage.getItem(`${STORAGE_KEYS.TVL_PREFIX}${market}`);
   return val !== null ? val : "0.00";
 };
 
-export const setStoredTVL = (tvl: string): void => {
+export const setStoredTVL = (tvl: string, market: ActiveMarketId = "cUSDT"): void => {
   if (!isBrowser) return;
-  localStorage.setItem(STORAGE_KEYS.TVL, tvl);
+  localStorage.setItem(`${STORAGE_KEYS.TVL_PREFIX}${market}`, tvl);
 };
 
-export const getStoredPrizePot = (): string => {
-  if (!isBrowser) return "15.00";
-  const val = localStorage.getItem(STORAGE_KEYS.PRIZE_POT);
-  return val !== null ? val : "15.00";
+export const getStoredPrizePot = (market: ActiveMarketId = "cUSDT"): string => {
+  if (!isBrowser) return market === "cUSDT" ? "15.00" : "25.00";
+  const val = localStorage.getItem(`${STORAGE_KEYS.PRIZE_POT_PREFIX}${market}`);
+  return val !== null ? val : market === "cUSDT" ? "15.00" : "25.00";
 };
 
-export const setStoredPrizePot = (pot: string): void => {
+export const setStoredPrizePot = (pot: string, market: ActiveMarketId = "cUSDT"): void => {
   if (!isBrowser) return;
-  localStorage.setItem(STORAGE_KEYS.PRIZE_POT, pot);
+  localStorage.setItem(`${STORAGE_KEYS.PRIZE_POT_PREFIX}${market}`, pot);
 };
 
-export const getStoredDrawHistory = (userAccount?: string | null): StoredDrawRecord[] => {
+// 4-Phase Draw Progression
+export const getStoredDrawPhase = (market: ActiveMarketId = "cUSDT"): DrawPhase => {
+  if (!isBrowser) return "OPEN";
+  const val = localStorage.getItem(`${STORAGE_KEYS.DRAW_PHASE_PREFIX}${market}`);
+  return (val as DrawPhase) || "OPEN";
+};
+
+export const setStoredDrawPhase = (phase: DrawPhase, market: ActiveMarketId = "cUSDT"): void => {
+  if (!isBrowser) return;
+  localStorage.setItem(`${STORAGE_KEYS.DRAW_PHASE_PREFIX}${market}`, phase);
+};
+
+// Draw History
+export const getStoredDrawHistory = (userAccount?: string | null, market: ActiveMarketId = "cUSDT"): StoredDrawRecord[] => {
   if (!isBrowser) return [];
   const raw = localStorage.getItem(STORAGE_KEYS.DRAWS);
   if (!raw) return [];
   try {
     const list: StoredDrawRecord[] = JSON.parse(raw);
+    const filtered = list.filter((d) => !d.market || d.market === market);
     if (userAccount) {
       const lower = userAccount.toLowerCase();
-      return list.map((d) => ({
+      return filtered.map((d) => ({
         ...d,
         isMyWin: d.winner.toLowerCase() === lower || d.winner.toLowerCase().includes(lower.slice(2, 6)),
       }));
     }
-    return list;
+    return filtered;
   } catch {
     return [];
   }
@@ -117,29 +169,40 @@ export const getStoredDrawHistory = (userAccount?: string | null): StoredDrawRec
 
 export const addStoredDraw = (draw: StoredDrawRecord): void => {
   if (!isBrowser) return;
-  const current = getStoredDrawHistory();
-  const updated = [draw, ...current.filter((d) => d.drawId !== draw.drawId)].slice(0, 30);
+  const raw = localStorage.getItem(STORAGE_KEYS.DRAWS);
+  const current: StoredDrawRecord[] = raw ? JSON.parse(raw) : [];
+  const updated = [draw, ...current.filter((d) => !(d.drawId === draw.drawId && d.market === draw.market))].slice(0, 30);
   localStorage.setItem(STORAGE_KEYS.DRAWS, JSON.stringify(updated));
-  localStorage.setItem(STORAGE_KEYS.CURRENT_DRAW_ID, String(draw.drawId));
-  localStorage.setItem(STORAGE_KEYS.LAST_DRAW, String(draw.timestamp));
+  localStorage.setItem(`${STORAGE_KEYS.CURRENT_DRAW_ID_PREFIX}${draw.market}`, String(draw.drawId));
+  localStorage.setItem(`${STORAGE_KEYS.LAST_DRAW_PREFIX}${draw.market}`, String(draw.timestamp));
 };
 
-export const getStoredCurrentDrawId = (): number => {
+export const getStoredCurrentDrawId = (market: ActiveMarketId = "cUSDT"): number => {
   if (!isBrowser) return 1;
-  const val = localStorage.getItem(STORAGE_KEYS.CURRENT_DRAW_ID);
+  const val = localStorage.getItem(`${STORAGE_KEYS.CURRENT_DRAW_ID_PREFIX}${market}`);
   return val ? parseInt(val, 10) : 1;
 };
 
-export const getStoredLastDrawTime = (): number => {
+export const getStoredLastDrawTime = (market: ActiveMarketId = "cUSDT"): number => {
   if (!isBrowser) return Math.floor(Date.now() / 1000) - 10;
-  const val = localStorage.getItem(STORAGE_KEYS.LAST_DRAW);
+  const val = localStorage.getItem(`${STORAGE_KEYS.LAST_DRAW_PREFIX}${market}`);
   return val ? parseInt(val, 10) : Math.floor(Date.now() / 1000) - 10;
 };
 
-/**
- * Returns activities filtered strictly for the given connected wallet.
- * If account is passed, only returns activities belonging to that account.
- */
+// Liquidity Hunt Reward Accounting
+export const getStoredLiquidityHuntPoints = (account: string | null): number => {
+  if (!isBrowser || !account) return 0;
+  const val = localStorage.getItem(`${STORAGE_KEYS.LIQUIDITY_HUNT_POINTS_PREFIX}${account.toLowerCase()}`);
+  return val ? parseInt(val, 10) : 0;
+};
+
+export const addStoredLiquidityHuntPoints = (account: string | null, pts: number): void => {
+  if (!isBrowser || !account) return;
+  const cur = getStoredLiquidityHuntPoints(account);
+  localStorage.setItem(`${STORAGE_KEYS.LIQUIDITY_HUNT_POINTS_PREFIX}${account.toLowerCase()}`, String(cur + pts));
+};
+
+// Activity Log
 export const getStoredActivity = (account?: string | null): StoredActivityEntry[] => {
   if (!isBrowser) return [];
   const raw = localStorage.getItem(STORAGE_KEYS.ACTIVITY);

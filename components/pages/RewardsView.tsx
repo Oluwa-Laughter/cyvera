@@ -9,14 +9,22 @@ import {
   RefreshCw, 
   Eye, 
   EyeOff, 
-  ShieldCheck,
-  CheckCircle2,
-  Gift
+  ShieldCheck, 
+  CheckCircle2, 
+  Gift,
+  Lock,
+  Unlock,
+  Key,
+  Flame,
+  Check
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { ActiveMarketId, ZAMA_SEPOLIA_CONFIG } from "@/lib/contracts";
 
 interface RewardsViewProps {
   account: string | null;
+  activeMarket?: ActiveMarketId;
+  onChangeMarket?: (m: ActiveMarketId) => void;
   decryptedWinnings: string | null;
   isDecryptingWinnings: boolean;
   onDecryptWinnings: () => void;
@@ -24,23 +32,28 @@ interface RewardsViewProps {
   onCompoundPrize: () => Promise<void>;
   onConnect: () => void;
   isLoadingAction: boolean;
+  actionStatus?: string;
 }
 
 export const RewardsView: React.FC<RewardsViewProps> = ({
   account,
+  activeMarket = "cUSDT",
+  onChangeMarket,
   decryptedWinnings,
   isDecryptingWinnings,
   onDecryptWinnings,
   onClaimPrize,
   onCompoundPrize,
   onConnect,
-  isLoadingAction}) => {
+  isLoadingAction,
+}) => {
   const hasWinnings = parseFloat(decryptedWinnings || "0") > 0;
+  const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
 
   const triggerCelebration = () => {
     confetti({
-      particleCount: 120,
-      spread: 80,
+      particleCount: 140,
+      spread: 85,
       origin: { y: 0.6 },
     });
   };
@@ -57,128 +70,164 @@ export const RewardsView: React.FC<RewardsViewProps> = ({
 
   return (
     <div className="space-y-8 w-full max-w-4xl mx-auto text-black">
-      {/* 1. Header Rewards Card */}
-      <div className="aura-card p-8 sm:p-10 bg-gradient-to-br from-white via-slate-50 to-amber-50/40">
+      {/* 1. Market Switcher */}
+      {onChangeMarket && (
+        <div className="flex items-center justify-between p-2 rounded-2xl bg-white border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-1 text-xs font-bold">
+            <button
+              onClick={() => onChangeMarket("cUSDT")}
+              className={`px-4 py-2 rounded-xl transition-all ${
+                activeMarket === "cUSDT" 
+                  ? "bg-aura-yellow text-black font-black shadow-sm" 
+                  : "text-slate-500 hover:text-black"
+              }`}
+            >
+              cUSDT Winnings
+            </button>
+            <button
+              onClick={() => onChangeMarket("cUSDC")}
+              className={`px-4 py-2 rounded-xl transition-all ${
+                activeMarket === "cUSDC" 
+                  ? "bg-aura-yellow text-black font-black shadow-sm" 
+                  : "text-slate-500 hover:text-black"
+              }`}
+            >
+              cUSDC Winnings
+            </button>
+          </div>
+          <span className="text-[11px] font-bold text-slate-500 hidden sm:inline">
+            EIP-712 User-Decryption Session
+          </span>
+        </div>
+      )}
+
+      {/* 2. Header Rewards Card */}
+      <div className="aura-card p-6 sm:p-10 bg-gradient-to-br from-white via-slate-50 to-amber-50/40 border border-slate-200 shadow-aura-md space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-slate-200">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Your Prize Winnings</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold border border-amber-200">
-                100% Confidential
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Private Prize Reveal Session
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-200">
+                Encrypted with Zama FHE
               </span>
             </div>
 
-            <div className="flex items-baseline gap-3 mt-1">
-              <div className="text-4xl sm:text-5xl font-black text-black">
-                {account ? (
-                  decryptedWinnings !== null ? (
-                    <span className="text-black">
-                      ${decryptedWinnings} <span className="text-base text-slate-500 font-medium">cUSDT</span>
-                    </span>
-                  ) : (
-                    <span className="text-slate-400 tracking-widest text-3xl">
-                      •••••••• <span className="text-base text-slate-400">cUSDT</span>
-                    </span>
-                  )
-                ) : (
-                  <span className="text-slate-400 text-2xl font-bold">Not Connected</span>
-                )}
-              </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
+              Your Confidential Winnings
+            </h2>
+            <p className="text-xs text-slate-500 font-medium">
+              The result is not published to the chain as a readable prize amount. Authorize a session to inspect your permitted value.
+            </p>
+          </div>
 
-              {account && (
-                <button
-                  onClick={onDecryptWinnings}
-                  disabled={isDecryptingWinnings}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 transition-all shadow-sm active:scale-95"
-                >
-                  {isDecryptingWinnings ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  ) : decryptedWinnings !== null ? (
-                    <>
-                      <EyeOff className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Hide</span>
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Reveal Winnings</span>
-                    </>
-                  )}
-                </button>
+          <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-right min-w-[140px]">
+            <span className="text-[10px] font-bold text-amber-900 uppercase">Status</span>
+            <div className="text-sm font-black text-amber-950">
+              {hasWinnings ? "🎉 Prize Won!" : "🔒 Encrypted Handle"}
+            </div>
+          </div>
+        </div>
+
+        {/* Big Reveal Display Box */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 text-center space-y-4 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-aura-yellow text-black flex items-center justify-center mx-auto shadow-md">
+            <Trophy className="w-7 h-7" />
+          </div>
+
+          <div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+              Decrypted Prize Value
+            </span>
+            <div className="text-4xl sm:text-5xl font-black text-black mt-1 font-mono">
+              {account ? (
+                decryptedWinnings !== null ? (
+                  <span className={hasWinnings ? "text-emerald-800" : "text-slate-800"}>
+                    {hasWinnings ? `+$${decryptedWinnings}` : "$0.00"}{" "}
+                    <span className="text-lg text-slate-500 font-normal">{activeMarket}</span>
+                  </span>
+                ) : (
+                  <span className="text-slate-400 text-3xl">•••••••• {activeMarket}</span>
+                )
+              ) : (
+                <span className="text-slate-400 text-2xl">Connect Wallet</span>
               )}
             </div>
           </div>
 
-          <div className="text-right text-xs text-slate-500 hidden sm:block">
-            <div>Payout Settlement:</div>
-            <div className="text-base font-extrabold text-emerald-700 mt-0.5">Instant Onchain Transfer</div>
-          </div>
-        </div>
-
-        <div className="pt-4 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2 font-medium">
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Only your wallet can decrypt and claim your prizes</span>
-          </span>
-          <span>Zero public broadcast of winner net worth</span>
-        </div>
-      </div>
-
-      {/* 2. Claim / Compound Action Box */}
-      <div className="aura-card p-8">
-        {!account ? (
-          <div className="text-center py-8 space-y-4">
-            <Trophy className="w-12 h-12 text-amber-500 mx-auto" />
-            <div>
-              <h4 className="text-lg font-bold text-black">Connect Wallet to Check Winnings</h4>
-              <p className="text-xs text-slate-500 mt-1">Verify if your wallet won the latest prize draw!</p>
+          {account && (
+            <div className="pt-2">
+              <button
+                onClick={onDecryptWinnings}
+                disabled={isDecryptingWinnings}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-bold text-slate-800 transition-all active:scale-95 shadow-sm"
+              >
+                {isDecryptingWinnings ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Key className="w-4 h-4 text-amber-600" />
+                )}
+                <span>
+                  {isDecryptingWinnings ? "Decrypting via EIP-712..." : "Authorize Decryption Session"}
+                </span>
+              </button>
             </div>
+          )}
+
+          {hasWinnings && (
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs font-bold flex items-center justify-center gap-2 animate-bounce">
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>Congratulations! You won the {activeMarket} Prize Pot!</span>
+            </div>
+          )}
+        </div>
+
+        {/* Claim & Auto-Compound Actions */}
+        {hasWinnings && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <button
-              onClick={onConnect}
-              className="px-8 py-3.5 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-extrabold text-xs shadow-aura-yellow active:scale-95"
+              onClick={handleClaim}
+              disabled={isLoadingAction}
+              className="py-4 px-6 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-xs uppercase tracking-wider shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
             >
-              Connect Wallet
+              {isLoadingAction ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4" />}
+              <span>Claim Prize Profit to Wallet</span>
+            </button>
+
+            <button
+              onClick={handleCompound}
+              disabled={isLoadingAction}
+              className="py-4 px-6 rounded-2xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-900 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+            >
+              {isLoadingAction ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Repeat className="w-4 h-4 text-amber-600" />}
+              <span>Auto-Compound (+Tickets)</span>
             </button>
           </div>
-        ) : hasWinnings ? (
-          <div className="space-y-6">
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 flex items-center gap-3 text-xs text-amber-950 font-medium">
-              <Sparkles className="w-6 h-6 text-amber-600 shrink-0" />
-              <span>
-                <strong className="text-black text-sm block mb-0.5">Congratulations! You Won!</strong>
-                You have ${decryptedWinnings} cUSDT in secret prize winnings. You can claim them directly to your wallet or auto-compound into your principal for more tickets.
-              </span>
-            </div>
+        )}
+      </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-extrabold">
-              <button
-                onClick={handleClaim}
-                disabled={isLoadingAction}
-                className="py-4 px-6 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black transition-all shadow-aura-yellow flex items-center justify-center gap-2 active:scale-95"
-              >
-                <ArrowDownToLine className="w-4 h-4" />
-                <span>Claim Prize to Wallet</span>
-              </button>
+      {/* 3. Privacy & Decryption Mechanics */}
+      <div className="aura-card p-6 sm:p-8 bg-white border border-slate-200 space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+          <Lock className="w-4 h-4 text-amber-500" />
+          <h3 className="text-sm font-black uppercase tracking-wide text-black">Private Reveal Security Architecture</h3>
+        </div>
 
-              <button
-                onClick={handleCompound}
-                disabled={isLoadingAction}
-                className="py-4 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 transition-all flex items-center justify-center gap-2 active:scale-95"
-              >
-                <Repeat className="w-4 h-4 text-amber-600" />
-                <span>Auto-Compound into Savings</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="py-12 text-center rounded-2xl bg-slate-50 border border-slate-100 space-y-2 text-xs">
-            <Trophy className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <p className="text-black font-bold text-sm">No Unclaimed Winnings</p>
-            <p className="text-slate-500 max-w-sm mx-auto">
-              Your principal is currently active in the savings vault. Click &quot;Reveal Winnings&quot; above after each draw to verify your secret winning status!
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-600 font-medium">
+          <div className="space-y-2">
+            <h4 className="font-bold text-black text-xs">How Decryption Works</h4>
+            <p className="leading-relaxed">
+              When a draw concludes, prize winnings are credited directly as an encrypted ciphertext handle `_encryptedWinnings[winner]` onchain. Neither miners, keepers, nor third-party analytics can view what you won.
             </p>
           </div>
-        )}
+          <div className="space-y-2">
+            <h4 className="font-bold text-black text-xs">EIP-712 User Signature</h4>
+            <p className="leading-relaxed">
+              When you click "Authorize Decryption Session", your wallet signs an offchain EIP-712 permission request. The Zama relayer proves your identity and returns your decrypted plaintext balance exclusively to your screen.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

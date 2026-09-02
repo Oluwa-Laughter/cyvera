@@ -1,25 +1,32 @@
 /**
  * Live on-chain protocol state reader & state engine for VeilPool.
- * Connects to Ethereum Sepolia RPC, queries live token and contract states,
- * and maintains accurate per-wallet balances and test draws.
+ * Connects to Ethereum Sepolia RPC, tracks dual markets (cUSDT & cUSDC),
+ * and maintains per-market balances, shielding, and 4-phase draw states.
  */
 import { ethers } from "ethers";
 import {
+  ActiveMarketId,
   CONTRACT_ADDRESSES,
+  ZAMA_SEPOLIA_CONFIG,
   MOCK_ERC20_ABI,
   AURA_PRIZE_POOL_ABI,
   MOCK_YIELD_SOURCE_ABI,
 } from "./contracts";
 import {
   getStoredSavings,
+  getStoredShieldedBalance,
   getStoredWinnings,
   getStoredWalletBalance,
   setStoredWalletBalance,
+  getStoredPublicWalletBalance,
   getStoredTVL,
   getStoredPrizePot,
+  getStoredDrawPhase,
   getStoredDrawHistory,
   getStoredCurrentDrawId,
   getStoredLastDrawTime,
+  getStoredLiquidityHuntPoints,
+  DrawPhase,
 } from "./store";
 
 export const SEPOLIA_CHAIN_ID = 11155111;
@@ -47,6 +54,8 @@ export const getBestProvider = (): ethers.Provider => {
 
 export interface DrawRecordView {
   drawId: number;
+  market: ActiveMarketId;
+  phase: DrawPhase;
   timestamp: number;
   totalParticipants: number;
   prizeAmount: string;
@@ -56,6 +65,11 @@ export interface DrawRecordView {
 }
 
 export interface ProtocolSnapshot {
+  market: ActiveMarketId;
+  marketName: string;
+  marketSymbol: string;
+  publicSymbol: string;
+  drawPhase: DrawPhase;
   totalDeposits: string;
   totalPrizeReserve: string;
   totalPrizesAwarded: string;
@@ -68,22 +82,28 @@ export interface ProtocolSnapshot {
   totalYieldHarvested: string;
   apyBasisPoints: number;
   userWalletBalance: string;
+  userPublicWalletBalance: string;
+  userShieldedBalance: string;
   userNativeEthBalance: string;
   userShieldedBalanceHandle: string;
   userUnclaimedWinnings: string;
   userEncryptedWinningsHandle: string;
   userIsDepositor: boolean;
+  liquidityHuntPoints: number;
   drawHistory: DrawRecordView[];
   timeToNextDraw: number;
 }
 
 const ZERO = "0x" + "00".repeat(32);
 
-export async function fetchLiveProtocolState(userAccount?: string | null): Promise<ProtocolSnapshot> {
+export async function fetchLiveProtocolState(
+  userAccount?: string | null,
+  market: ActiveMarketId = "cUSDT"
+): Promise<ProtocolSnapshot> {
   const provider = getBestProvider();
-  const token = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.depositToken, MOCK_ERC20_ABI, provider);
-  const pool = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, provider);
-  const ys = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.yieldSource, MOCK_YIELD_SOURCE_ABI, provider);
+  const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[market];
+  const tokenAddr = marketCfg.underlying;
+  const token = new ethers.Contract(tokenAddr, MOCK_ERC20_ABI, provider);
 
   let onchainWalletBal: bigint = 0n;
   let onchainNativeEthBal: bigint = 0n;
@@ -97,7 +117,7 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
       onchainWalletBal = tokBal;
       onchainNativeEthBal = ethBal;
       if (tokBal > 0n) {
-        setStoredWalletBalance(userAccount, ethers.formatUnits(tokBal, 6));
+        setStoredWalletBalance(userAccount, ethers.formatUnits(tokBal, marketCfg.decimals), market);
       }
     } catch {
       onchainWalletBal = 0n;
@@ -107,16 +127,20 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
 
   const userNativeEthBalance = parseFloat(ethers.formatEther(onchainNativeEthBal)).toFixed(4);
 
-  const storedSaved = getStoredSavings(userAccount || null);
-  const storedWin = getStoredWinnings(userAccount || null);
-  const storedWallet = getStoredWalletBalance(userAccount || null);
-  const storedTVL = getStoredTVL();
-  const storedPot = getStoredPrizePot();
-  const storedDraws = getStoredDrawHistory(userAccount);
-  const storedDrawId = getStoredCurrentDrawId();
-  const storedLastDraw = getStoredLastDrawTime();
+  const storedSaved = getStoredSavings(userAccount || null, market);
+  const storedShielded = getStoredShieldedBalance(userAccount || null, market);
+  const storedWin = getStoredWinnings(userAccount || null, market);
+  const storedWallet = getStoredWalletBalance(userAccount || null, market);
+  const storedPublicWallet = getStoredPublicWalletBalance(userAccount || null, market);
+  const storedTVL = getStoredTVL(market);
+  const storedPot = getStoredPrizePot(market);
+  const storedPhase = getStoredDrawPhase(market);
+  const storedDraws = getStoredDrawHistory(userAccount, market);
+  const storedDrawId = getStoredCurrentDrawId(market);
+  const storedLastDraw = getStoredLastDrawTime(market);
+  const storedLhPoints = getStoredLiquidityHuntPoints(userAccount || null);
 
-  const effectiveWalletBal = onchainWalletBal > 0n ? ethers.formatUnits(onchainWalletBal, 6) : storedWallet;
+  const effectiveWalletBal = onchainWalletBal > 0n ? ethers.formatUnits(onchainWalletBal, marketCfg.decimals) : storedWallet;
   const userSavedNum = parseFloat(storedSaved);
   const now = Math.floor(Date.now() / 1000);
   const drawInterval = 60; // 1-minute test cycle
@@ -125,8 +149,14 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
 
   const effectiveTVL = parseFloat(storedTVL) > 0 ? storedTVL : (userSavedNum > 0 ? storedSaved : "0.00");
   const effectiveDepositors = userSavedNum > 0 ? 1 : 0;
+  const apyBps = market === "cUSDT" ? 850 : 1200;
 
   return {
+    market,
+    marketName: marketCfg.name,
+    marketSymbol: marketCfg.symbol,
+    publicSymbol: marketCfg.publicSymbol,
+    drawPhase: storedPhase,
     totalDeposits: effectiveTVL,
     totalPrizeReserve: storedPot,
     totalPrizesAwarded: "0.00",
@@ -137,13 +167,16 @@ export async function fetchLiveProtocolState(userAccount?: string | null): Promi
     winnersPerDraw: 1,
     depositorsCount: effectiveDepositors,
     totalYieldHarvested: "0.00",
-    apyBasisPoints: 850,
+    apyBasisPoints: apyBps,
     userWalletBalance: effectiveWalletBal,
+    userPublicWalletBalance: storedPublicWallet,
+    userShieldedBalance: storedShielded,
     userNativeEthBalance,
     userShieldedBalanceHandle: ZERO,
     userUnclaimedWinnings: storedWin,
     userEncryptedWinningsHandle: ZERO,
     userIsDepositor: userSavedNum > 0,
+    liquidityHuntPoints: storedLhPoints,
     drawHistory: storedDraws,
     timeToNextDraw: timeToNext,
   };
