@@ -8,3 +8,6 @@ broadcast
 .env.local
 *.tsbuildinfo
 .DS_Store
+deliverables/
+presentation/
+x_thread/
