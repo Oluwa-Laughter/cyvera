@@ -19,7 +19,8 @@ import {
   Layers,
   ChevronRight,
   Eye,
-  ArrowUpRight
+  ArrowUpRight,
+  PiggyBank
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { FiClock } from "react-icons/fi";
