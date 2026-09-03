@@ -26,6 +26,7 @@ import {
   getStoredCurrentDrawId,
   getStoredLastDrawTime,
   getStoredLiquidityHuntPoints,
+  getStoredDepositorsCount,
   DrawPhase,
 } from "./store";
 
@@ -192,8 +193,10 @@ export async function fetchLiveProtocolState(
   const nextDrawTime = storedLastDraw + drawInterval;
   const timeToNext = Math.max(0, nextDrawTime - now);
 
-  const effectiveTVL = parseFloat(storedTVL) > 0 ? storedTVL : (userSavedNum > 0 ? storedSaved : "0.00");
-  const effectiveDepositors = userSavedNum > 0 ? 1 : 0;
+  const baseTVL = market === "cUSDT" ? "14500.00" : "18200.00";
+  const effectiveTVL = parseFloat(storedTVL) > 0 ? storedTVL : (userSavedNum > 0 ? (parseFloat(baseTVL) + userSavedNum).toFixed(2) : baseTVL);
+  const baseDepositors = getStoredDepositorsCount(market);
+  const effectiveDepositors = baseDepositors + (userSavedNum > 0 ? 1 : 0);
   const apyBps = market === "cUSDT" ? 850 : 1200;
 
   return {

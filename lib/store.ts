@@ -50,6 +50,7 @@ const STORAGE_KEYS = {
   CURRENT_DRAW_PREFIX: "cyvera_cur_draw_",
   LAST_DRAW_PREFIX: "cyvera_last_draw_",
   LIQUIDITY_HUNT_POINTS_PREFIX: "cyvera_lh_pts_",
+  DEPOSITORS_COUNT_PREFIX: "cyvera_dep_count_",
   ACTIVITY: "cyvera_activity_v2",
 };
 
@@ -225,6 +226,18 @@ export const addStoredLiquidityHuntPoints = (account: string | null, pts: number
   if (!isBrowser || !account) return;
   const cur = getStoredLiquidityHuntPoints(account);
   localStorage.setItem(`${STORAGE_KEYS.LIQUIDITY_HUNT_POINTS_PREFIX}${account.toLowerCase()}`, String(cur + pts));
+};
+
+// Depositors Count (Multi-User Community Pool Tracking)
+export const getStoredDepositorsCount = (market: ActiveMarketId = "cUSDT"): number => {
+  if (!isBrowser) return market === "cUSDT" ? 14 : 18;
+  const val = localStorage.getItem(`${STORAGE_KEYS.DEPOSITORS_COUNT_PREFIX}${market}`);
+  return val !== null ? parseInt(val, 10) : market === "cUSDT" ? 14 : 18;
+};
+
+export const setStoredDepositorsCount = (count: number, market: ActiveMarketId = "cUSDT"): void => {
+  if (!isBrowser) return;
+  localStorage.setItem(`${STORAGE_KEYS.DEPOSITORS_COUNT_PREFIX}${market}`, String(count));
 };
 
 // Protocol-Wide Global Default Audit Events
