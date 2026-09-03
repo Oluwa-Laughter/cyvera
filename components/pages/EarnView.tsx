@@ -1,214 +1,227 @@
 "use client";
 
 import React from "react";
+import { motion } from "framer-motion";
 import { 
-  Zap, 
-  Flame, 
-  Coins, 
-  Trophy, 
-  Timer, 
   Sparkles, 
-  ArrowRight, 
-  Layers, 
-  Gift, 
-  Percent, 
+  Flame, 
+  Trophy, 
+  ShieldCheck, 
+  Lock, 
+  Coins, 
+  ArrowUpRight, 
   CheckCircle2, 
-  Lock,
+  Zap, 
+  Clock, 
+  TrendingUp,
+  Percent,
+  Layers,
   ChevronRight
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { ActiveMarketId } from "@/lib/contracts";
 
 interface EarnViewProps {
+  account: string | null;
+  activeMarket: ActiveMarketId;
+  onChangeMarket?: (m: ActiveMarketId) => void;
   userSavings: string;
   liquidityHuntPoints: number;
-  onNavigateVault: () => void;
-  onOpenFaucet: () => void;
-  activeMarket?: ActiveMarketId;
-  onChangeMarket?: (m: ActiveMarketId) => void;
+  onEnterVault: () => void;
+  onConnect: () => void;
 }
 
 export const EarnView: React.FC<EarnViewProps> = ({
+  account,
+  activeMarket,
+  onChangeMarket,
   userSavings,
   liquidityHuntPoints,
-  onNavigateVault,
-  onOpenFaucet,
-  activeMarket = "cUSDT",
-  onChangeMarket,
+  onEnterVault,
+  onConnect,
 }) => {
   const savedNum = parseFloat(userSavings || "0");
-  const multiplier = savedNum >= 1000 ? "3.5x" : savedNum >= 250 ? "2.0x" : savedNum > 0 ? "1.2x" : "1.0x";
-  const tier = savedNum >= 1000 ? "Diamond Whale" : savedNum >= 250 ? "Gold Saver" : savedNum > 0 ? "Silver Explorer" : "Bronze Observer";
-  const boostPct = savedNum >= 1000 ? "+250%" : savedNum >= 250 ? "+100%" : savedNum > 0 ? "+20%" : "+0%";
+  const hasSavings = savedNum > 0;
+
+  // Compute tier
+  const tier = savedNum >= 500 ? "Diamond Hunter" : savedNum >= 100 ? "Gold Hunter" : savedNum >= 25 ? "Silver Hunter" : "Bronze Scout";
+  const multiplier = savedNum >= 500 ? "2.5x" : savedNum >= 100 ? "1.8x" : savedNum >= 25 ? "1.25x" : "1.0x";
+  const boostPct = savedNum >= 500 ? "+150%" : savedNum >= 100 ? "+80%" : savedNum >= 25 ? "+25%" : "+0%";
 
   return (
     <div className="space-y-6 w-full max-w-5xl mx-auto text-foreground">
-      {/* Market Switcher (High-End Island Tabs) */}
+      {/* Market Switcher */}
       {onChangeMarket && (
-        <div className="flex items-center justify-between p-1.5 rounded-2xl bg-[#0B0E17]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg">
-          <div className="flex items-center gap-1 text-xs font-semibold">
+        <div className="flex items-center justify-between p-2 rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)] shadow-sm">
+          <div className="flex items-center gap-1.5 text-xs font-bold">
             <button
               onClick={() => onChangeMarket("cUSDT")}
-              className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+              className={`px-3.5 py-1.5 rounded-xl transition-all ${
                 activeMarket === "cUSDT" 
-                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black shadow-[0_0_25px_rgba(6,182,212,0.35)]" 
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
+                  : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              <div className={`w-2 h-2 rounded-full ${activeMarket === "cUSDT" ? "bg-slate-950 animate-pulse" : "bg-cyan-500/50"}`} />
-              <span>cUSDT Liquidity Hunt</span>
+              cUSDT Liquidity Hunt
             </button>
             <button
               onClick={() => onChangeMarket("cUSDC")}
-              className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+              className={`px-3.5 py-1.5 rounded-xl transition-all ${
                 activeMarket === "cUSDC" 
-                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black shadow-[0_0_25px_rgba(6,182,212,0.35)]" 
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
+                  : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              <div className={`w-2 h-2 rounded-full ${activeMarket === "cUSDC" ? "bg-slate-950 animate-pulse" : "bg-cyan-500/50"}`} />
-              <span>cUSDC Liquidity Hunt</span>
+              cUSDC Liquidity Hunt
             </button>
           </div>
-          <span className="text-[11px] font-mono text-cyan-400/80 bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/20 hidden sm:inline">
-            Confidential Multipliers
+          <span className="text-[11px] font-medium text-[var(--muted)] hidden sm:inline">
+            Confidential Multiplier Season
           </span>
         </div>
       )}
 
-      {/* 1. Hero Banner (Double-Bezel Architecture) */}
-      <div className="p-1 rounded-3xl bg-white/[0.03] border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-        <div className="p-5 sm:p-7 rounded-[calc(1.5rem-4px)] bg-[#0C101A]/90 backdrop-blur-xl border border-white/[0.04] space-y-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-white/[0.06]">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold tracking-widest text-cyan-400 uppercase bg-cyan-500/10 px-3 py-0.5 rounded-full border border-cyan-500/20 flex items-center gap-1.5">
-                  <Flame className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Season 1: Confidential Liquidity Hunt</span>
-                </span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#101524] text-slate-300 font-semibold border border-white/[0.06]">
-                  {activeMarket} Pool
-                </span>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1">
-                Confidential TVL Boost & Yield Hunt
-              </h2>
-              <p className="text-xs text-slate-400 font-normal max-w-lg leading-relaxed">
-                Earn time-weighted protocol incentives and confidential prize multipliers simply by holding savings in the zero-loss vault.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-[#111624] border border-white/[0.08] shadow-sm text-center min-w-[150px]">
-              <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">Hunt Status</span>
-              <div className="text-lg font-bold text-white mt-0.5">{tier}</div>
-              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 inline-block mt-1">
-                {multiplier} Prize Multiplier
+      {/* 1. Hero Banner */}
+      <div className="cyvera-card p-6 space-y-6">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-[var(--card-border)]">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-500 bg-amber-500/10 px-3 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-500" />
+                <span>Season 1: Confidential Liquidity Hunt</span>
+              </span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-foreground font-semibold border border-[var(--card-border)]">
+                {activeMarket} Pool
               </span>
             </div>
+
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight mt-1">
+              Confidential TVL Boost & Yield Hunt
+            </h2>
+            <p className="text-xs text-[var(--muted)] font-normal max-w-lg leading-relaxed">
+              Earn time-weighted protocol incentives and confidential prize multipliers simply by holding savings in the zero-loss vault.
+            </p>
           </div>
 
-          {/* Real-Time Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-[#101524] border border-white/[0.06] space-y-1 shadow-inner">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Shielded Principal</span>
-              </span>
-              <div className="text-2xl font-bold text-white font-mono">
-                ${userSavings} <span className="text-xs font-normal text-slate-400 font-sans">{activeMarket}</span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-normal">100% principal safe & withdrawable</p>
-            </div>
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-[var(--card-border)] shadow-sm text-center min-w-[150px]">
+            <span className="text-[11px] font-semibold text-[var(--muted)] uppercase">Hunt Status</span>
+            <div className="text-lg font-bold text-foreground mt-0.5">{tier}</div>
+            <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 inline-block mt-1">
+              {multiplier} Prize Multiplier
+            </span>
+          </div>
+        </div>
 
-            <div className="p-4 rounded-2xl bg-[#101524] border border-white/[0.06] space-y-1 shadow-inner">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Draw Boost</span>
-              </span>
-              <div className="text-2xl font-bold text-cyan-300 font-mono">
-                {boostPct} <span className="text-xs font-semibold text-slate-400 font-sans">Odds Multiplier</span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-normal">Calculated automatically onchain</p>
+        {/* Real-Time Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--card-border)] space-y-1 shadow-sm">
+            <span className="text-[11px] font-semibold text-[var(--muted)] uppercase flex items-center gap-1.5">
+              <Coins className="w-3.5 h-3.5 text-amber-500" />
+              <span>Shielded Principal</span>
+            </span>
+            <div className="text-xl sm:text-2xl font-bold text-foreground font-mono">
+              ${userSavings} <span className="text-xs font-normal text-[var(--muted)]">{activeMarket}</span>
             </div>
+            <p className="text-[11px] text-[var(--muted)] font-normal">100% principal safe & withdrawable</p>
+          </div>
 
-            <div className="p-4 rounded-2xl bg-[#101524] border border-white/[0.06] space-y-1 shadow-inner">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase flex items-center gap-1.5">
-                <Trophy className="w-3.5 h-3.5 text-blue-400" />
-                <span>Earned Hunt Points</span>
-              </span>
-              <div className="text-2xl font-bold text-white font-mono">
-                {Math.max(liquidityHuntPoints, Math.floor(savedNum * 12))} <span className="text-xs font-normal text-slate-400 font-sans">PTS</span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-normal">Season 1 Protocol Rewards</p>
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--card-border)] space-y-1 shadow-sm">
+            <span className="text-[11px] font-semibold text-[var(--muted)] uppercase flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-yellow-500" />
+              <span>Draw Boost</span>
+            </span>
+            <div className="text-xl sm:text-2xl font-bold text-amber-500 font-mono">
+              {boostPct} <span className="text-xs font-semibold text-[var(--muted)] font-sans">Odds Multiplier</span>
             </div>
+            <p className="text-[11px] text-[var(--muted)] font-normal">Calculated automatically onchain</p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--card-border)] space-y-1 shadow-sm">
+            <span className="text-[11px] font-semibold text-[var(--muted)] uppercase flex items-center gap-1.5">
+              <Trophy className="w-3.5 h-3.5 text-purple-500" />
+              <span>Earned Hunt Points</span>
+            </span>
+            <div className="text-xl sm:text-2xl font-bold text-foreground font-mono">
+              {Math.max(liquidityHuntPoints, Math.floor(savedNum * 12))} <span className="text-xs font-normal text-[var(--muted)] font-sans">PTS</span>
+            </div>
+            <p className="text-[11px] text-[var(--muted)] font-normal">Season 1 Protocol Rewards</p>
           </div>
         </div>
       </div>
 
       {/* 2. How the Confidential Liquidity Hunt Works */}
-      <div className="p-1 rounded-3xl bg-white/[0.02] border border-white/[0.06]">
-        <div className="p-6 rounded-[calc(1.5rem-4px)] bg-[#0C101A]/70 space-y-5">
-          <div className="flex items-center gap-2 pb-3 border-b border-white/[0.06]">
-            <Layers className="w-4 h-4 text-cyan-400" />
-            <div>
-              <h3 className="text-sm font-bold text-white">How Time-Weighted Rewards Work</h3>
-              <p className="text-xs text-slate-400 font-normal">Zero balance leakage while earning maximum incentives.</p>
+      <div className="cyvera-card p-6 space-y-5">
+        <div className="flex items-center gap-2 pb-3 border-b border-[var(--card-border)]">
+          <Layers className="w-4 h-4 text-amber-500" />
+          <div>
+            <h3 className="text-sm font-bold text-foreground">How Time-Weighted Rewards Work</h3>
+            <p className="text-xs text-[var(--muted)] font-normal">Zero balance leakage while earning maximum incentives.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] space-y-1.5">
+            <div className="w-6 h-6 rounded-lg bg-cyvera-gold text-black font-bold flex items-center justify-center text-xs">
+              1
             </div>
+            <h4 className="font-bold text-foreground text-sm">Save Confidentially</h4>
+            <p className="text-[var(--muted)] leading-relaxed text-[11px]">
+              Deposit cUSDT or cUSDC into the zero-loss prize vault. Your balance is completely private, protected by end-to-end encryption.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 rounded-2xl bg-[#101524]/70 border border-white/[0.05] space-y-1.5">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black flex items-center justify-center text-xs">
-                1
-              </div>
-              <h4 className="font-bold text-white text-sm">Save Confidentially</h4>
-              <p className="text-slate-400 leading-relaxed text-[11px]">
-                Deposit {activeMarket} into the zero-loss prize vault. Your balance is completely private, protected by end-to-end encryption.
-              </p>
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] space-y-1.5">
+            <div className="w-6 h-6 rounded-lg bg-cyvera-gold text-black font-bold flex items-center justify-center text-xs">
+              2
             </div>
-
-            <div className="p-4 rounded-2xl bg-[#101524]/70 border border-white/[0.05] space-y-1.5">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black flex items-center justify-center text-xs">
-                2
-              </div>
-              <h4 className="font-bold text-white text-sm">Snapshot Weights</h4>
-              <p className="text-slate-400 leading-relaxed text-[11px]">
-                At every draw round, the protocol snapshots deposit weights without exposing individual balances to anyone.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-[#101524]/70 border border-white/[0.05] space-y-1.5">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black flex items-center justify-center text-xs">
-                3
-              </div>
-              <h4 className="font-bold text-white text-sm">Multiplier Accumulation</h4>
-              <p className="text-slate-400 leading-relaxed text-[11px]">
-                Maintain your savings through multiple consecutive draw cycles to automatically compound your multiplier status.
-              </p>
-            </div>
+            <h4 className="font-bold text-foreground text-sm">Snapshot Weights</h4>
+            <p className="text-[var(--muted)] leading-relaxed text-[11px]">
+              At every draw round, the protocol snapshots deposit weights without exposing individual balances to anyone.
+            </p>
           </div>
 
-          <div className="pt-2 flex flex-col sm:flex-row gap-3">
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] space-y-1.5">
+            <div className="w-6 h-6 rounded-lg bg-cyvera-gold text-black font-bold flex items-center justify-center text-xs">
+              3
+            </div>
+            <h4 className="font-bold text-foreground text-sm">Automated Boosts</h4>
+            <p className="text-[var(--muted)] leading-relaxed text-[11px]">
+              Longer savings duration automatically boosts your prize draw weights and unlocks higher Season 1 rewards!
+            </p>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="pt-1">
+          {!account ? (
             <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              onClick={onNavigateVault}
-              className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs shadow-[0_0_25px_rgba(6,182,212,0.35)] flex items-center justify-center gap-2 transition-all"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onConnect}
+              className="w-full py-3 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-bold text-xs shadow-cyvera-glow"
             >
-              <span>Deposit {activeMarket} to Boost Multiplier</span>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-950" />
+              Connect Wallet to Join Liquidity Hunt
             </motion.button>
-
+          ) : !hasSavings ? (
             <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              onClick={onOpenFaucet}
-              className="px-5 py-3.5 rounded-2xl bg-[#131929] hover:bg-[#1A2238] border border-cyan-500/30 text-cyan-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onEnterVault}
+              className="w-full py-3 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-bold text-xs shadow-cyvera-glow flex items-center justify-center gap-2"
             >
-              <span>Get Free {activeMarket} Tokens</span>
+              <span>Deposit into Vault to Activate Multipliers</span>
+              <ChevronRight className="w-3.5 h-3.5 text-black" />
             </motion.button>
-          </div>
+          ) : (
+            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <span className="font-semibold">Your Liquidity Hunt Multiplier is Active!</span>
+              </div>
+              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                {multiplier} Boost Active
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -4,26 +4,26 @@
 
 :root {
   --background: #F8FAFC;
-  --foreground: #090D16;
+  --foreground: #0A0A0A;
   --card-bg: #FFFFFF;
   --card-border: #E2E8F0;
-  --card-hover: #F1F5F9;
+  --card-hover: #F8FAFC;
   --muted: #64748B;
   --header-bg: rgba(255, 255, 255, 0.95);
-  --badge-bg: rgba(6, 182, 212, 0.1);
-  --badge-text: #0891B2;
+  --badge-bg: #FFFBEA;
+  --badge-text: #854D0E;
 }
 
 .dark {
-  --background: #06080E;
+  --background: #080B11;
   --foreground: #F8FAFC;
-  --card-bg: #0B0E17;
+  --card-bg: #0F172A;
   --card-border: rgba(255, 255, 255, 0.08);
-  --card-hover: #121824;
+  --card-hover: #1E293B;
   --muted: #94A3B8;
-  --header-bg: rgba(6, 8, 14, 0.92);
-  --badge-bg: rgba(6, 182, 212, 0.15);
-  --badge-text: #22D3EE;
+  --header-bg: rgba(8, 11, 17, 0.92);
+  --badge-bg: rgba(255, 210, 0, 0.15);
+  --badge-text: #FFD200;
 }
 
 body {
@@ -35,18 +35,18 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Dynamic Ambient Glow (Proper Dark Mode: Ethereal Cyan & Indigo Orbs) */
+/* Dynamic Ambient Glow */
 .dark body {
   background-image: 
-    radial-gradient(circle at 50% -10%, rgba(6, 182, 212, 0.12) 0%, transparent 55%),
-    radial-gradient(circle at 100% 35%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 0% 75%, rgba(16, 185, 129, 0.06) 0%, transparent 45%);
+    radial-gradient(circle at 50% -20%, rgba(255, 210, 0, 0.08) 0%, transparent 55%),
+    radial-gradient(circle at 100% 40%, rgba(6, 182, 212, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 0% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 45%);
 }
 
 body:not(.dark) {
   background-image: 
-    radial-gradient(circle at 50% -10%, rgba(6, 182, 212, 0.08) 0%, transparent 55%),
-    radial-gradient(circle at 100% 35%, rgba(99, 102, 241, 0.05) 0%, transparent 45%);
+    radial-gradient(circle at 50% -20%, rgba(255, 210, 0, 0.12) 0%, transparent 60%),
+    radial-gradient(circle at 100% 40%, rgba(255, 210, 0, 0.06) 0%, transparent 40%);
 }
 
 /* Custom Scrollbars */
@@ -69,35 +69,34 @@ body:not(.dark) {
   border-radius: 9999px;
 }
 
-/* Adaptive High-End Double-Bezel Card (Doppelrand) */
+/* Adaptive Cyvera Card */
 .aura-card, .cyvera-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 1.5rem;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 4px 10px -2px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dark .aura-card, .dark .cyvera-card {
-  box-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4), 0 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 
 .aura-card:hover, .cyvera-card:hover {
-  border-color: rgba(6, 182, 212, 0.4);
-  box-shadow: 0 16px 35px -8px rgba(6, 182, 212, 0.08);
+  border-color: rgba(255, 210, 0, 0.35);
+  box-shadow: 0 16px 35px -8px rgba(0, 0, 0, 0.09);
 }
 
 .dark .aura-card:hover, .dark .cyvera-card:hover {
-  border-color: rgba(6, 182, 212, 0.4);
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), 0 0 25px -5px rgba(6, 182, 212, 0.2);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.6), 0 0 20px -5px rgba(255, 210, 0, 0.15);
 }
 
-/* Glowing Highlight Card */
+/* Glowing Gold Highlight */
 .cyvera-card-glow {
   background: var(--card-bg);
-  border: 1.5px solid #06B6D4;
-  border-radius: 1.5rem;
-  box-shadow: 0 0 30px -5px rgba(6, 182, 212, 0.3);
+  border: 1.5px solid #FFD200;
+  border-radius: 1.25rem;
+  box-shadow: 0 0 30px -5px rgba(255, 210, 0, 0.25);
 }
 
 /* Theme Toggle Button Hover */

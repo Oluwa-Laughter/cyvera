@@ -119,7 +119,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
               onClick={() => scrollToSection("liquidity-hunt")}
               className="px-3.5 py-1.5 rounded-full hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5"
             >
-              <Flame className="w-3.5 h-3.5 text-cyan-400" />
+              <Flame className="w-3.5 h-3.5 text-amber-500" />
               <span>Liquidity Hunt</span>
             </button>
             <button
@@ -142,12 +142,12 @@ export const LandingView: React.FC<LandingViewProps> = ({
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.92 }}
               onClick={onToggleTheme}
-              className="p-2 sm:p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-slate-700 dark:text-cyan-300 transition-colors shrink-0"
+              className="p-2 sm:p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-slate-700 dark:text-amber-400 transition-colors shrink-0"
               title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
               aria-label="Toggle Theme"
             >
               {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-cyan-300" />
+                <Sun className="w-4 h-4 text-amber-400" />
               ) : (
                 <Moon className="w-4 h-4 text-slate-700" />
               )}
@@ -157,14 +157,14 @@ export const LandingView: React.FC<LandingViewProps> = ({
           {/* Wallet State in Home Header */}
           {account ? (
             <div className="flex items-center gap-2">
-              <div className="flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-cyan-500/30 rounded-xl sm:rounded-2xl">
+              <div className="flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-amber-500/30 rounded-xl sm:rounded-2xl">
                 <span className="text-[9px] sm:text-[10px] text-[var(--muted)] font-mono flex items-center gap-1">
-                  <Wallet className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-cyan-400" />
+                  <Wallet className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-500" />
                   <span>Wallet:</span>
                 </span>
                 <span className="text-[11px] sm:text-xs font-mono font-black text-foreground">
                   ${walletBalance || "0.00"}{" "}
-                  <span className="text-[9px] sm:text-[10px] font-bold text-cyan-400">{activeMarket}</span>
+                  <span className="text-[9px] sm:text-[10px] font-bold text-amber-500">{activeMarket}</span>
                 </span>
               </div>
 
@@ -185,7 +185,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 {isConnecting ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <Wallet className="w-3.5 h-3.5 text-cyan-400" />
+                  <Wallet className="w-3.5 h-3.5 text-amber-500" />
                 )}
                 <span>{isConnecting ? "Connecting..." : "Connect"}</span>
               </motion.button>
@@ -197,7 +197,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => onEnterApp("dashboard")}
-            className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(6,182,212,0.35)] transition-all shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold text-xs uppercase tracking-wider shadow-cyvera-glow transition-all shrink-0"
           >
             <span>Launch App</span>
             <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
@@ -215,14 +215,14 @@ export const LandingView: React.FC<LandingViewProps> = ({
         >
           {/* Left Column: Vision & Value Proposition */}
           <motion.div variants={itemVariants} className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 dark:text-cyan-300 font-extrabold text-xs">
-              <FaShieldAlt className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 dark:text-amber-400 font-extrabold text-xs">
+              <FaShieldAlt className="w-3.5 h-3.5 text-amber-500" />
               <span>Confidential No-Loss Prize Savings • Powered by Zama FHEVM</span>
             </div>
 
             <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.08] text-foreground">
               Encrypted Wealth. <br />
-              <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 bg-clip-text text-transparent">
                 Verifiable Jackpots.
               </span>
             </h1>
@@ -236,7 +236,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onEnterApp("vault", calcDeposit)}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_25px_rgba(6,182,212,0.35)] flex items-center justify-center gap-2 transition-all"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 transition-all"
               >
                 <PiggyBank className="w-4 h-4 text-black" />
                 <span>Launch App to Save (100% Zero-Loss)</span>
@@ -248,7 +248,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 onClick={() => onEnterApp("draws")}
                 className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
               >
-                <Dices className="w-4 h-4 text-cyan-400" />
+                <Dices className="w-4 h-4 text-amber-500" />
                 <span>Explore 4-Phase Draws</span>
               </motion.button>
             </div>
@@ -265,7 +265,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
               </div>
               <div>
                 <span className="text-[11px] block opacity-80">Randomness Engine:</span>
-                <strong className="text-cyan-400 font-bold text-sm">Provably Fair Draws</strong>
+                <strong className="text-amber-500 font-bold text-sm">Provably Fair Draws</strong>
               </div>
             </div>
           </motion.div>
@@ -317,9 +317,9 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
               {/* Wallet Balance Callout */}
               {account && (
-                <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-between text-xs">
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between text-xs">
                   <span className="text-[var(--muted)] font-medium flex items-center gap-1.5">
-                    <Wallet className="w-3.5 h-3.5 text-cyan-400" />
+                    <Wallet className="w-3.5 h-3.5 text-amber-500" />
                     <span>Your Connected Balance:</span>
                   </span>
                   <span className="font-mono font-black text-foreground">
@@ -332,7 +332,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
               <div className="space-y-2 text-xs font-medium">
                 <div className="flex items-center justify-between font-bold">
                   <label className="text-foreground">Simulate Deposit Amount:</label>
-                  <span className="text-cyan-400 font-mono font-black">${parsedDeposit.toFixed(2)} {selectedMarket}</span>
+                  <span className="text-amber-500 font-mono font-black">${parsedDeposit.toFixed(2)} {selectedMarket}</span>
                 </div>
                 <input
                   type="range"
@@ -341,7 +341,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   step="10"
                   value={calcDeposit}
                   onChange={(e) => setCalcDeposit(e.target.value)}
-                  className="w-full accent-cyan-400 cursor-pointer"
+                  className="w-full accent-amber-500 cursor-pointer"
                 />
               </div>
 
@@ -366,7 +366,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => onEnterApp("vault", calcDeposit)}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_25px_rgba(6,182,212,0.35)] flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2"
               >
                 <span>Launch App to Deposit in {selectedMarket} Vault</span>
                 <ChevronRight className="w-4 h-4 text-black" />
@@ -380,7 +380,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
       <section id="how-it-works" className="py-20 px-4 sm:px-8 bg-slate-50/70 dark:bg-slate-900/40 border-t border-[var(--card-border)] scroll-mt-16">
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 dark:text-cyan-300 text-[11px] font-black border border-cyan-500/20 uppercase tracking-wide">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 dark:text-amber-400 text-[11px] font-black border border-amber-500/20 uppercase tracking-wide">
               <HelpCircle className="w-3.5 h-3.5" />
               <span>Step-by-Step Overview</span>
             </div>
@@ -396,13 +396,13 @@ export const LandingView: React.FC<LandingViewProps> = ({
             {/* Step 1 */}
             <motion.div whileHover={{ y: -4 }} className="cyvera-card p-6 space-y-4 relative overflow-hidden group">
               <div className="flex items-center justify-between">
-                <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
                   <PiggyBank className="w-5 h-5" />
                 </div>
                 <span className="text-3xl font-black text-slate-200 dark:text-slate-800 font-mono">01</span>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wide block">Encrypted Principal</span>
+                <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wide block">Encrypted Principal</span>
                 <h3 className="font-bold text-foreground text-sm">Deposit & Save</h3>
               </div>
               <p className="text-xs text-[var(--muted)] leading-relaxed font-medium">
@@ -463,7 +463,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
           </div>
 
           {/* Interactive CTA Banner */}
-          <div className="cyvera-card p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 bg-gradient-to-r from-cyan-500/5 via-blue-500/5 to-transparent border border-cyan-500/20">
+          <div className="cyvera-card p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 bg-gradient-to-r from-amber-500/5 via-yellow-500/5 to-transparent border border-amber-500/20">
             <div className="space-y-1 text-center sm:text-left">
               <h4 className="text-base font-black text-foreground">Ready to explore the full app experience?</h4>
               <p className="text-xs text-[var(--muted)] font-medium">
@@ -474,7 +474,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => onEnterApp("vault")}
-              className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(6,182,212,0.35)] shrink-0 flex items-center gap-2"
+              className="px-8 py-3.5 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold text-xs uppercase tracking-wider shadow-cyvera-glow shrink-0 flex items-center gap-2"
             >
               <span>Launch App to Save</span>
               <ArrowRight className="w-4 h-4 text-black" />
@@ -486,8 +486,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
       {/* 4. Dedicated "Confidential Liquidity Hunt" Section */}
       <section id="liquidity-hunt" className="py-20 px-4 sm:px-8 max-w-6xl mx-auto w-full space-y-12 scroll-mt-16">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 dark:text-cyan-300 text-[11px] font-black border border-cyan-500/20 uppercase tracking-wide">
-            <Flame className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 dark:text-amber-400 text-[11px] font-black border border-amber-500/20 uppercase tracking-wide">
+            <Flame className="w-3.5 h-3.5 text-amber-500" />
             <span>Time-Weighted Protocol Rewards</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
@@ -502,8 +502,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <motion.div whileHover={{ y: -3 }} className="cyvera-card p-6 space-y-4 border-amber-900/20">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-300 dark:text-cyan-400">Bronze Saver</span>
-              <span className="font-mono text-xs font-black bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-md">1.0x Boost</span>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-600">Bronze Saver</span>
+              <span className="font-mono text-xs font-black bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-md">1.0x Boost</span>
             </div>
             <div className="text-2xl font-black text-foreground font-mono">$10 - $99</div>
             <p className="text-xs text-[var(--muted)] leading-relaxed font-medium">
@@ -530,13 +530,13 @@ export const LandingView: React.FC<LandingViewProps> = ({
             </div>
           </motion.div>
 
-          <motion.div whileHover={{ y: -3 }} className="cyvera-card p-6 space-y-4 border-cyan-500/40 relative overflow-hidden">
-            <div className="absolute top-0 right-0 px-3 py-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 text-[9px] font-black rounded-bl-xl uppercase tracking-wider">
+          <motion.div whileHover={{ y: -3 }} className="cyvera-card p-6 space-y-4 border-amber-500/40 relative overflow-hidden">
+            <div className="absolute top-0 right-0 px-3 py-0.5 bg-cyvera-gold text-black text-[9px] font-black rounded-bl-xl uppercase tracking-wider">
               Popular
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-cyan-400">Gold Treasury</span>
-              <span className="font-mono text-xs font-black bg-cyan-500/15 text-cyan-400 px-2 py-0.5 rounded-md">2.0x Boost</span>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-500">Gold Treasury</span>
+              <span className="font-mono text-xs font-black bg-amber-500/15 text-amber-500 px-2 py-0.5 rounded-md">2.0x Boost</span>
             </div>
             <div className="text-2xl font-black text-foreground font-mono">$500 - $999</div>
             <p className="text-xs text-[var(--muted)] leading-relaxed font-medium">
@@ -567,7 +567,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         {/* Feature CTA to dedicated Earn page */}
         <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
               <Award className="w-6 h-6" />
             </div>
             <div>
@@ -582,7 +582,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => onEnterApp("earn")}
-            className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(6,182,212,0.35)] flex items-center justify-center gap-2 shrink-0"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 shrink-0"
           >
             <Flame className="w-4 h-4 text-black" />
             <span>Launch App to Join Liquidity Hunt</span>
@@ -618,7 +618,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             </motion.div>
 
             <motion.div whileHover={{ y: -4 }} className="cyvera-card p-6 space-y-3">
-              <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
                 <Dices className="w-5 h-5" />
               </div>
               <h3 className="font-bold text-foreground text-sm">2. Draw Odds & Strategy Exposure</h3>
@@ -667,7 +667,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
           <div className="cyvera-card p-6 space-y-3">
-            <div className="text-[11px] font-bold text-cyan-400 bg-cyan-500/10 px-2.5 py-1 rounded-lg inline-block">
+            <div className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-lg inline-block">
               Zero-Knowledge Protection
             </div>
             <h4 className="font-bold text-foreground text-sm">Private Balances</h4>
@@ -742,7 +742,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => onEnterApp("vault")}
-              className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(6,182,212,0.35)]"
+              className="px-8 py-3.5 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold text-xs uppercase tracking-wider shadow-cyvera-glow"
             >
               Launch App to Deposit
             </motion.button>

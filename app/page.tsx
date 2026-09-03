@@ -1159,13 +1159,13 @@ function ToastViewport({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: num
                 ? "bg-slate-900 border-emerald-500/40 text-emerald-300"
                 : toast.type === "error"
                 ? "bg-slate-900 border-rose-500/40 text-rose-300"
-                : "bg-slate-900 border-cyan-500/40 text-slate-100"
+                : "bg-slate-900 border-amber-500/40 text-slate-100"
             }`}
           >
             <div className="shrink-0 mt-0.5">
               {toast.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
               {toast.type === "error" && <AlertTriangle className="w-4 h-4 text-rose-400" />}
-              {toast.type === "info" && <Info className="w-4 h-4 text-cyan-400" />}
+              {toast.type === "info" && <Info className="w-4 h-4 text-amber-400" />}
             </div>
             <div className="flex-1">
               <p className="font-bold leading-relaxed">{toast.message}</p>
@@ -1174,7 +1174,7 @@ function ToastViewport({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: num
                   href={`https://sepolia.etherscan.io/tx/${toast.txHash}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[10px] text-cyan-400/80 hover:text-cyan-300 flex items-center gap-1 mt-1 underline font-mono"
+                  className="text-[10px] text-amber-400/80 hover:text-amber-300 flex items-center gap-1 mt-1 underline font-mono"
                 >
                   <span>View on Sepolia Etherscan</span>
                   <ExternalLink className="w-3 h-3" />
