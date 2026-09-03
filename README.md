@@ -22,7 +22,7 @@
 
 ---
 
-## 🌟 Executive Summary
+## 🌟 Summary
 
 **Cyvera** is an institutional-grade, confidential decentralized prize savings protocol built on **Ethereum Sepolia** using the **Zama Fully Homomorphic Encryption Virtual Machine (fhEVM)** and **ERC-7984 Confidential Tokens**.
 
@@ -302,9 +302,3 @@ npm run build
 ## 📜 License
 
 Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for details.
-
----
-
-<div align="center">
-  <sub>Built with ❤️ for private, provably fair decentralized finance on Ethereum Sepolia & Zama FHEVM.</sub>
-</div>
