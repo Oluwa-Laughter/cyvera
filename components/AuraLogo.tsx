@@ -28,10 +28,10 @@ export const AuraLogo: React.FC<CyveraLogoProps> = ({ size = "md", showText = tr
         whileHover={{ scale: 1.05, rotate: 3 }}
         whileTap={{ scale: 0.95 }}
         transition={{ type: "spring", stiffness: 380, damping: 22 }}
-        className={`relative flex items-center justify-center ${iconDimensions} rounded-2xl bg-[#080B11] border border-amber-400/40 p-1.5 overflow-hidden shadow-cyvera-glow`}
+        className={`relative flex items-center justify-center ${iconDimensions} rounded-2xl bg-[#06080E] border border-cyan-500/40 p-1.5 overflow-hidden shadow-[0_0_20px_rgba(6,182,212,0.3)]`}
       >
         {/* Ambient Gradient Glow */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/30 via-yellow-400/20 to-cyan-500/20" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/30 via-blue-500/20 to-indigo-500/20" />
         
         {/* Geometric Hexagonal Cipher Aperture Vector */}
         <svg
@@ -43,7 +43,7 @@ export const AuraLogo: React.FC<CyveraLogoProps> = ({ size = "md", showText = tr
           {/* Outer Cyber Hexagon */}
           <path
             d="M16 2.5L28 9.5V22.5L16 29.5L4 22.5V9.5L16 2.5Z"
-            stroke="#FFD200"
+            stroke="#22D3EE"
             strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -54,11 +54,11 @@ export const AuraLogo: React.FC<CyveraLogoProps> = ({ size = "md", showText = tr
             fill="url(#cyvera-grad)"
             opacity="0.9"
           />
-          <circle cx="16" cy="16" r="2.2" fill="#080B11" stroke="#FFD200" strokeWidth="1.5" />
+          <circle cx="16" cy="16" r="2.2" fill="#06080E" stroke="#06B6D4" strokeWidth="1.5" />
           <defs>
             <linearGradient id="cyvera-grad" x1="9" y1="8" x2="23" y2="24" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#FFD200" />
-              <stop offset="1" stopColor="#F59E0B" />
+              <stop stopColor="#22D3EE" />
+              <stop offset="1" stopColor="#3B82F6" />
             </linearGradient>
           </defs>
         </svg>
@@ -68,7 +68,7 @@ export const AuraLogo: React.FC<CyveraLogoProps> = ({ size = "md", showText = tr
         <div className="flex flex-col">
           <span className={`font-black tracking-tight ${textSize}`}>
             <span className="text-foreground">Cy</span>
-            <span className="text-amber-500">vera</span>
+            <span className="text-cyan-400">vera</span>
           </span>
           <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase leading-none">
             Confidential Prize Protocol

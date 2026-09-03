@@ -78,9 +78,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
           onClick={onOpenFaucet}
-          className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-500 dark:text-amber-400 font-bold transition-all shadow-sm shrink-0"
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-semibold transition-all shadow-[0_0_15px_rgba(6,182,212,0.15)] shrink-0"
         >
-          <Droplets className="w-3.5 h-3.5 text-amber-500" />
+          <Droplets className="w-3.5 h-3.5 text-cyan-400" />
           <span className="hidden sm:inline">Get Tokens</span>
           <span className="sm:hidden text-[11px]">Faucet</span>
         </motion.button>
@@ -91,12 +91,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.92 }}
             onClick={onToggleTheme}
-            className="p-2 sm:p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-slate-700 dark:text-amber-400 transition-colors shrink-0"
+            className="p-2 sm:p-2.5 rounded-full bg-slate-100 dark:bg-[#121826] border border-white/[0.08] text-slate-700 dark:text-cyan-400 transition-colors shrink-0"
             title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
             aria-label="Toggle Theme"
           >
             {theme === "dark" ? (
-              <Sun className="w-4 h-4 text-amber-400" />
+              <Sun className="w-4 h-4 text-cyan-400" />
             ) : (
               <Moon className="w-4 h-4 text-slate-700" />
             )}
@@ -107,20 +107,20 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         {account ? (
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Always Visible Wallet Balance Box */}
-            <div className="flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-amber-500/30 rounded-xl sm:rounded-2xl">
+            <div className="flex flex-col items-end px-3 py-1 bg-slate-100 dark:bg-[#101524] border border-cyan-500/20 rounded-xl sm:rounded-2xl shadow-sm">
               <span className="text-[9px] sm:text-[10px] text-[var(--muted)] font-mono flex items-center gap-1">
-                <Wallet className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-500" />
+                <Wallet className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-cyan-400" />
                 <span>Wallet:</span>
               </span>
-              <span className="text-[11px] sm:text-xs font-mono font-black text-foreground">
+              <span className="text-[11px] sm:text-xs font-mono font-bold text-foreground">
                 ${walletBalance || "0.00"}{" "}
-                <span className="text-[9px] sm:text-[10px] font-bold text-amber-500">{activeMarket}</span>
+                <span className="text-[9px] sm:text-[10px] font-mono text-cyan-400 font-semibold">{activeMarket}</span>
               </span>
             </div>
 
             <button
               onClick={onDisconnect}
-              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-400 border border-[var(--card-border)] text-foreground font-mono transition-colors group"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 rounded-full bg-slate-100 dark:bg-[#101524] hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-400 border border-[var(--card-border)] text-foreground font-mono transition-colors group"
               title="Click to disconnect"
             >
               <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
@@ -134,12 +134,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             whileTap={{ scale: 0.97 }}
             onClick={onConnect}
             disabled={isConnecting}
-            className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold shadow-cyvera-glow transition-all disabled:opacity-50 shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black shadow-[0_0_25px_rgba(6,182,212,0.35)] transition-all disabled:opacity-50 shrink-0"
           >
             {isConnecting ? (
-              <RefreshCw className="w-4 h-4 animate-spin text-black" />
+              <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
             ) : (
-              <Wallet className="w-4 h-4 text-black" />
+              <Wallet className="w-4 h-4 text-slate-950" />
             )}
             <span className="text-[11px] sm:text-xs">{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
           </motion.button>

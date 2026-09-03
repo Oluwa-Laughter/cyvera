@@ -80,31 +80,31 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-[var(--muted)] hover:text-foreground transition-all"
+          className="absolute top-5 right-5 p-2 rounded-full bg-white/5 text-slate-400 hover:text-white transition-all"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-cyvera-gold text-black shadow-cyvera-glow">
-            <Droplets className="w-6 h-6 text-black" />
+          <div className="p-3 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+            <Droplets className="w-6 h-6 text-slate-950" />
           </div>
           <div>
-            <h3 className="text-xl font-black text-foreground tracking-tight">Test Token Faucet</h3>
-            <p className="text-xs text-[var(--muted)] font-medium">Mint testnet tokens directly on Ethereum Sepolia</p>
+            <h3 className="text-xl font-black text-white tracking-tight">Test Token Faucet</h3>
+            <p className="text-xs text-slate-400 font-medium">Mint testnet tokens directly on Ethereum Sepolia</p>
           </div>
         </div>
 
         {/* Token Selector Tabs */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-[var(--card-border)] text-xs font-bold">
+        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-[#0E1322] border border-white/[0.06] text-xs font-bold">
           <button
             type="button"
             onClick={() => setSelectedToken("cUSDT")}
             className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
               selectedToken === "cUSDT"
-                ? "bg-white dark:bg-slate-900 text-foreground font-black shadow-sm"
-                : "text-[var(--muted)] hover:text-foreground"
+                ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black shadow-md"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             <span>cUSDT (Stablecoin)</span>
@@ -114,8 +114,8 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
             onClick={() => setSelectedToken("cUSDC")}
             className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
               selectedToken === "cUSDC"
-                ? "bg-white dark:bg-slate-900 text-foreground font-black shadow-sm"
-                : "text-[var(--muted)] hover:text-foreground"
+                ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black shadow-md"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             <span>cUSDC (Treasury)</span>
@@ -123,10 +123,10 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
         </div>
 
         {/* Current Balance & Add to MetaMask */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--card-border)] flex items-center justify-between text-xs font-medium">
+        <div className="p-4 rounded-2xl bg-[#101524] border border-white/[0.06] flex items-center justify-between text-xs font-medium shadow-inner">
           <div>
-            <span className="text-[var(--muted)] block text-[11px]">Wallet Token Balance:</span>
-            <span className="font-mono font-black text-foreground text-sm">
+            <span className="text-slate-400 block text-[11px]">Wallet Token Balance:</span>
+            <span className="font-mono font-black text-white text-sm">
               {account ? `${currentTokenBalance || "0.00"} ${currentCfg.symbol}` : "Not Connected"}
             </span>
           </div>
@@ -134,29 +134,38 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
           {account && (
             <button
               onClick={handleAddToken}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground text-[11px] font-bold transition-all shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#131929] hover:bg-[#1A2238] border border-cyan-500/30 text-cyan-300 hover:text-white text-[11px] font-bold transition-all shadow-sm active:scale-95"
             >
               {isAdded ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Added to Wallet</span>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400">Added to Wallet</span>
                 </>
               ) : (
                 <>
-                  <PlusCircle className="w-3.5 h-3.5 text-amber-500" />
-                  <span>+Add to MetaMask</span>
+                  <Plus className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Add to MetaMask</span>
                 </>
               )}
             </button>
           )}
         </div>
 
-        {/* Contract Address & 1-Click Copy Box */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] space-y-2 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[var(--muted)] text-[11px] font-bold uppercase tracking-wider">
-              {currentCfg.symbol} Contract Address (Sepolia):
-            </span>
+        {/* Faucet Info */}
+        <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300 space-y-1">
+          <div className="font-bold flex items-center gap-1.5 text-white">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Instant +1,000 {currentCfg.symbol} per mint</span>
+          </div>
+          <p className="text-slate-400 text-[11px] leading-relaxed">
+            Mints testnet {currentCfg.symbol} tokens directly to your wallet for testing deposits, daily prize draws, and instant zero-loss withdrawals.
+          </p>
+        </div>
+
+        {/* Contract Address & Manual Import Guide */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-400 font-medium">Underlying Token Contract:</span>
             <button
               onClick={handleCopyAddress}
               className="flex items-center gap-1 text-amber-500 hover:underline font-bold text-[11px]"
@@ -214,7 +223,7 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
                 onClose();
                 if (onConnect) onConnect();
               }}
-              className="w-full py-3 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-bold text-xs shadow-cyvera-glow active:scale-95 transition-all"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black text-xs shadow-[0_0_25px_rgba(6,182,212,0.35)] transition-all"
             >
               Connect Wallet to Mint
             </button>
@@ -222,16 +231,16 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
             <button
               onClick={() => onClaimFaucet(selectedToken)}
               disabled={isClaiming}
-              className="w-full py-3 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-bold text-xs transition-all shadow-cyvera-glow flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs transition-all shadow-[0_0_25px_rgba(6,182,212,0.35)] flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isClaiming ? (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-black" />
+                  <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
                   <span>Minting 1,000 {currentCfg.symbol} on Sepolia...</span>
                 </>
               ) : (
                 <>
-                  <Droplets className="w-3.5 h-3.5 text-black" />
+                  <Droplets className="w-4 h-4 text-slate-950" />
                   <span>Mint 1,000 {currentCfg.symbol} Now</span>
                 </>
               )}
@@ -240,7 +249,7 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground font-semibold text-xs transition-all"
+            className="w-full py-2.5 rounded-xl bg-[#111624] hover:bg-[#182032] text-slate-300 hover:text-white font-semibold text-xs transition-all border border-white/[0.06]"
           >
             Close
           </button>
