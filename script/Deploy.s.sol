@@ -9,6 +9,13 @@ import { CyveraPrizePool } from "../contracts/CyveraPrizePool.sol";
 /// @notice Deploys the full Cyvera stack to Ethereum Sepolia.
 contract DeployCyvera is Script {
     function run() external returns (address tokenAddr, address yieldAddr, address poolAddr) {
+        uint256 deployerPrivateKey = vm.envOr("PRIVATE_KEY", uint256(0));
+        if (deployerPrivateKey != 0) {
+            vm.startBroadcast(deployerPrivateKey);
+        } else {
+            vm.startBroadcast();
+        }
+
         // 1. Token setup
         address existingToken = vm.envOr("DEPOSIT_TOKEN", address(0));
         if (existingToken != address(0)) {
@@ -44,6 +51,8 @@ contract DeployCyvera is Script {
         // 5. Initial configuration
         pool.setDrawInterval(60 seconds);
         pool.setWinnersPerDraw(1);
+
+        vm.stopBroadcast();
 
         console.log("\n--- Cyvera Deployment Complete ---");
         console.log("   NEXT_PUBLIC_CYVERA_POOL_ADDRESS=%s", poolAddr);
