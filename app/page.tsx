@@ -702,6 +702,31 @@ export default function Home() {
         ? snap.depositorsCount
         : (activeMarket === "cUSDT" ? 14 : 18);
 
+      const communityPoolWinners = [
+        "0x892a43b123d4567e890123456789012345678901",
+        "0x3c9143b123d4567e890123456789012345678902",
+        "0x5a1243b123d4567e890123456789012345678903",
+        "0x7b2343b123d4567e890123456789012345678904",
+      ];
+      const communityWinner = communityPoolWinners[currentDraw % communityPoolWinners.length];
+
+      // A user with $0 principal has 0 tickets and CANNOT participate or win!
+      const userHasTickets = userSaved > 0;
+      const didUserWin = userHasTickets;
+      const winningAddress = didUserWin ? account : communityWinner;
+
+      // Credit winner with dynamic prize pot only if user actually participated and won
+      if (didUserWin) {
+        const curWin = parseFloat(getStoredWinnings(account, activeMarket));
+        const newWin = (curWin + parseFloat(prizeAmount)).toFixed(2);
+        setStoredWinnings(account, newWin, activeMarket);
+        setDecryptedWinnings(newWin);
+      }
+
+      // Reset prize pot to seed base after award
+      setStoredPrizePot("5.00", activeMarket);
+      setStoredDrawPhase("OPEN", activeMarket);
+
       // Record draw in verifiable history
       addStoredDraw({
         drawId: currentDraw,
@@ -710,26 +735,28 @@ export default function Home() {
         timestamp: Math.floor(Date.now() / 1000),
         totalParticipants: poolParticipants,
         prizeAmount,
-        winner: account || "0x892a43b123d4567e890123456789012345678901",
+        winner: winningAddress,
         executed: true,
-        isMyWin: userSaved > 0,
+        isMyWin: didUserWin,
       });
 
-      // Confidential draw activity: isPublicOnchainTx is FALSE so no broken Etherscan link is shown
+      // Activity entry
       addActivityEntry({
         kind: "draw",
         type: "DRAW",
-        account,
+        account: winningAddress,
         amount: `$${prizeAmount} ${activeMarket}`,
-        description: `Draw #${currentDraw} executed via Zama FHE randomness on ${activeMarket}`,
+        description: didUserWin
+          ? `Draw #${currentDraw} executed — You won +$${prizeAmount} ${activeMarket}!`
+          : `Draw #${currentDraw} executed — Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)} (You had 0 tickets)`,
         status: "CONFIRMED",
         isPublicOnchainTx: false,
       });
 
-      if (userSaved > 0) {
+      if (didUserWin) {
         addToast("success", `Draw #${currentDraw} executed! You won +$${prizeAmount} ${activeMarket}! Open Private Reveal to inspect and claim.`);
       } else {
-        addToast("info", `Draw #${currentDraw} executed onchain! Deposit in the vault to activate draw tickets for future rounds.`);
+        addToast("info", `Draw #${currentDraw} executed onchain! Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)}. You had 0 tickets in this round; deposit into the vault to participate!`);
       }
       refreshProtocolState();
     } catch (err: any) {
@@ -1002,6 +1029,7 @@ export default function Home() {
               winnersPerDraw={snap?.winnersPerDraw ?? 1}
               currentPrizePot={snap?.totalPrizeReserve ?? (activeMarket === "cUSDT" ? "15.00" : "25.00")}
               totalDepositors={snap?.depositorsCount ?? (activeMarket === "cUSDT" ? 14 : 18)}
+              userSavings={decryptedBalance || "0.00"}
               lastDrawTime={snap?.lastDrawTime ?? 0}
               drawInterval={snap?.drawInterval ?? 60}
               timeToNextDraw={snap?.timeToNextDraw ?? 0}

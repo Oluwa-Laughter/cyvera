@@ -34,6 +34,8 @@ export interface DrawRecordView {
   winner: string;
   executed: boolean;
   isMyWin: boolean;
+  phase?: string;
+  market?: string;
 }
 
 interface DrawsViewProps {
@@ -45,6 +47,7 @@ interface DrawsViewProps {
   winnersPerDraw: number;
   currentPrizePot: string;
   totalDepositors: number;
+  userSavings?: string;
   lastDrawTime: number;
   drawInterval: number;
   timeToNextDraw: number;
@@ -70,6 +73,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   currentDrawId,
   currentPrizePot,
   totalDepositors,
+  userSavings = "0.00",
   lastDrawTime,
   drawInterval = 60,
   drawHistory,
@@ -101,12 +105,27 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
   const seconds = timeLeft % 60;
   const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
+  // Live real-time phase derived dynamically from the countdown timer
+  const livePhase: DrawPhase = isTriggeringDraw 
+    ? "SELECTING" 
+    : timeLeft > 20 
+    ? "OPEN" 
+    : timeLeft > 5 
+    ? "SNAPSHOT" 
+    : timeLeft > 0 
+    ? "SELECTING" 
+    : "CLAIMING";
+
   const phases = [
-    { id: "OPEN", label: "1. Open", desc: "Deposits & tickets active", active: drawPhase === "OPEN" },
-    { id: "SNAPSHOT", label: "2. Snapshot", desc: "Private weights locked", active: drawPhase === "SNAPSHOT" },
-    { id: "SELECTING", label: "3. Selection", desc: "Fair random selection", active: drawPhase === "SELECTING" },
-    { id: "CLAIMING", label: "4. Claim Window", desc: "Private reveal session open", active: drawPhase === "CLAIMING" },
+    { id: "OPEN", label: "1. Open", desc: "Deposits & tickets active", active: livePhase === "OPEN" },
+    { id: "SNAPSHOT", label: "2. Snapshot", desc: "Private weights locked", active: livePhase === "SNAPSHOT" },
+    { id: "SELECTING", label: "3. Selection", desc: "Fair random selection", active: livePhase === "SELECTING" },
+    { id: "CLAIMING", label: "4. Claim Window", desc: "Private reveal session open", active: livePhase === "CLAIMING" },
   ];
+
+  const parsedSavings = parseFloat(userSavings || "0");
+  const userHasTickets = parsedSavings > 0;
+  const hasWinnings = parseFloat(decryptedWinnings || "0") > 0;
 
   return (
     <div className="space-y-6 w-full max-w-5xl mx-auto text-foreground">
@@ -144,7 +163,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
       {/* 2. Active Draw Hero Banner */}
       <div className="cyvera-card p-6 space-y-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-[var(--card-border)]">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
                 Active Prize Draw #{currentDrawId}
@@ -157,9 +176,23 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
               ${currentPrizePot}{" "}
               <span className="text-base text-[var(--muted)] font-normal">{activeMarket} Prize Pot</span>
             </div>
-            <p className="text-xs text-[var(--muted)] font-normal">
-              Active Participants: <strong className="text-foreground font-semibold">{totalDepositors} Savers in Pool</strong>
-            </p>
+
+            {/* Participation & Ticket Status */}
+            <div className="flex items-center gap-2 flex-wrap text-xs pt-0.5">
+              <span className="text-[var(--muted)]">
+                Active Participants: <strong className="text-foreground font-semibold">{totalDepositors} Savers in Pool</strong>
+              </span>
+              <span className="text-[var(--muted)]">•</span>
+              {userHasTickets ? (
+                <span className="text-emerald-500 font-bold bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                  Your Tickets: {parsedSavings.toFixed(0)} Active Tickets (${parsedSavings.toFixed(2)})
+                </span>
+              ) : (
+                <span className="text-amber-500 font-bold bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                  Your Tickets: 0 Tickets (Not Participating)
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Countdown Clock Box */}
@@ -183,7 +216,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
               <span>Draw Lifecycle Phases</span>
             </span>
             <span className="text-[10px] text-emerald-500 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              Fair & Transparent
+              Live Phase: {livePhase}
             </span>
           </div>
 
@@ -204,8 +237,8 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
           </div>
         </div>
 
-        {/* Phase 4 Callout Banner */}
-        {drawPhase === "CLAIMING" && (
+        {/* Phase 4 Callout Banner — Shown ONLY if the user actually won and has unclaimed winnings */}
+        {hasWinnings && (
           <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-cyvera-gold text-black font-bold shrink-0 shadow-sm">
@@ -213,7 +246,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
               </div>
               <div>
                 <strong className="text-foreground font-bold block">
-                  Phase 4 (Claim Window) is Active!
+                  You Won +${decryptedWinnings} {activeMarket}!
                 </strong>
                 <span className="text-[var(--muted)] text-[11px]">
                   Prizes have been privately awarded. Open Private Reveal to inspect and claim your profit.
@@ -232,6 +265,25 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
           </div>
         )}
 
+        {/* Zero-Ticket Informational Callout if user withdrew or has 0 balance */}
+        {!userHasTickets && account && (
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[var(--card-border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-center gap-2 text-[var(--muted)]">
+              <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>You currently have 0 tickets in this draw round. Deposit cUSDT or cUSDC into the vault to participate with zero loss.</span>
+            </div>
+            {onNavigateVault && (
+              <button
+                onClick={onNavigateVault}
+                className="px-3 py-1.5 rounded-lg bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-bold text-xs shadow-sm shrink-0 flex items-center gap-1"
+              >
+                <span>Deposit to Get Tickets</span>
+                <ChevronRight className="w-3.5 h-3.5 text-black" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
           {!account ? (
@@ -243,16 +295,28 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
             >
               Connect Wallet
             </motion.button>
-          ) : totalDepositors === 0 && onNavigateVault ? (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onNavigateVault}
-              className="w-full py-3 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-bold text-xs shadow-cyvera-glow flex items-center justify-center gap-2"
-            >
-              <span>Deposit in Vault to Activate Draw Tickets</span>
-              <ChevronRight className="w-3.5 h-3.5 text-black" />
-            </motion.button>
+          ) : !userHasTickets ? (
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full">
+              {onNavigateVault && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={onNavigateVault}
+                  className="flex-1 py-3 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-bold text-xs shadow-cyvera-glow flex items-center justify-center gap-2"
+                >
+                  <span>Deposit in Vault to Enter Draw (${currentPrizePot} Pot)</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-black" />
+                </motion.button>
+              )}
+              <button
+                onClick={onTriggerDraw}
+                disabled={isTriggeringDraw}
+                className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-semibold text-xs transition-colors shrink-0"
+                title="Execute draw round as a keeper or observer"
+              >
+                {isTriggeringDraw ? "Running Draw..." : "Trigger Draw (Keeper)"}
+              </button>
+            </div>
           ) : (
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -363,9 +427,13 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
                   <div>
                     <div className="font-bold text-foreground flex items-center gap-2">
                       <span>Draw #{draw.drawId}</span>
-                      {draw.isMyWin && (
+                      {draw.isMyWin ? (
                         <span className="text-[10px] bg-amber-500 text-black font-bold px-2 py-0.5 rounded-full">
                           You Won!
+                        </span>
+                      ) : (
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-[var(--muted)] font-mono px-2 py-0.5 rounded-full border border-[var(--card-border)]">
+                          Winner: {draw.winner ? `${draw.winner.slice(0, 6)}...${draw.winner.slice(-4)}` : "Community Pool"}
                         </span>
                       )}
                     </div>
@@ -381,7 +449,7 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
                       ${draw.prizeAmount} {draw.market}
                     </div>
                     <span className="text-[10px] text-emerald-500 font-bold">
-                      {draw.phase}
+                      {draw.phase || "COMPLETED"}
                     </span>
                   </div>
 

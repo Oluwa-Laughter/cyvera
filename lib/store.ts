@@ -174,7 +174,7 @@ export const getStoredDrawHistory = (userAccount?: string | null, market: Active
       const lower = userAccount.toLowerCase();
       return list.map((d) => ({
         ...d,
-        isMyWin: d.winner?.toLowerCase() === lower,
+        isMyWin: Boolean(d.isMyWin && d.winner?.toLowerCase() === lower),
       }));
     }
     return list;
@@ -190,7 +190,7 @@ export const addStoredDraw = (draw: StoredDrawRecord): void => {
   localStorage.setItem(`${STORAGE_KEYS.DRAW_HISTORY_PREFIX}${draw.market}`, JSON.stringify(updated));
   setStoredCurrentDrawId(draw.drawId + 1, draw.market);
   setStoredLastDrawTime(draw.timestamp, draw.market);
-  setStoredDrawPhase("CLAIMING", draw.market);
+  setStoredDrawPhase("OPEN", draw.market);
 };
 
 export const getStoredCurrentDrawId = (market: ActiveMarketId = "cUSDT"): number => {
