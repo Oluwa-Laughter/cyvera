@@ -26,29 +26,29 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
     : getAllStoredActivity();
 
   return (
-    <div className="space-y-8 w-full max-w-4xl mx-auto text-foreground">
+    <div className="space-y-6 w-full max-w-5xl mx-auto text-foreground">
       {/* 1. Header Banner */}
-      <div className="cyvera-card p-6 sm:p-8 space-y-4">
+      <div className="cyvera-card p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-cyvera-gold text-black flex items-center justify-center font-bold shadow-cyvera-glow">
               <History className="w-5 h-5 text-black" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-foreground">Activity & Audit Log</h2>
-              <p className="text-xs text-[var(--muted)] font-medium">
-                Verified onchain history of your deposits, withdrawals, draws, and prize distributions.
+              <h2 className="text-xl font-bold text-foreground">Activity & Audit Log</h2>
+              <p className="text-xs text-[var(--muted)] font-normal">
+                Verified history of your deposits, withdrawals, draws, and prize distributions.
               </p>
             </div>
           </div>
 
           {/* Filter Mode Selector */}
-          <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-[var(--card-border)] text-xs font-bold">
+          <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-[var(--card-border)] text-xs font-semibold">
             <button
               onClick={() => setFilterMode("my")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
                 filterMode === "my" 
-                  ? "bg-white dark:bg-slate-900 text-foreground shadow-sm" 
+                  ? "bg-white dark:bg-slate-900 text-foreground font-bold shadow-sm" 
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
@@ -57,9 +57,9 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
             </button>
             <button
               onClick={() => setFilterMode("all")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
                 filterMode === "all" 
-                  ? "bg-white dark:bg-slate-900 text-foreground shadow-sm" 
+                  ? "bg-white dark:bg-slate-900 text-foreground font-bold shadow-sm" 
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
@@ -74,7 +74,7 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
           <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-[var(--card-border)] text-xs">
             <div className="flex items-center gap-2 text-[var(--muted)]">
               <Lock className="w-3.5 h-3.5 text-amber-500" />
-              <span>Showing isolated logs for your connected address:</span>
+              <span>Showing personal logs for your connected address:</span>
             </div>
             <span className="font-mono font-bold text-foreground bg-slate-200 dark:bg-slate-700/60 px-2 py-0.5 rounded-lg text-[11px]">
               {account.slice(0, 6)}...{account.slice(-4)}
@@ -84,7 +84,7 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
       </div>
 
       {/* 2. Feed Container */}
-      <div className="cyvera-card p-6 sm:p-8 space-y-4">
+      <div className="cyvera-card p-6 space-y-4">
         <ActivityFeed
           items={displayedEntries as any}
           title={filterMode === "my" ? "Personal Wallet Transactions" : "Protocol-Wide Verified Audit Feed"}

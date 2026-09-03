@@ -6,79 +6,80 @@ import { X, PiggyBank, Trophy, ShieldCheck, Sparkles, Lock, ArrowDownRight, Refr
 interface HowItWorksModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onEnterVault?: () => void;
 }
 
-export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ isOpen, onClose }) => {
+export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ isOpen, onClose, onEnterVault }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl p-6 sm:p-10 max-w-2xl w-full my-8 relative shadow-aura-lg border border-slate-200 text-black">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-xl w-full my-8 relative shadow-2xl border border-slate-200 dark:border-slate-800 text-foreground">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-black transition-all"
+          className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-black dark:hover:text-white transition-all"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-2xl bg-aura-yellow text-black shadow-aura-yellow">
-            <Sparkles className="w-6 h-6" />
+          <div className="p-2.5 rounded-2xl bg-cyvera-gold text-black shadow-cyvera-glow">
+            <Sparkles className="w-5 h-5 text-black" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-black">How VeilPool Works</h3>
-            <p className="text-xs text-slate-500 font-medium">The No-Loss, 100% Private Prize Savings Protocol</p>
+            <h3 className="text-xl font-bold text-foreground">How Cyvera Works</h3>
+            <p className="text-xs text-[var(--muted)] font-normal">The Zero-Loss, 100% Private Prize Savings Protocol</p>
           </div>
         </div>
 
         {/* 4 Clean Steps */}
-        <div className="space-y-4 mb-8">
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-4">
-            <div className="w-8 h-8 rounded-full bg-aura-yellow text-black font-black flex items-center justify-center text-sm shrink-0">
+        <div className="space-y-3 mb-6">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-[var(--card-border)] flex items-start gap-3.5">
+            <div className="w-7 h-7 rounded-full bg-cyvera-gold text-black font-bold flex items-center justify-center text-xs shrink-0">
               1
             </div>
             <div>
-              <h4 className="font-bold text-black text-sm">Deposit & Get Prize Tickets</h4>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                Deposit tokens into the savings vault. Every 1 cUSDT gives you 1 ticket in all upcoming daily prize draws.
+              <h4 className="font-bold text-foreground text-xs">Deposit & Get Prize Tickets</h4>
+              <p className="text-xs text-[var(--muted)] mt-0.5 leading-relaxed font-normal">
+                Deposit tokens into the savings vault. Every $1.00 in cUSDT or cUSDC gives you 1 ticket in recurring prize draws.
               </p>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-4">
-            <div className="w-8 h-8 rounded-full bg-aura-yellow text-black font-black flex items-center justify-center text-sm shrink-0">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-[var(--card-border)] flex items-start gap-3.5">
+            <div className="w-7 h-7 rounded-full bg-cyvera-gold text-black font-bold flex items-center justify-center text-xs shrink-0">
               2
             </div>
             <div>
-              <h4 className="font-bold text-black text-sm">Collective Yield Creates Jackpots</h4>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                The pool generates 8.50% APY interest through DeFi lending (Aave). The accrued interest is pooled together into prize pots.
+              <h4 className="font-bold text-foreground text-xs">Accrued Interest Creates Prize Pots</h4>
+              <p className="text-xs text-[var(--muted)] mt-0.5 leading-relaxed font-normal">
+                The pool generates 8.50% - 12.00% APY yield through decentralized money markets. This yield funds recurring prize pots with zero principal risk.
               </p>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-4">
-            <div className="w-8 h-8 rounded-full bg-aura-yellow text-black font-black flex items-center justify-center text-sm shrink-0">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-[var(--card-border)] flex items-start gap-3.5">
+            <div className="w-7 h-7 rounded-full bg-cyvera-gold text-black font-bold flex items-center justify-center text-xs shrink-0">
               3
             </div>
             <div>
-              <h4 className="font-bold text-black text-sm">Win Prizes in Total Privacy</h4>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                Draws pick winners fairly using confidential onchain randomness. Unlike traditional lotteries, nobody can see your savings or track your payouts.
+              <h4 className="font-bold text-foreground text-xs">Win Prizes in Total Privacy</h4>
+              <p className="text-xs text-[var(--muted)] mt-0.5 leading-relaxed font-normal">
+                Draws pick winners fairly using verifiable onchain randomness. Nobody can see your savings or track your winning payouts.
               </p>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-4">
-            <div className="w-8 h-8 rounded-full bg-emerald-500 text-white font-black flex items-center justify-center text-sm shrink-0">
+          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3.5">
+            <div className="w-7 h-7 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center text-xs shrink-0">
               4
             </div>
             <div>
-              <h4 className="font-bold text-emerald-950 text-sm">Zero Loss &bull; Withdraw 100% Anytime</h4>
-              <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
-                You never spend your principal. Even if you don&apos;t win a draw, your money is completely safe and withdrawable at any moment.
+              <h4 className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">Zero Loss • Withdraw 100% Anytime</h4>
+              <p className="text-xs text-[var(--muted)] mt-0.5 leading-relaxed font-normal">
+                You never wager your principal. Even if you don&apos;t win a draw, your initial deposit is completely safe and withdrawable at any moment.
               </p>
             </div>
           </div>
@@ -86,8 +87,8 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ isOpen, onClos
 
         {/* Action */}
         <button
-          onClick={onClose}
-          className="w-full py-4 rounded-2xl bg-aura-yellow hover:bg-aura-yellowHover text-black font-black text-sm transition-all shadow-aura-yellow"
+          onClick={onEnterVault || onClose}
+          className="w-full py-3 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-bold text-xs shadow-cyvera-glow transition-all"
         >
           Got It, Let&apos;s Save!
         </button>

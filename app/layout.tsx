@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s | Cyvera",
   },
   description:
-    "Production-ready confidential prize savings protocol powered by Zama FHEVM on Ethereum Sepolia. Save cUSDT and cUSDC with 100% zero-loss protection, keep deposit balances strictly encrypted with euint64, and win yield-backed verifiable onchain draws.",
+    "Production-ready confidential prize savings protocol powered by Zama FHEVM on Ethereum Sepolia. Save cUSDT and cUSDC with 100% zero-loss protection, keep deposit balances strictly confidential with end-to-end encryption, and win yield-backed verifiable onchain draws.",
   applicationName: "Cyvera",
   authors: [{ name: "Cyvera Protocol Team", url: "https://github.com/Oluwa-Laughter/cyvera" }],
   generator: "Next.js",

@@ -186,23 +186,23 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
               <p className="text-[var(--muted)]">If MetaMask did not pop up automatically, follow these 3 quick steps:</p>
               <ol className="list-decimal list-inside space-y-1 text-foreground">
                 <li>Open your <strong>MetaMask</strong> extension and ensure you are on the <strong>Sepolia</strong> network.</li>
-                <li>Scroll down in your Assets tab and click <strong>"Import Tokens"</strong> $\rightarrow$ <strong>"Custom Token"</strong>.</li>
+                <li>Scroll down in your Assets tab and click <strong>"Import Tokens"</strong> → <strong>"Custom Token"</strong>.</li>
                 <li>Paste the Contract Address: <strong className="font-mono text-amber-500 break-all">{currentCfg.underlying}</strong></li>
-                <li>Token Symbol will auto-fill as <strong>{currentCfg.symbol}</strong>, Decimals: <strong>6</strong>. Click <strong>"Next"</strong> $\rightarrow$ <strong>"Import"</strong>!</li>
+                <li>Token Symbol will auto-fill as <strong>{currentCfg.symbol}</strong>, Decimals: <strong>6</strong>. Click <strong>"Next"</strong> → <strong>"Import"</strong>!</li>
               </ol>
             </div>
           )}
         </div>
 
         {/* Mint Button */}
-        <div className="space-y-3 text-xs">
+        <div className="space-y-2.5 text-xs">
           {!account ? (
             <button
               onClick={() => {
                 onClose();
                 if (onConnect) onConnect();
               }}
-              className="w-full py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold shadow-cyvera-glow active:scale-95 transition-all"
+              className="w-full py-3 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-bold text-xs shadow-cyvera-glow active:scale-95 transition-all"
             >
               Connect Wallet to Mint
             </button>
@@ -210,16 +210,16 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
             <button
               onClick={() => onClaimFaucet(selectedToken)}
               disabled={isClaiming}
-              className="w-full py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider transition-all shadow-cyvera-glow flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+              className="w-full py-3 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-bold text-xs transition-all shadow-cyvera-glow flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
             >
               {isClaiming ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-black" />
                   <span>Minting 1,000 {currentCfg.symbol} on Sepolia...</span>
                 </>
               ) : (
                 <>
-                  <Droplets className="w-4 h-4 text-black" />
+                  <Droplets className="w-3.5 h-3.5 text-black" />
                   <span>Mint 1,000 {currentCfg.symbol} Now</span>
                 </>
               )}
@@ -228,7 +228,7 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground font-bold transition-all"
+            className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground font-semibold text-xs transition-all"
           >
             Close
           </button>

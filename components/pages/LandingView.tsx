@@ -257,15 +257,15 @@ export const LandingView: React.FC<LandingViewProps> = ({
             <div className="pt-8 border-t border-[var(--card-border)] grid grid-cols-3 gap-6 text-xs font-medium text-[var(--muted)]">
               <div>
                 <span className="text-[11px] block opacity-80">Principal Invariant:</span>
-                <strong className="text-emerald-500 font-black text-sm">100% Protected</strong>
+                <strong className="text-emerald-500 font-bold text-sm">100% Protected</strong>
               </div>
               <div>
                 <span className="text-[11px] block opacity-80">Privacy Standard:</span>
-                <strong className="text-foreground font-black text-sm">Zama euint64</strong>
+                <strong className="text-foreground font-bold text-sm">End-to-End Encrypted</strong>
               </div>
               <div>
                 <span className="text-[11px] block opacity-80">Randomness Engine:</span>
-                <strong className="text-amber-500 font-black text-sm">FHE.randEuint64()</strong>
+                <strong className="text-amber-500 font-bold text-sm">Provably Fair Draws</strong>
               </div>
             </div>
           </motion.div>
@@ -353,7 +353,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[var(--muted)]">Weight & Odds Privacy:</span>
-                  <span className="font-mono text-[10px] text-emerald-500 font-bold">Encrypted euint64</span>
+                  <span className="text-[11px] text-emerald-500 font-bold">100% Confidential</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[var(--muted)]">Zero-Loss Guarantee:</span>
@@ -406,7 +406,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 <h3 className="font-bold text-foreground text-sm">Deposit & Save</h3>
               </div>
               <p className="text-xs text-[var(--muted)] leading-relaxed font-medium">
-                Deposit public tokens into the confidential <strong className="text-foreground">cUSDT</strong> or <strong className="text-foreground">cUSDC</strong> vault. Your balance is instantly encrypted into an onchain <code className="text-amber-500 font-mono">euint64</code> ciphertext. Nobody can see your deposit size.
+                Deposit public tokens into the confidential <strong className="text-foreground">cUSDT</strong> or <strong className="text-foreground">cUSDC</strong> vault. Your balance is instantly shielded with private encryption. Nobody on the blockchain can see your deposit size or track your wallet.
               </p>
             </motion.div>
 
@@ -436,11 +436,11 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 <span className="text-3xl font-black text-slate-200 dark:text-slate-800 font-mono">03</span>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-cyan-500 uppercase tracking-wide block">Zama FHE Randomness</span>
+                <span className="text-[10px] font-bold text-cyan-500 uppercase tracking-wide block">Cryptographic Randomness</span>
                 <h3 className="font-bold text-foreground text-sm">Provably Fair Draws</h3>
               </div>
               <p className="text-xs text-[var(--muted)] leading-relaxed font-medium">
-                Draws run automatically onchain. Winner selection executes over encrypted balances using <code className="text-cyan-500 font-mono">FHE.randEuint64()</code>. Tickets are weighted by deposit without revealing individual weights.
+                Draws run automatically onchain. Winner selection executes with tamper-proof cryptographic randomness. Draw tickets are proportional to your savings without exposing individual balances to the public.
               </p>
             </motion.div>
 
@@ -657,42 +657,42 @@ export const LandingView: React.FC<LandingViewProps> = ({
             <Cpu className="w-3.5 h-3.5" />
             <span>Fully Homomorphic Encryption (FHE)</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-            How Cyvera Operates Over Encrypted State
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+            Next-Generation Financial Privacy
           </h2>
           <p className="text-xs sm:text-sm text-[var(--muted)] font-medium">
-            Smart contracts perform computations on encrypted data without ever decrypting it onchain.
+            Experience prize savings with guaranteed math, provable fairness, and zero data leakage.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
           <div className="cyvera-card p-6 space-y-3">
-            <div className="font-mono text-[11px] font-black text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-lg inline-block">
-              FHE.asEuint64()
+            <div className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-lg inline-block">
+              Zero-Knowledge Protection
             </div>
-            <h4 className="font-bold text-foreground text-sm">Homomorphic State Wrapping</h4>
+            <h4 className="font-bold text-foreground text-sm">Private Balances</h4>
             <p className="text-[var(--muted)] leading-relaxed font-medium">
-              Deposits are encrypted into 64-bit homomorphic ciphertexts. The contract adds, subtracts, and tracks cumulative pool shares without knowing the underlying balance amounts.
+              Your savings stay strictly confidential. The protocol accounts for interest and draw tickets while keeping your personal wealth completely invisible to competitors, bots, and public explorers.
             </p>
           </div>
 
           <div className="cyvera-card p-6 space-y-3">
-            <div className="font-mono text-[11px] font-black text-cyan-500 bg-cyan-500/10 px-2.5 py-1 rounded-lg inline-block">
-              FHE.randEuint64()
+            <div className="text-[11px] font-bold text-cyan-500 bg-cyan-500/10 px-2.5 py-1 rounded-lg inline-block">
+              Provably Fair Selection
             </div>
-            <h4 className="font-bold text-foreground text-sm">Verifiable Entropy Engine</h4>
+            <h4 className="font-bold text-foreground text-sm">Tamper-Proof Draws</h4>
             <p className="text-[var(--muted)] leading-relaxed font-medium">
-              At draw intervals, the protocol invokes onchain FHE randomness. The random seed is generated homomorphically onchain, making it immune to miner front-running or keeper tampering.
+              Winner selection runs onchain with cryptographically verifiable randomness. Nobody—not even validators or protocol creators—can bias, manipulate, or predict the draw.
             </p>
           </div>
 
           <div className="cyvera-card p-6 space-y-3">
-            <div className="font-mono text-[11px] font-black text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-lg inline-block">
-              EIP-712 Decryption
+            <div className="text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-lg inline-block">
+              Owner-Only Access
             </div>
-            <h4 className="font-bold text-foreground text-sm">Authorized User Reveal</h4>
+            <h4 className="font-bold text-foreground text-sm">Private Prize Reveal</h4>
             <p className="text-[var(--muted)] leading-relaxed font-medium">
-              Only the account holding the corresponding private key can authorize an offchain decryption session through the Zama relayer to privately reveal their prize outcome.
+              Only your connected wallet has the authorization to decrypt and view your winning payout, preventing financial exposure and unwanted attention.
             </p>
           </div>
         </div>

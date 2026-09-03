@@ -1087,16 +1087,16 @@ const TAB_TITLES: Record<AppPageTab, { title: string; subtitle: string }> = {
     subtitle: "Deposit cUSDT and cUSDC with 100% zero-loss protection & earn draw tickets",
   },
   draws: {
-    title: "4-Phase Verifiable Draws",
-    subtitle: "Permissionless draw progression powered by Zama FHE onchain randomness",
+    title: "Verifiable Prize Draws",
+    subtitle: "Automatic provably fair draws with 100% zero-loss protection",
   },
   earn: {
     title: "Confidential Liquidity Hunt",
-    subtitle: "Earn time-weighted protocol incentives & confidential prize multipliers on encrypted TVL",
+    subtitle: "Earn time-weighted protocol incentives and confidential prize multipliers on your savings",
   },
   rewards: {
     title: "Private Prize Reveal",
-    subtitle: "Authorize an EIP-712 decryption session to privately inspect your prize result",
+    subtitle: "Privately inspect your winnings and claim prize tokens directly to your wallet",
   },
   activity: {
     title: "Activity & Audit Log",

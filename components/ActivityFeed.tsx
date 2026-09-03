@@ -169,7 +169,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                 ) : (
                   <span className="shrink-0 text-[10px] inline-flex items-center gap-1 text-emerald-500 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 font-mono">
                     <Lock className="w-3 h-3 text-emerald-500" />
-                    <span>Zama FHE</span>
+                    <span>Encrypted</span>
                   </span>
                 )}
               </motion.li>
