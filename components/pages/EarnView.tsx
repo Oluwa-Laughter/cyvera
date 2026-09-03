@@ -23,6 +23,7 @@ import { ActiveMarketId } from "@/lib/contracts";
 interface EarnViewProps {
   account: string | null;
   activeMarket: ActiveMarketId;
+  onChangeMarket?: (m: ActiveMarketId) => void;
   userSavings: string;
   liquidityHuntPoints: number;
   onEnterVault: () => void;
@@ -32,6 +33,7 @@ interface EarnViewProps {
 export const EarnView: React.FC<EarnViewProps> = ({
   account,
   activeMarket,
+  onChangeMarket,
   userSavings,
   liquidityHuntPoints,
   onEnterVault,
@@ -47,6 +49,37 @@ export const EarnView: React.FC<EarnViewProps> = ({
 
   return (
     <div className="space-y-6 w-full max-w-5xl mx-auto text-foreground">
+      {/* Market Switcher */}
+      {onChangeMarket && (
+        <div className="flex items-center justify-between p-2 rounded-2xl bg-[var(--card-bg)] border border-[var(--card-border)] shadow-sm">
+          <div className="flex items-center gap-1.5 text-xs font-bold">
+            <button
+              onClick={() => onChangeMarket("cUSDT")}
+              className={`px-3.5 py-1.5 rounded-xl transition-all ${
+                activeMarket === "cUSDT" 
+                  ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
+                  : "text-[var(--muted)] hover:text-foreground"
+              }`}
+            >
+              cUSDT Liquidity Hunt
+            </button>
+            <button
+              onClick={() => onChangeMarket("cUSDC")}
+              className={`px-3.5 py-1.5 rounded-xl transition-all ${
+                activeMarket === "cUSDC" 
+                  ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
+                  : "text-[var(--muted)] hover:text-foreground"
+              }`}
+            >
+              cUSDC Liquidity Hunt
+            </button>
+          </div>
+          <span className="text-[11px] font-medium text-[var(--muted)] hidden sm:inline">
+            Confidential Multiplier Season
+          </span>
+        </div>
+      )}
+
       {/* 1. Hero Banner */}
       <div className="cyvera-card p-6 space-y-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-[var(--card-border)]">

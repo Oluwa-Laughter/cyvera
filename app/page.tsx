@@ -629,6 +629,11 @@ export default function Home() {
       setStoredSavings(account, newSaved, activeMarket);
       setDecryptedBalance(newSaved);
 
+      if (parseFloat(newSaved) === 0) {
+        const curDep = getStoredDepositorsCount(activeMarket);
+        setStoredDepositorsCount(Math.max(activeMarket === "cUSDT" ? 14 : 18, curDep - 1), activeMarket);
+      }
+
       // Refresh onchain wallet balance
       const newOnchainBal = await token.balanceOf(account).catch(() => 0n);
       setStoredWalletBalance(account, parseFloat(ethers.formatUnits(newOnchainBal, marketCfg.decimals)).toFixed(2), activeMarket);
@@ -686,18 +691,6 @@ export default function Home() {
 
       addToast("info", `Sampling Zama FHE randomness for Draw #${currentDraw} on ${activeMarket}...`);
 
-      // Credit winner with dynamic prize pot
-      if (userSaved > 0) {
-        const curWin = parseFloat(getStoredWinnings(account, activeMarket));
-        const newWin = (curWin + parseFloat(prizeAmount)).toFixed(2);
-        setStoredWinnings(account, newWin, activeMarket);
-        setDecryptedWinnings(newWin);
-      }
-
-      // Reset prize pot to seed base after award
-      setStoredPrizePot("5.00", activeMarket);
-      setStoredDrawPhase("CLAIMING", activeMarket);
-
       const poolParticipants = (snap?.depositorsCount && snap.depositorsCount > 0)
         ? snap.depositorsCount
         : (activeMarket === "cUSDT" ? 14 : 18);
@@ -723,8 +716,9 @@ export default function Home() {
         setDecryptedWinnings(newWin);
       }
 
-      // Reset prize pot to seed base after award
-      setStoredPrizePot("5.00", activeMarket);
+      // Reset prize pot to seed base after award (15.00 for cUSDT, 25.00 for cUSDC)
+      const baseSeedPot = activeMarket === "cUSDT" ? "15.00" : "25.00";
+      setStoredPrizePot(baseSeedPot, activeMarket);
       setStoredDrawPhase("OPEN", activeMarket);
 
       // Record draw in verifiable history
@@ -1052,6 +1046,7 @@ export default function Home() {
             <EarnView
               account={account}
               activeMarket={activeMarket}
+              onChangeMarket={setActiveMarket}
               userSavings={decryptedBalance || "0.00"}
               liquidityHuntPoints={snap?.liquidityHuntPoints ?? 0}
               onEnterVault={() => setCurrentTab("vault")}
@@ -1096,6 +1091,8 @@ export default function Home() {
         onClaimFaucet={handleClaimFaucet}
         isClaiming={isClaimingFaucet}
         walletBalance={snap?.userWalletBalance ?? "0.00"}
+        usdtBalance={account ? getStoredWalletBalance(account, "cUSDT") : "0.00"}
+        usdcBalance={account ? getStoredWalletBalance(account, "cUSDC") : "0.00"}
         account={account}
         onConnect={handleConnectWallet}
         activeMarket={activeMarket}

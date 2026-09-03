@@ -23,7 +23,9 @@ interface FaucetModalProps {
   onClose: () => void;
   onClaimFaucet: (market: ActiveMarketId) => Promise<void>;
   isClaiming: boolean;
-  walletBalance: string;
+  walletBalance?: string;
+  usdtBalance?: string;
+  usdcBalance?: string;
   account: string | null;
   onConnect?: () => void;
   activeMarket?: ActiveMarketId;
@@ -35,6 +37,8 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
   onClaimFaucet,
   isClaiming,
   walletBalance = "0.00",
+  usdtBalance,
+  usdcBalance,
   account,
   onConnect,
   activeMarket = "cUSDT",
@@ -44,9 +48,17 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
   const [isCopied, setIsCopied] = useState(false);
   const [showManualGuide, setShowManualGuide] = useState(false);
 
+  // Sync selected token when activeMarket changes
+  React.useEffect(() => {
+    setSelectedToken(activeMarket);
+  }, [activeMarket]);
+
   if (!isOpen) return null;
 
   const currentCfg = ZAMA_SEPOLIA_CONFIG.markets[selectedToken];
+  const currentTokenBalance = selectedToken === "cUSDT"
+    ? (usdtBalance ?? walletBalance ?? "0.00")
+    : (usdcBalance ?? (activeMarket === "cUSDC" ? walletBalance : "0.00"));
 
   const handleAddToken = async () => {
     const success = await addTokenToWallet(currentCfg.underlying, currentCfg.symbol, currentCfg.decimals);
@@ -115,7 +127,7 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
           <div>
             <span className="text-[var(--muted)] block text-[11px]">Wallet Token Balance:</span>
             <span className="font-mono font-black text-foreground text-sm">
-              {account ? `${walletBalance || "0.00"} ${currentCfg.symbol}` : "Not Connected"}
+              {account ? `${currentTokenBalance || "0.00"} ${currentCfg.symbol}` : "Not Connected"}
             </span>
           </div>
 
