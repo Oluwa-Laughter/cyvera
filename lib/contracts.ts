@@ -44,20 +44,14 @@ export const ZAMA_SEPOLIA_CONFIG = {
       publicSymbol: "USDC",
       decimals: 6,
       underlying: toChecksumAddress(
-        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN_USDC ||
-        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN ||
-        "0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838"
+        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN_USDC || "0xE0E6aA26a248795C8a4a89Feb4b5D78CBe2c98c5"
       ),
       wrapper: toChecksumAddress("0x7c5BF43B851c1dff1a4feE8dB225b87f2C223639"),
       vault: toChecksumAddress(
-        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS_USDC ||
-        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS ||
-        "0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF"
+        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS_USDC || "0xC669F93c667Acf060713aB35d83d53a9688CC265"
       ),
       yieldSource: toChecksumAddress(
-        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS_USDC ||
-        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS ||
-        "0xe1699F23031C9CB430124232C1eAb5f20F676C66"
+        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS_USDC || "0x9C32bA329CC28474b3f52609e61F7c11C30bc643"
       ),
       apy: "12.00%",
       drawFrequency: "1-Minute (Testing) / Weekly (Mainnet)",
