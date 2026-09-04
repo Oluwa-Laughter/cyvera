@@ -153,6 +153,68 @@ async function querySepoliaBalances(userAccount: string) {
   return null;
 }
 
+/**
+ * Queries the live CyveraPrizePool smart contract on Sepolia for
+ * real pool summary, draw timing, participant counts, and encrypted user handles.
+ */
+async function querySepoliaPoolState(userAccount: string | null, market: ActiveMarketId) {
+  const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[market];
+  for (let i = 0; i < SEPOLIA_RPCS.length; i++) {
+    try {
+      const provider = getPublicProvider(i);
+      const pool = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, provider);
+
+      const summaryPromise = pool.getPoolSummary().catch(() => null);
+      const userStatePromise = userAccount
+        ? Promise.all([
+            pool.getUserEncryptedBalance(userAccount).catch(() => ZERO),
+            pool.getUserEncryptedWinnings(userAccount).catch(() => ZERO),
+            pool.getUnclaimedWinnings(userAccount).catch(() => 0n),
+            pool.isUserDepositor(userAccount).catch(() => false),
+          ])
+        : Promise.resolve([ZERO, ZERO, 0n, false] as const);
+
+      const [summary, userState] = await Promise.all([summaryPromise, userStatePromise]);
+
+      if (summary) {
+        const [
+          totalDep,
+          prizeRes,
+          prizesAw,
+          totalWith,
+          lastDraw,
+          interval,
+          curDrawId,
+          winCount,
+          depCount,
+        ] = summary;
+
+        const onchainDep = parseFloat(ethers.formatUnits(totalDep, marketCfg.decimals)).toFixed(2);
+        const onchainPot = parseFloat(ethers.formatUnits(prizeRes, marketCfg.decimals)).toFixed(2);
+
+        return {
+          totalDeposits: parseFloat(onchainDep) > 0 ? onchainDep : null,
+          totalPrizeReserve: parseFloat(onchainPot) > 0 ? onchainPot : null,
+          totalPrizesAwarded: parseFloat(ethers.formatUnits(prizesAw, marketCfg.decimals)).toFixed(2),
+          totalWithdrawn: parseFloat(ethers.formatUnits(totalWith, marketCfg.decimals)).toFixed(2),
+          lastDrawTime: Number(lastDraw),
+          drawInterval: Number(interval),
+          currentDrawId: Number(curDrawId),
+          winnersPerDraw: Number(winCount),
+          depositorCount: Number(depCount),
+          userBalanceHandle: (userState[0] as string) || ZERO,
+          userWinningsHandle: (userState[1] as string) || ZERO,
+          userUnclaimedWinnings: parseFloat(ethers.formatUnits(userState[2], marketCfg.decimals)).toFixed(2),
+          userIsDepositor: Boolean(userState[3]),
+        };
+      }
+    } catch (err) {
+      // Continue to next RPC
+    }
+  }
+  return null;
+}
+
 export async function fetchLiveProtocolState(
   userAccount?: string | null,
   market: ActiveMarketId = "cUSDT"
@@ -163,6 +225,9 @@ export async function fetchLiveProtocolState(
   if (userAccount) {
     liveBalances = await querySepoliaBalances(userAccount);
   }
+
+  // Query live pool contract on Sepolia
+  const onchainPool = await querySepoliaPoolState(userAccount || null, market);
 
   const storedSaved = getStoredSavings(userAccount || null, market);
   const storedShielded = getStoredShieldedBalance(userAccount || null, market);
@@ -189,15 +254,29 @@ export async function fetchLiveProtocolState(
 
   const userSavedNum = parseFloat(storedSaved);
   const now = Math.floor(Date.now() / 1000);
-  const drawInterval = 60; // 1-minute test cycle
-  const nextDrawTime = storedLastDraw + drawInterval;
+  const drawInterval = onchainPool?.drawInterval || 60;
+  const lastDrawTime = onchainPool?.lastDrawTime || storedLastDraw;
+  const nextDrawTime = lastDrawTime + drawInterval;
   const timeToNext = Math.max(0, nextDrawTime - now);
 
   const baseTVL = market === "cUSDT" ? "14500.00" : "18200.00";
-  const effectiveTVL = parseFloat(storedTVL) > 0 ? storedTVL : (userSavedNum > 0 ? (parseFloat(baseTVL) + userSavedNum).toFixed(2) : baseTVL);
+  const effectiveTVL = onchainPool?.totalDeposits || (parseFloat(storedTVL) > 0 ? storedTVL : (userSavedNum > 0 ? (parseFloat(baseTVL) + userSavedNum).toFixed(2) : baseTVL));
+  const effectivePot = onchainPool?.totalPrizeReserve || storedPot;
+  const effectiveCurrentDraw = onchainPool?.currentDrawId || storedDrawId;
   const baseDepositors = getStoredDepositorsCount(market);
-  const effectiveDepositors = baseDepositors + (userSavedNum > 0 ? 1 : 0);
+  const effectiveDepositors = (onchainPool?.depositorCount && onchainPool.depositorCount > 0)
+    ? onchainPool.depositorCount
+    : baseDepositors + (userSavedNum > 0 ? 1 : 0);
   const apyBps = market === "cUSDT" ? 850 : 1200;
+
+  // Derive ciphertext handles from onchain contract if available, otherwise generate deterministic handle
+  const balanceHandle = (onchainPool?.userBalanceHandle && onchainPool.userBalanceHandle !== ZERO)
+    ? onchainPool.userBalanceHandle
+    : (userAccount ? ethers.keccak256(ethers.toUtf8Bytes(`cyvera-enc-balance-${userAccount}-${market}`)) : ZERO);
+
+  const winningsHandle = (onchainPool?.userWinningsHandle && onchainPool.userWinningsHandle !== ZERO)
+    ? onchainPool.userWinningsHandle
+    : (userAccount ? ethers.keccak256(ethers.toUtf8Bytes(`cyvera-enc-winnings-${userAccount}-${market}`)) : ZERO);
 
   return {
     market,
@@ -206,13 +285,13 @@ export async function fetchLiveProtocolState(
     publicSymbol: marketCfg.publicSymbol,
     drawPhase: storedPhase,
     totalDeposits: effectiveTVL,
-    totalPrizeReserve: storedPot,
-    totalPrizesAwarded: "0.00",
-    totalWithdrawn: "0.00",
-    lastDrawTime: storedLastDraw,
+    totalPrizeReserve: effectivePot,
+    totalPrizesAwarded: onchainPool?.totalPrizesAwarded || "0.00",
+    totalWithdrawn: onchainPool?.totalWithdrawn || "0.00",
+    lastDrawTime,
     drawInterval,
-    currentDrawId: storedDrawId,
-    winnersPerDraw: 1,
+    currentDrawId: effectiveCurrentDraw,
+    winnersPerDraw: onchainPool?.winnersPerDraw || 1,
     depositorsCount: effectiveDepositors,
     totalYieldHarvested: "0.00",
     apyBasisPoints: apyBps,
@@ -220,10 +299,12 @@ export async function fetchLiveProtocolState(
     userPublicWalletBalance: storedPublicWallet,
     userShieldedBalance: storedShielded,
     userNativeEthBalance: effectiveEthBal,
-    userShieldedBalanceHandle: ZERO,
-    userUnclaimedWinnings: storedWin,
-    userEncryptedWinningsHandle: ZERO,
-    userIsDepositor: userSavedNum > 0,
+    userShieldedBalanceHandle: balanceHandle,
+    userUnclaimedWinnings: (onchainPool?.userUnclaimedWinnings && parseFloat(onchainPool.userUnclaimedWinnings) > 0)
+      ? onchainPool.userUnclaimedWinnings
+      : storedWin,
+    userEncryptedWinningsHandle: winningsHandle,
+    userIsDepositor: onchainPool ? onchainPool.userIsDepositor : userSavedNum > 0,
     liquidityHuntPoints: storedLhPoints,
     drawHistory: storedDraws,
     timeToNextDraw: timeToNext,

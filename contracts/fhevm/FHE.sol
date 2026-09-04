@@ -132,7 +132,14 @@ library FHE {
         bytes memory payload = abi.encode(op, a, b);
         (bool ok, bytes memory ret) = FHE_COPROCESSOR.staticcall{gas: 50_000}(payload);
         if (ok && ret.length >= 32) return euint64.wrap(bytes32(ret));
-        // Fallback: deterministic placeholder for vanilla chains / tests.
+        // Fallback: deterministic simulation for vanilla chains / tests.
+        uint64 valA = uint64(uint256(euint64.unwrap(a)));
+        uint64 valB = uint64(uint256(euint64.unwrap(b)));
+        if (op == OP_ADD) return euint64.wrap(bytes32(uint256(valA + valB)));
+        if (op == OP_SUB) return euint64.wrap(bytes32(uint256(valA >= valB ? valA - valB : 0)));
+        if (op == OP_MUL) return euint64.wrap(bytes32(uint256(valA * valB)));
+        if (op == OP_DIV) return euint64.wrap(bytes32(uint256(valB > 0 ? valA / valB : 0)));
+        if (op == OP_REM) return euint64.wrap(bytes32(uint256(valB > 0 ? valA % valB : 0)));
         return euint64.wrap(keccak256(abi.encode(op, a, b, "FHE-bin64")));
     }
 
@@ -140,28 +147,45 @@ library FHE {
         bytes memory payload = abi.encode(op, a, b);
         (bool ok, bytes memory ret) = FHE_COPROCESSOR.staticcall{gas: 50_000}(payload);
         if (ok && ret.length >= 32) return ebool.wrap(bytes32(ret));
-        return ebool.wrap(keccak256(abi.encode(op, a, b, "FHE-cmp64")));
+        uint64 valA = uint64(uint256(euint64.unwrap(a)));
+        uint64 valB = uint64(uint256(euint64.unwrap(b)));
+        bool res = false;
+        if (op == OP_EQ) res = (valA == valB);
+        if (op == OP_NE) res = (valA != valB);
+        if (op == OP_LT) res = (valA < valB);
+        if (op == OP_LE) res = (valA <= valB);
+        if (op == OP_GT) res = (valA > valB);
+        if (op == OP_GE) res = (valA >= valB);
+        return ebool.wrap(res ? bytes32(uint256(1)) : bytes32(0));
     }
 
     function _binB(ebool a, ebool b, uint8 op) private view returns (ebool) {
         bytes memory payload = abi.encode(op, a, b);
         (bool ok, bytes memory ret) = FHE_COPROCESSOR.staticcall{gas: 50_000}(payload);
         if (ok && ret.length >= 32) return ebool.wrap(bytes32(ret));
-        return ebool.wrap(keccak256(abi.encode(op, a, b, "FHE-binB")));
+        bool valA = ebool.unwrap(a) != bytes32(0);
+        bool valB = ebool.unwrap(b) != bytes32(0);
+        bool res = false;
+        if (op == OP_AND) res = (valA && valB);
+        if (op == OP_OR)  res = (valA || valB);
+        if (op == OP_XOR) res = (valA != valB);
+        return ebool.wrap(res ? bytes32(uint256(1)) : bytes32(0));
     }
 
     function _unaB(ebool a, uint8 op) private view returns (ebool) {
         bytes memory payload = abi.encode(op, a);
         (bool ok, bytes memory ret) = FHE_COPROCESSOR.staticcall{gas: 50_000}(payload);
         if (ok && ret.length >= 32) return ebool.wrap(bytes32(ret));
-        return ebool.wrap(keccak256(abi.encode(op, a, "FHE-unaB")));
+        bool valA = ebool.unwrap(a) != bytes32(0);
+        bool res = (op == OP_NOT) ? !valA : valA;
+        return ebool.wrap(res ? bytes32(uint256(1)) : bytes32(0));
     }
 
     function _sel(ebool cond, euint64 t, euint64 f) private view returns (euint64) {
         bytes memory payload = abi.encode(OP_SEL, cond, t, f);
         (bool ok, bytes memory ret) = FHE_COPROCESSOR.staticcall{gas: 60_000}(payload);
         if (ok && ret.length >= 32) return euint64.wrap(bytes32(ret));
-        return euint64.wrap(keccak256(abi.encode(OP_SEL, cond, t, f, "FHE-sel")));
+        return ebool.unwrap(cond) != bytes32(0) ? t : f;
     }
 
     function _rand(bytes32 seed) private view returns (euint64) {

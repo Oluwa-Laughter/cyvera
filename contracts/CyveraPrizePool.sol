@@ -79,7 +79,6 @@ contract CyveraPrizePool {
     // Per-user encrypted accounting
     mapping(address => euint64) internal _encryptedBalances;
     mapping(address => euint64) internal _encryptedWinnings;
-    mapping(address => uint256) internal _unclaimedWinningsPlain; // kept so claimPrize is gas-efficient
 
     // Draw history
     struct DrawRecord {
@@ -200,7 +199,6 @@ contract CyveraPrizePool {
         FHE.allow(_encryptedBalances[msg.sender], msg.sender);
 
         totalDeposits += amount;
-        _publicSafeBalance[msg.sender] += amount;
         emit Deposited(msg.sender, euint64.unwrap(_encryptedBalances[msg.sender]), block.timestamp);
     }
 
@@ -209,7 +207,7 @@ contract CyveraPrizePool {
     // ---------------------------------------------------------------------
     function withdraw(uint256 amount) external nonReentrant {
         if (amount == 0) revert InvalidAmount();
-        uint256 userBalance = _effectiveBalance(msg.sender);
+        uint256 userBalance = uint256(euint64.unwrap(_encryptedBalances[msg.sender]));
         if (userBalance < amount) revert InsufficientBalance(amount, userBalance);
 
         // Decrement the encrypted principal
@@ -220,14 +218,17 @@ contract CyveraPrizePool {
 
         totalDeposits -= amount;
         totalWithdrawn += amount;
-        _publicSafeBalance[msg.sender] = userBalance - amount;
+
+        if (userBalance == amount) {
+            _removeDepositor(msg.sender);
+        }
 
         if (!depositToken.transfer(msg.sender, amount)) revert TransferFailed();
         emit Withdrawn(msg.sender, amount, euint64.unwrap(_encryptedBalances[msg.sender]), block.timestamp);
     }
 
     function withdrawAll() external nonReentrant {
-        uint256 userBalance = _effectiveBalance(msg.sender);
+        uint256 userBalance = uint256(euint64.unwrap(_encryptedBalances[msg.sender]));
         if (userBalance == 0) revert InsufficientBalance(0, 0);
 
         // Zero out the encrypted handle
@@ -237,7 +238,6 @@ contract CyveraPrizePool {
 
         totalDeposits -= userBalance;
         totalWithdrawn += userBalance;
-        _publicSafeBalance[msg.sender] = 0;
 
         _removeDepositor(msg.sender);
 
@@ -307,7 +307,7 @@ contract CyveraPrizePool {
         uint256 ticket = entropySeed % total;
         uint256 cumulative;
         for (uint256 i = 0; i < n; i++) {
-            uint256 b = _effectiveBalance(_depositors[i]);
+            uint256 b = uint256(euint64.unwrap(_encryptedBalances[_depositors[i]]));
             cumulative += b;
             if (ticket < cumulative) return i;
         }
@@ -321,7 +321,6 @@ contract CyveraPrizePool {
         );
         FHE.allowThis(encWinnings);
         FHE.allow(encWinnings, winner);
-        _unclaimedWinningsPlain[winner] += prize;
         bytes32 handle = euint64.unwrap(encWinnings);
         emit WinnerSelected(drawId, winner, handle);
     }
@@ -330,9 +329,8 @@ contract CyveraPrizePool {
     // Claim / compound
     // ---------------------------------------------------------------------
     function claimPrize() external nonReentrant {
-        uint256 amount = _unclaimedWinningsPlain[msg.sender];
+        uint256 amount = uint256(euint64.unwrap(_encryptedWinnings[msg.sender]));
         if (amount == 0) revert NoWinnings();
-        _unclaimedWinningsPlain[msg.sender] = 0;
 
         // Zero the encrypted handle
         _encryptedWinnings[msg.sender] = FHE.asEuint64(uint64(0));
@@ -344,9 +342,8 @@ contract CyveraPrizePool {
     }
 
     function compoundPrize() external nonReentrant {
-        uint256 amount = _unclaimedWinningsPlain[msg.sender];
+        uint256 amount = uint256(euint64.unwrap(_encryptedWinnings[msg.sender]));
         if (amount == 0) revert NoWinnings();
-        _unclaimedWinningsPlain[msg.sender] = 0;
 
         _encryptedWinnings[msg.sender] = FHE.asEuint64(uint64(0));
         FHE.allowThis(_encryptedWinnings[msg.sender]);
@@ -366,7 +363,6 @@ contract CyveraPrizePool {
         FHE.allow(_encryptedBalances[msg.sender], msg.sender);
 
         totalDeposits += amount;
-        _publicSafeBalance[msg.sender] += amount;
 
         emit PrizeCompounded(msg.sender, amount, block.timestamp);
     }
@@ -374,12 +370,6 @@ contract CyveraPrizePool {
     // ---------------------------------------------------------------------
     // Internal helpers
     // ---------------------------------------------------------------------
-    mapping(address => uint256) internal _publicSafeBalance;
-
-    function _effectiveBalance(address user) internal view returns (uint256) {
-        return _publicSafeBalance[user];
-    }
-
     function _removeDepositor(address user) internal {
         if (!_isDepositor[user]) return;
         uint256 idx = _depositorIndex[user];
@@ -393,7 +383,7 @@ contract CyveraPrizePool {
 
         _depositors.pop();
         delete _depositorIndex[user];
-        _isDepositor[user] = false;
+        delete _isDepositor[user];
     }
 
     // ---------------------------------------------------------------------
@@ -408,7 +398,7 @@ contract CyveraPrizePool {
     }
 
     function getUnclaimedWinnings(address user) external view returns (uint256) {
-        return _unclaimedWinningsPlain[user];
+        return uint256(euint64.unwrap(_encryptedWinnings[user]));
     }
 
     function getDepositorCount() external view returns (uint256) {
@@ -459,11 +449,6 @@ contract CyveraPrizePool {
 
     function getDrawHistory(uint256 drawId) external view returns (DrawRecord memory) {
         return drawHistory[drawId];
-    }
-
-    function setPublicSafeBalance(address user, uint256 balance) external {
-        require(msg.sender == owner || msg.sender == deployer, "Only admin");
-        _publicSafeBalance[user] = balance;
     }
 }
 

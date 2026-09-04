@@ -34,7 +34,6 @@ contract CyveraPrizePoolTest is Test {
         token.approve(address(pool), amount);
         vm.prank(user);
         pool.deposit(amount);
-        pool.setPublicSafeBalance(user, amount);
     }
 
     function _warpToNextDraw() internal {
