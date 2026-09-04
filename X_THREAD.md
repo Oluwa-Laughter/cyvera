@@ -67,9 +67,9 @@ The contract homomorphically verifies `FHE.ge(balance, amount)` before release.
 
 ### Tweet 9 (Verified Sepolia Contracts)
 8/ Cyvera is live and deployed on Ethereum Sepolia:
-🏛️ PrizePool: `0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16`
-🪙 Deposit Token (cUSDT): `0xC30109A6A2f678324FeB98645E62A115b49687c8`
-🌾 Mock Yield Source: `0x650091Cca5CA4533de9021e82cf3dd787cD16012`
+🏛️ PrizePool: `0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF`
+🪙 Deposit Token (cUSDT): `0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838`
+🌾 Mock Yield Source: `0xe1699F23031C9CB430124232C1eAb5f20F676C66`
 
 All contracts verified on Sepolia Etherscan!
 

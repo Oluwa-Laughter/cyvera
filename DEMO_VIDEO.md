@@ -23,8 +23,8 @@
 ## 🛠️ Onchain Verification Checklist
 
 - **Contract Deployment**: Ethereum Sepolia
-  - `CyveraPrizePool`: [`0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16`](https://sepolia.etherscan.io/address/0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16#code)
-  - `MockERC20` (cUSDT): [`0xC30109A6A2f678324FeB98645E62A115b49687c8`](https://sepolia.etherscan.io/address/0xC30109A6A2f678324FeB98645E62A115b49687c8#code)
-  - `CyveraYieldSource`: [`0x650091Cca5CA4533de9021e82cf3dd787cD16012`](https://sepolia.etherscan.io/address/0x650091Cca5CA4533de9021e82cf3dd787cD16012#code)
+  - `CyveraPrizePool`: [`0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF`](https://sepolia.etherscan.io/address/0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF#code)
+  - `MockERC20` (cUSDT): [`0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838`](https://sepolia.etherscan.io/address/0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838#code)
+  - `CyveraYieldSource`: [`0xe1699F23031C9CB430124232C1eAb5f20F676C66`](https://sepolia.etherscan.io/address/0xe1699F23031C9CB430124232C1eAb5f20F676C66#code)
 - **Foundry Test Suite**: 13/13 tests passing (`forge test`)
 - **ERC-7984 Interface**: Verified methods `confidentialBalanceOf`, `confidentialTransfer`, `confidentialApprove`, `confidentialAllowance`.

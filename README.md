@@ -22,9 +22,9 @@ contract never observes a plaintext balance.
 | **Live Web Application** | [cyvera-one.vercel.app](https://cyvera-one.vercel.app/) | Production Next.js 15 dApp with RainbowKit, Wagmi & EIP-712 decryption |
 | **Demo Video Walkthrough** | [3-Min Video Walkthrough](https://youtu.be/cyvera-zama-demo) | End-to-end user journey: Deposit → Draw → EIP-712 Decrypt → Claim ([Script](DEMO_VIDEO.md)) |
 | **X Technical Thread / Article** | [X Article / Technical Thread](https://x.com/cyverafi/status/1897250000000000000) | Deep-dive breakdown of Zama FHEVM integration & ERC-7984 ([Full Thread](X_THREAD.md)) |
-| **CyveraPrizePool (Vault)** | [`0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16`](https://sepolia.etherscan.io/address/0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16#code) | Verified Sepolia contract with FHE randomness & ERC-7984 |
-| **Deposit Token (cUSDT)** | [`0xC30109A6A2f678324FeB98645E62A115b49687c8`](https://sepolia.etherscan.io/address/0xC30109A6A2f678324FeB98645E62A115b49687c8#code) | 6-decimal test token with free onchain faucet |
-| **CyveraYieldSource** | [`0x650091Cca5CA4533de9021e82cf3dd787cD16012`](https://sepolia.etherscan.io/address/0x650091Cca5CA4533de9021e82cf3dd787cD16012#code) | Mock yield generator funding dynamic prize reserves |
+| **CyveraPrizePool (Vault)** | [`0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF`](https://sepolia.etherscan.io/address/0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF#code) | Verified Sepolia contract with FHE randomness & ERC-7984 |
+| **Deposit Token (cUSDT)** | [`0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838`](https://sepolia.etherscan.io/address/0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838#code) | 6-decimal test token with free onchain faucet |
+| **CyveraYieldSource** | [`0xe1699F23031C9CB430124232C1eAb5f20F676C66`](https://sepolia.etherscan.io/address/0xe1699F23031C9CB430124232C1eAb5f20F676C66#code) | Mock yield generator funding dynamic prize reserves |
 | **Deployer / Admin** | [`0xFcb3C3195dFdB51B41bb7F0e659F05028Aa25AC6`](https://sepolia.etherscan.io/address/0xFcb3C3195dFdB51B41bb7F0e659F05028Aa25AC6) | Protocol deployer and keeper manager |
 
 ## Quick start

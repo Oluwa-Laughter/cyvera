@@ -26,14 +26,14 @@ export const ZAMA_SEPOLIA_CONFIG = {
       publicSymbol: "USDT",
       decimals: 6,
       underlying: toChecksumAddress(
-        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0xC30109A6A2f678324FeB98645E62A115b49687c8"
+        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838"
       ),
       wrapper: toChecksumAddress("0x4E7B06D78965594eB5EF5414c357ca21E1554491"),
       vault: toChecksumAddress(
-        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || "0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16"
+        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || "0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF"
       ),
       yieldSource: toChecksumAddress(
-        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0x650091Cca5CA4533de9021e82cf3dd787cD16012"
+        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0xe1699F23031C9CB430124232C1eAb5f20F676C66"
       ),
       apy: "8.50%",
       drawFrequency: "1-Minute (Testing) / Daily (Mainnet)",
@@ -44,14 +44,14 @@ export const ZAMA_SEPOLIA_CONFIG = {
       publicSymbol: "USDC",
       decimals: 6,
       underlying: toChecksumAddress(
-        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0xC30109A6A2f678324FeB98645E62A115b49687c8"
+        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838"
       ),
       wrapper: toChecksumAddress("0x7c5BF43B851c1dff1a4feE8dB225b87f2C223639"),
       vault: toChecksumAddress(
-        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || "0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16"
+        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || "0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF"
       ),
       yieldSource: toChecksumAddress(
-        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0x650091Cca5CA4533de9021e82cf3dd787cD16012"
+        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0xe1699F23031C9CB430124232C1eAb5f20F676C66"
       ),
       apy: "12.00%",
       drawFrequency: "1-Minute (Testing) / Weekly (Mainnet)",
@@ -64,14 +64,14 @@ export type ActiveMarketId = "cUSDT" | "cUSDC";
 export const CONTRACT_ADDRESSES = {
   sepolia: {
     depositToken: toChecksumAddress(
-      process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0xC30109A6A2f678324FeB98645E62A115b49687c8"
+      process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838"
     ),
     confidentialWrapper: toChecksumAddress("0x4E7B06D78965594eB5EF5414c357ca21E1554491"),
     prizePool: toChecksumAddress(
-      process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || process.env.NEXT_PUBLIC_AURA_POOL_ADDRESS || "0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16"
+      process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || process.env.NEXT_PUBLIC_AURA_POOL_ADDRESS || "0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF"
     ),
     yieldSource: toChecksumAddress(
-      process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0x650091Cca5CA4533de9021e82cf3dd787cD16012"
+      process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0xe1699F23031C9CB430124232C1eAb5f20F676C66"
     ),
   },
   local: {
