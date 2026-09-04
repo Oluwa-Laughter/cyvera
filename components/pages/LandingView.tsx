@@ -49,6 +49,7 @@ interface LandingViewProps {
   activeMarket?: ActiveMarketId;
   onConnect?: () => void;
   onDisconnect?: () => void;
+  onOpenAccountModal?: () => void;
   isConnecting?: boolean;
   theme?: "dark" | "light";
   onToggleTheme?: () => void;
@@ -61,6 +62,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   activeMarket = "cUSDT",
   onConnect,
   onDisconnect,
+  onOpenAccountModal,
   isConnecting = false,
   theme = "dark",
   onToggleTheme,
@@ -156,8 +158,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
           {/* Wallet State in Home Header */}
           {account ? (
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-amber-500/30 rounded-xl sm:rounded-2xl">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="hidden xs:flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-amber-500/30 rounded-xl sm:rounded-2xl">
                 <span className="text-[9px] sm:text-[10px] text-[var(--muted)] font-mono flex items-center gap-1">
                   <Wallet className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-500" />
                   <span>Wallet:</span>
@@ -168,10 +170,14 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 </span>
               </div>
 
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] font-mono text-xs text-foreground">
+              <button
+                onClick={onOpenAccountModal || onDisconnect}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 border border-[var(--card-border)] font-mono text-xs text-foreground transition-colors group cursor-pointer"
+                title="Click to view wallet details"
+              >
                 <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                <span>{formatAddress(account)}</span>
-              </div>
+                <span className="text-[11px] sm:text-xs">{formatAddress(account)}</span>
+              </button>
             </div>
           ) : (
             onConnect && (
@@ -180,7 +186,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 whileTap={{ scale: 0.97 }}
                 onClick={onConnect}
                 disabled={isConnecting}
-                className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold transition-all text-xs"
+                className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold transition-all text-xs cursor-pointer disabled:opacity-50"
               >
                 {isConnecting ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />

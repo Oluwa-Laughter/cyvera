@@ -29,7 +29,7 @@ import {
 import { fetchLiveProtocolState, SEPOLIA_CHAIN_ID, ProtocolSnapshot } from "@/lib/web3";
 import { connectInjectedWallet, disconnectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
 import { useAccount, useDisconnect, useSwitchChain, useChainId } from "wagmi";
-import { useConnectModal, useAccountModal } from "@rainbow-me/rainbowkit";
+import { useConnectModal, useAccountModal, useChainModal } from "@rainbow-me/rainbowkit";
 import {
   getStoredTheme,
   setStoredTheme,
@@ -118,12 +118,18 @@ export default function Home() {
     address: wagmiAddress,
     isConnected: wagmiIsConnected,
     connector: wagmiConnector,
+    status: wagmiStatus,
   } = useAccount();
   const wagmiChainId = useChainId();
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const { switchChainAsync } = useSwitchChain();
   const { openConnectModal } = useConnectModal();
   const { openAccountModal } = useAccountModal();
+  const { openChainModal } = useChainModal();
+
+  const prevAccountRef = useRef<string | null>(null);
+  const isWalletConnecting =
+    isConnecting || wagmiStatus === "connecting" || wagmiStatus === "reconnecting";
 
   // Protocol snapshot
   const [snap, setSnap] = useState<ProtocolSnapshot | null>(null);
@@ -247,6 +253,7 @@ export default function Home() {
 
   // Disconnect Wallet
   const handleDisconnectWallet = useCallback(async () => {
+    prevAccountRef.current = null;
     try {
       if (wagmiDisconnect) {
         wagmiDisconnect();
@@ -290,10 +297,20 @@ export default function Home() {
 
           if (isCancelled) return;
 
+          const isNewConnection = prevAccountRef.current !== wagmiAddress;
+          prevAccountRef.current = wagmiAddress;
+
           setAccount(wagmiAddress);
           if (bp) setProvider(bp);
           if (signerInstance) setSigner(signerInstance);
           setChainId(wagmiChainId || SEPOLIA_CHAIN_ID);
+
+          if (isNewConnection) {
+            addToast(
+              "success",
+              `Connected wallet ${wagmiAddress.slice(0, 6)}...${wagmiAddress.slice(-4)}`
+            );
+          }
 
           const liveSnapshot = await fetchLiveProtocolState(wagmiAddress, activeMarket);
           if (isCancelled) return;
@@ -304,7 +321,8 @@ export default function Home() {
         } catch (err) {
           console.warn("Wagmi session sync notice:", err);
         }
-      } else if (!wagmiIsConnected) {
+      } else if (wagmiStatus === "disconnected") {
+        prevAccountRef.current = null;
         setAccount(null);
         setProvider(null);
         setSigner(null);
@@ -319,7 +337,16 @@ export default function Home() {
     return () => {
       isCancelled = true;
     };
-  }, [mounted, wagmiAddress, wagmiIsConnected, wagmiConnector, wagmiChainId, activeMarket]);
+  }, [
+    mounted,
+    wagmiAddress,
+    wagmiIsConnected,
+    wagmiConnector,
+    wagmiStatus,
+    wagmiChainId,
+    activeMarket,
+    addToast,
+  ]);
 
   // Helper to get guaranteed fresh signer directly from active connected wallet
   const getFreshSigner = async (): Promise<ethers.Signer> => {
@@ -958,7 +985,8 @@ export default function Home() {
         activeMarket={activeMarket}
         onConnect={handleConnectWallet}
         onDisconnect={handleDisconnectWallet}
-        isConnecting={isConnecting}
+        onOpenAccountModal={openAccountModal}
+        isConnecting={isWalletConnecting}
         theme={theme}
         onToggleTheme={handleToggleTheme}
       />
@@ -986,12 +1014,13 @@ export default function Home() {
           onConnect={handleConnectWallet}
           onDisconnect={handleDisconnectWallet}
           onOpenAccountModal={openAccountModal}
-          isConnecting={isConnecting}
+          isConnecting={isWalletConnecting}
           onOpenFaucet={() => setIsFaucetOpen(true)}
           walletBalance={snap?.userWalletBalance ?? "0.00"}
           nativeEthBalance={snap?.userNativeEthBalance ?? "0.0000"}
           activeMarket={activeMarket}
           isWrongNetwork={chainId !== null && chainId !== SEPOLIA_CHAIN_ID}
+          onSwitchNetwork={openChainModal || ensureSepolia}
           theme={theme}
           onToggleTheme={handleToggleTheme}
         />
@@ -1001,8 +1030,8 @@ export default function Home() {
             <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-400 flex items-center justify-between text-xs font-bold">
               <span>Your wallet is not connected to Ethereum Sepolia.</span>
               <button
-                onClick={ensureSepolia}
-                className="px-4 py-1.5 rounded-full bg-rose-600 text-white font-black"
+                onClick={openChainModal || ensureSepolia}
+                className="px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-black transition-colors cursor-pointer"
               >
                 Switch Network
               </button>

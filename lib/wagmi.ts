@@ -13,7 +13,7 @@ import {
   zerionWallet,
   ledgerWallet,
 } from "@rainbow-me/rainbowkit/wallets";
-import { createConfig, http } from "wagmi";
+import { createConfig, http, fallback } from "wagmi";
 import { sepolia } from "wagmi/chains";
 
 export const WALLETCONNECT_PROJECT_ID =
@@ -54,9 +54,15 @@ export const wagmiConfig = createConfig({
   connectors,
   chains: [sepolia],
   transports: {
-    [sepolia.id]: http(
-      process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com"
-    ),
+    [sepolia.id]: fallback([
+      http(
+        process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL ||
+          "https://ethereum-sepolia-rpc.publicnode.com"
+      ),
+      http("https://rpc.sepolia.org"),
+      http("https://eth-sepolia.public.blastapi.io"),
+      http("https://1rpc.io/sepolia"),
+    ]),
   },
   ssr: true,
 });

@@ -20,6 +20,7 @@ interface TopHeaderProps {
   nativeEthBalance?: string;
   activeMarket?: ActiveMarketId;
   isWrongNetwork?: boolean;
+  onSwitchNetwork?: () => void;
   theme?: "dark" | "light";
   onToggleTheme?: () => void;
 }
@@ -38,6 +39,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   nativeEthBalance,
   activeMarket = "cUSDT",
   isWrongNetwork = false,
+  onSwitchNetwork,
   theme = "dark",
   onToggleTheme,
 }) => {
@@ -70,9 +72,23 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       {/* Right: Network, Balance, Theme Toggle, Wallet / Disconnect */}
       <div className="flex items-center gap-2 sm:gap-3 text-xs font-semibold shrink-0">
         {/* Network Badge */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-[var(--card-border)] text-[var(--muted)] font-mono">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[11px] font-bold text-foreground">Sepolia</span>
+        <div
+          onClick={isWrongNetwork && onSwitchNetwork ? onSwitchNetwork : undefined}
+          className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border font-mono transition-all ${
+            isWrongNetwork
+              ? "bg-rose-500/15 border-rose-500/50 text-rose-500 dark:text-rose-400 hover:bg-rose-500/25 cursor-pointer animate-pulse"
+              : "bg-slate-100 dark:bg-slate-800/80 border-[var(--card-border)] text-[var(--muted)]"
+          }`}
+          title={isWrongNetwork ? "Wrong network. Click to switch to Sepolia" : "Connected to Ethereum Sepolia"}
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              isWrongNetwork ? "bg-rose-500" : "bg-emerald-500 animate-pulse"
+            }`}
+          />
+          <span className="text-[11px] font-bold text-foreground">
+            {isWrongNetwork ? "Wrong Network" : "Sepolia"}
+          </span>
         </div>
 
         {/* Testnet Faucet Button */}
