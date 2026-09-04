@@ -42,7 +42,7 @@ import { FaShieldAlt } from "react-icons/fa";
 import { ActiveMarketId, ZAMA_SEPOLIA_CONFIG } from "@/lib/contracts";
 
 interface LandingViewProps {
-  onEnterApp: (tab?: "dashboard" | "vault" | "draws" | "earn" | "rewards" | "activity" | "how-it-works", initialAmount?: string) => void;
+  onEnterApp: (tab?: "dashboard" | "vault" | "draws" | "earn" | "rewards" | "activity" | "how-it-works", initialAmount?: string, market?: ActiveMarketId) => void;
   onOpenHowItWorks?: () => void;
   account?: string | null;
   walletBalance?: string;
@@ -371,7 +371,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => onEnterApp("vault", calcDeposit)}
+                onClick={() => onEnterApp("vault", calcDeposit, selectedMarket)}
                 className="w-full py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2"
               >
                 <span>Launch App to Deposit in {selectedMarket} Vault</span>

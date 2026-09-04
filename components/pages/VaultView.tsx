@@ -38,12 +38,12 @@ interface VaultViewProps {
   shieldedBalance?: string;
   decryptedBalance: string | null;
   isDecryptingBalance: boolean;
-  onDecryptBalance: () => void;
-  onDeposit: (amount: string) => Promise<void>;
-  onWithdraw: (amount: string) => Promise<void>;
-  onWithdrawAll: () => Promise<void>;
-  onShield?: (amount: string) => Promise<void>;
-  onUnshield?: (amount: string) => Promise<void>;
+  onDecryptBalance: (targetMarket?: ActiveMarketId) => void;
+  onDeposit: (amount: string, targetMarket?: ActiveMarketId) => Promise<void>;
+  onWithdraw: (amount: string, targetMarket?: ActiveMarketId) => Promise<void>;
+  onWithdrawAll: (targetMarket?: ActiveMarketId) => Promise<void>;
+  onShield?: (amount: string, targetMarket?: ActiveMarketId) => Promise<void>;
+  onUnshield?: (amount: string, targetMarket?: ActiveMarketId) => Promise<void>;
   onOpenFaucet: () => void;
   onConnect: () => void;
   isLoadingAction: boolean;
@@ -127,16 +127,16 @@ export const VaultView: React.FC<VaultViewProps> = ({
     if (activeSection === "save") {
       if (!amount || parseFloat(amount) <= 0) return;
       if (activeTab === "deposit") {
-        await onDeposit(amount);
+        await onDeposit(amount, activeMarket);
       } else {
-        await onWithdraw(amount);
+        await onWithdraw(amount, activeMarket);
       }
     } else {
       if (!shieldAmount || parseFloat(shieldAmount) <= 0) return;
       if (shieldTab === "shield" && onShield) {
-        await onShield(shieldAmount);
+        await onShield(shieldAmount, activeMarket);
       } else if (shieldTab === "unshield" && onUnshield) {
-        await onUnshield(shieldAmount);
+        await onUnshield(shieldAmount, activeMarket);
       }
     }
   };
@@ -270,7 +270,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
                   {account && (
                     <button
                       type="button"
-                      onClick={onDecryptBalance}
+                      onClick={() => onDecryptBalance(activeMarket)}
                       className="text-[var(--muted)] hover:text-foreground p-1"
                     >
                       {decryptedBalance !== null ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-amber-500" />}

@@ -517,7 +517,7 @@ export default function Home() {
   };
 
   // 2. Shield Tokens (Public USDT/USDC -> Confidential cUSDT/cUSDC)
-  const handleShield = async (amount: string) => {
+  const handleShield = async (amount: string, targetMarket?: ActiveMarketId) => {
     if (isActionLockedRef.current || isLoadingAction) return;
     if (!account) {
       await handleConnectWallet();
@@ -526,12 +526,13 @@ export default function Home() {
     const isOk = await ensureSepolia();
     if (!isOk) return;
 
+    const marketToUse = targetMarket || activeMarket;
     isActionLockedRef.current = true;
     setIsLoadingAction(true);
     try {
       const currentSigner = await getFreshSigner();
       const parsed = parseFloat(amount);
-      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[marketToUse];
       const needed = ethers.parseUnits(amount, marketCfg.decimals);
 
       addToast("info", `Step 1/2: Approving ${marketCfg.publicSymbol} for Shielding Wrapper...`);
@@ -542,8 +543,8 @@ export default function Home() {
       addToast("info", `Step 2/2: Wrapping ${amount} ${marketCfg.publicSymbol} into ${marketCfg.symbol}...`);
       const txHash = approveTx.hash;
 
-      const curWallet = parseFloat(getStoredWalletBalance(account, activeMarket));
-      setStoredWalletBalance(account, (curWallet + parsed).toFixed(2), activeMarket);
+      const curWallet = parseFloat(getStoredWalletBalance(account, marketToUse));
+      setStoredWalletBalance(account, (curWallet + parsed).toFixed(2), marketToUse);
 
       addActivityEntry({
         kind: "deposit",
@@ -569,25 +570,26 @@ export default function Home() {
   };
 
   // 3. Unshield Tokens (Confidential cUSDT/cUSDC -> Public USDT/USDC)
-  const handleUnshield = async (amount: string) => {
+  const handleUnshield = async (amount: string, targetMarket?: ActiveMarketId) => {
     if (isActionLockedRef.current || isLoadingAction) return;
     if (!account) return;
     const isOk = await ensureSepolia();
     if (!isOk) return;
 
+    const marketToUse = targetMarket || activeMarket;
     isActionLockedRef.current = true;
     setIsLoadingAction(true);
     try {
       const parsed = parseFloat(amount);
-      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
-      const curWallet = parseFloat(getStoredWalletBalance(account, activeMarket));
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[marketToUse];
+      const curWallet = parseFloat(getStoredWalletBalance(account, marketToUse));
 
       if (parsed > curWallet) {
         throw new Error(`Unshield amount exceeds your ${marketCfg.symbol} balance.`);
       }
 
       addToast("info", `Unshielding $${amount} ${marketCfg.symbol} → ${marketCfg.publicSymbol}...`);
-      setStoredWalletBalance(account, Math.max(0, curWallet - parsed).toFixed(2), activeMarket);
+      setStoredWalletBalance(account, Math.max(0, curWallet - parsed).toFixed(2), marketToUse);
 
       addActivityEntry({
         kind: "withdraw",
@@ -612,7 +614,7 @@ export default function Home() {
   };
 
   // 4. Confidential Deposit Action (Approval + Vault Deposit Onchain)
-  const handleDeposit = async (amount: string) => {
+  const handleDeposit = async (amount: string, targetMarket?: ActiveMarketId) => {
     if (isActionLockedRef.current || isLoadingAction) return;
     if (!account) {
       await handleConnectWallet();
@@ -621,6 +623,7 @@ export default function Home() {
     const isOk = await ensureSepolia();
     if (!isOk) return;
 
+    const marketToUse = targetMarket || activeMarket;
     isActionLockedRef.current = true;
     setIsLoadingAction(true);
     try {
@@ -630,7 +633,7 @@ export default function Home() {
       }
 
       const currentSigner = await getFreshSigner();
-      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[marketToUse];
       const token = new ethers.Contract(marketCfg.underlying, MOCK_ERC20_ABI, currentSigner);
       const vaultContract = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, currentSigner);
       const needed = ethers.parseUnits(amount, marketCfg.decimals);
@@ -673,31 +676,33 @@ export default function Home() {
       }
 
       // Update local storage & state
-      const currentSaved = parseFloat(getStoredSavings(account, activeMarket));
+      const currentSaved = parseFloat(getStoredSavings(account, marketToUse));
       const newSaved = (currentSaved + parsedAmount).toFixed(2);
-      setStoredSavings(account, newSaved, activeMarket);
-      setDecryptedBalance(newSaved);
+      setStoredSavings(account, newSaved, marketToUse);
+      if (marketToUse === activeMarket) {
+        setDecryptedBalance(newSaved);
+      }
 
       // Refresh onchain wallet balance
       const newOnchainBal = await token.balanceOf(account).catch(() => 0n);
-      setStoredWalletBalance(account, parseFloat(ethers.formatUnits(newOnchainBal, marketCfg.decimals)).toFixed(2), activeMarket);
+      setStoredWalletBalance(account, parseFloat(ethers.formatUnits(newOnchainBal, marketCfg.decimals)).toFixed(2), marketToUse);
 
       // Increase TVL, yield-backed prize pot, and Liquidity Hunt points
-      const currentTVL = parseFloat(getStoredTVL(activeMarket));
+      const currentTVL = parseFloat(getStoredTVL(marketToUse));
       const newTVL = (currentTVL + parsedAmount).toFixed(2);
-      setStoredTVL(newTVL, activeMarket);
+      setStoredTVL(newTVL, marketToUse);
 
       // Real dynamic prize pot accumulation: 5% of deposit added to pot yield
-      const currentPot = parseFloat(getStoredPrizePot(activeMarket));
+      const currentPot = parseFloat(getStoredPrizePot(marketToUse));
       const potIncrease = Math.max(1.0, parsedAmount * 0.05);
       const newPot = (currentPot + potIncrease).toFixed(2);
-      setStoredPrizePot(newPot, activeMarket);
+      setStoredPrizePot(newPot, marketToUse);
 
       addStoredLiquidityHuntPoints(account, Math.floor(parsedAmount * 10));
 
       if (currentSaved === 0) {
-        const curDep = getStoredDepositorsCount(activeMarket);
-        setStoredDepositorsCount(curDep + 1, activeMarket);
+        const curDep = getStoredDepositorsCount(marketToUse);
+        setStoredDepositorsCount(curDep + 1, marketToUse);
       }
 
       addActivityEntry({
@@ -724,18 +729,19 @@ export default function Home() {
   };
 
   // 5. Confidential Withdrawal Action (Calls vault.withdraw Onchain)
-  const handleWithdraw = async (amount: string) => {
+  const handleWithdraw = async (amount: string, targetMarket?: ActiveMarketId) => {
     if (isActionLockedRef.current || isLoadingAction) return;
     if (!account) return;
     const isOk = await ensureSepolia();
     if (!isOk) return;
 
+    const marketToUse = targetMarket || activeMarket;
     isActionLockedRef.current = true;
     setIsLoadingAction(true);
     try {
       const parsedAmount = parseFloat(amount);
-      const currentSaved = parseFloat(getStoredSavings(account, activeMarket));
-      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
+      const currentSaved = parseFloat(getStoredSavings(account, marketToUse));
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[marketToUse];
 
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         throw new Error("Invalid withdrawal amount.");
@@ -767,21 +773,23 @@ export default function Home() {
       }
 
       const newSaved = Math.max(0, currentSaved - parsedAmount).toFixed(2);
-      setStoredSavings(account, newSaved, activeMarket);
-      setDecryptedBalance(newSaved);
+      setStoredSavings(account, newSaved, marketToUse);
+      if (marketToUse === activeMarket) {
+        setDecryptedBalance(newSaved);
+      }
 
       if (parseFloat(newSaved) === 0) {
-        const curDep = getStoredDepositorsCount(activeMarket);
-        setStoredDepositorsCount(Math.max(activeMarket === "cUSDT" ? 14 : 18, curDep - 1), activeMarket);
+        const curDep = getStoredDepositorsCount(marketToUse);
+        setStoredDepositorsCount(Math.max(marketToUse === "cUSDT" ? 14 : 18, curDep - 1), marketToUse);
       }
 
       // Refresh onchain wallet balance
       const newOnchainBal = await token.balanceOf(account).catch(() => 0n);
-      setStoredWalletBalance(account, parseFloat(ethers.formatUnits(newOnchainBal, marketCfg.decimals)).toFixed(2), activeMarket);
+      setStoredWalletBalance(account, parseFloat(ethers.formatUnits(newOnchainBal, marketCfg.decimals)).toFixed(2), marketToUse);
 
       // Decrease TVL
-      const currentTVL = parseFloat(getStoredTVL(activeMarket));
-      setStoredTVL(Math.max(0, currentTVL - parsedAmount).toFixed(2), activeMarket);
+      const currentTVL = parseFloat(getStoredTVL(marketToUse));
+      setStoredTVL(Math.max(0, currentTVL - parsedAmount).toFixed(2), marketToUse);
 
       addActivityEntry({
         kind: "withdraw",
@@ -806,14 +814,15 @@ export default function Home() {
     }
   };
 
-  const handleWithdrawAll = async () => {
+  const handleWithdrawAll = async (targetMarket?: ActiveMarketId) => {
     if (!account) return;
-    const currentSaved = getStoredSavings(account, activeMarket);
+    const marketToUse = targetMarket || activeMarket;
+    const currentSaved = getStoredSavings(account, marketToUse);
     if (parseFloat(currentSaved) <= 0) {
       addToast("info", "Your saved balance is already $0.00.");
       return;
     }
-    await handleWithdraw(currentSaved);
+    await handleWithdraw(currentSaved, marketToUse);
   };
 
   // 6. 4-Phase Verifiable Draw Progression (Onchain FHE Entropy + Contract Call)
@@ -1127,8 +1136,9 @@ export default function Home() {
   if (currentView === "landing") {
     return (
       <LandingView
-        onEnterApp={(tab, initialAmount) => {
+        onEnterApp={(tab, initialAmount, market) => {
           setCurrentView("app");
+          if (market) setActiveMarket(market);
           if (tab) setCurrentTab(tab);
           if (initialAmount) setInitialDepositAmount(initialAmount);
         }}

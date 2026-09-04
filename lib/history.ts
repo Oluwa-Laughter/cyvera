@@ -33,11 +33,12 @@ function topic0(sig: string): string {
 
 export async function fetchUserHistory(
   userAddress: string,
-  fromBlock: number = 0
+  fromBlock: number = 0,
+  poolAddress?: string
 ): Promise<HistoryEntry[]> {
   if (!userAddress) return [];
   const iface = new ethers.Interface(AURA_PRIZE_POOL_ABI);
-  const pool = CONTRACT_ADDRESSES.sepolia.prizePool;
+  const pool = poolAddress || CONTRACT_ADDRESSES.sepolia.prizePool;
 
   // Try Etherscan first
   if (ETHERSCAN_API_KEY) {
