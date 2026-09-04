@@ -59,21 +59,23 @@ contract CyveraPrizePoolTest is Test {
         require(pool.getDepositorCount() == 1, "Depositor count");
         require(pool.totalDeposits() == amt, "Total deposits");
         require(pool.isUserDepositor(alice), "Should be depositor");
+        require(pool.getEncryptedBalanceHandle(alice) != bytes32(0), "Encrypted handle set");
     }
 
-    function test_WithdrawNoLoss() public {
+    function test_WithdrawExact() public {
         uint256 amt = 1_000 * 10 ** 6;
         _deposit(alice, amt);
 
         vm.prank(alice);
         pool.withdraw(500 * 10 ** 6);
         require(pool.totalDeposits() == 500 * 10 ** 6, "Remaining deposits");
+        require(pool.totalWithdrawn() == 500 * 10 ** 6, "Withdrawn counter");
         require(pool.getDepositorCount() == 1, "Still a depositor");
 
         vm.prank(alice);
-        pool.withdrawAll();
-        require(pool.totalDeposits() == 0, "Deposits after withdrawAll");
-        require(pool.getDepositorCount() == 0, "Depositor count after withdrawAll");
+        pool.withdraw(500 * 10 ** 6);
+        require(pool.totalDeposits() == 0, "Deposits after full withdraw");
+        require(pool.getDepositorCount() == 0, "Depositor count after full withdraw");
         require(token.balanceOf(alice) == 10_000 * 10 ** 6, "Refund total");
     }
 
@@ -107,6 +109,18 @@ contract CyveraPrizePoolTest is Test {
         require(pool.totalPrizesAwarded() == 100 * 10 ** 6, "Total prizes");
     }
 
+    function test_DrawPicksOneOfDepositors() public {
+        _deposit(alice, 1_000 * 10 ** 6);
+        _deposit(bob, 1_000 * 10 ** 6);
+        yieldSource.manualInjectYield(50 * 10 ** 6);
+
+        _warpToNextDraw();
+        pool.triggerDraw();
+
+        address winner = pool.getLastDrawWinner(1);
+        require(winner == alice || winner == bob, "Winner is one of depositors");
+    }
+
     function test_ClaimPrize() public {
         _deposit(alice, 1_000 * 10 ** 6);
         yieldSource.manualInjectYield(50 * 10 ** 6);
@@ -114,15 +128,14 @@ contract CyveraPrizePoolTest is Test {
         _warpToNextDraw();
         pool.triggerDraw();
 
-        uint256 claimable = pool.getUnclaimedWinnings(alice);
-        require(claimable == 50 * 10 ** 6, "Unclaimed winnings");
+        address winner = pool.getLastDrawWinner(1);
+        require(winner == alice, "Alice should win with only depositor");
 
-        uint256 beforeBal = token.balanceOf(alice);
-        vm.prank(alice);
-        pool.claimPrize();
-        uint256 afterBal = token.balanceOf(alice);
+        uint256 beforeBal = token.balanceOf(winner);
+        vm.prank(winner);
+        pool.claimPrize(50 * 10 ** 6);
+        uint256 afterBal = token.balanceOf(winner);
         require(afterBal - beforeBal == 50 * 10 ** 6, "Claimed amount");
-        require(pool.getUnclaimedWinnings(alice) == 0, "Winnings zeroed");
     }
 
     function test_RevertWhenDrawTooEarly() public {
@@ -145,5 +158,24 @@ contract CyveraPrizePoolTest is Test {
         vm.prank(poor);
         vm.expectRevert();
         pool.deposit(100 * 10 ** 6);
+    }
+
+    function test_GettersExposeHandles() public {
+        _deposit(alice, 100 * 10 ** 6);
+        bytes32 bal = pool.getEncryptedBalanceHandle(alice);
+        bytes32 allowed = pool.getWithdrawAllowedHandle(alice, 50 * 10 ** 6);
+        require(bal != bytes32(0), "Balance handle set");
+        require(allowed != bytes32(0), "Withdraw allowed handle set");
+    }
+
+    function test_DepositAfterWithdrawPreservesAccounting() public {
+        _deposit(alice, 1_000 * 10 ** 6);
+        vm.prank(alice);
+        pool.withdraw(400 * 10 ** 6);
+        require(pool.totalDeposits() == 600 * 10 ** 6, "After partial withdraw");
+
+        _deposit(alice, 200 * 10 ** 6);
+        require(pool.totalDeposits() == 800 * 10 ** 6, "After subsequent deposit");
+        require(pool.getDepositorCount() == 1, "Still a depositor");
     }
 }

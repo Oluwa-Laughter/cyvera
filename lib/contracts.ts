@@ -25,10 +25,16 @@ export const ZAMA_SEPOLIA_CONFIG = {
       symbol: "cUSDT",
       publicSymbol: "USDT",
       decimals: 6,
-      underlying: toChecksumAddress("0xa7dA08FafDC9097Cc0E7D4f113A61e31d7e8e9b0"),
+      underlying: toChecksumAddress(
+        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0xC30109A6A2f678324FeB98645E62A115b49687c8"
+      ),
       wrapper: toChecksumAddress("0x4E7B06D78965594eB5EF5414c357ca21E1554491"),
-      vault: toChecksumAddress("0x9fCd8e05C9f08FDaB15871178B67055bEc3Cf00F"),
-      yieldSource: toChecksumAddress("0x63BC7333B39794966953289052d751079F4386A4"),
+      vault: toChecksumAddress(
+        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || "0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16"
+      ),
+      yieldSource: toChecksumAddress(
+        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0x650091Cca5CA4533de9021e82cf3dd787cD16012"
+      ),
       apy: "8.50%",
       drawFrequency: "1-Minute (Testing) / Daily (Mainnet)",
     },
@@ -37,10 +43,16 @@ export const ZAMA_SEPOLIA_CONFIG = {
       symbol: "cUSDC",
       publicSymbol: "USDC",
       decimals: 6,
-      underlying: toChecksumAddress("0x9b5Cd13b8eFbB58Dc25A05CF411D8056058aDFfF"),
+      underlying: toChecksumAddress(
+        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0xC30109A6A2f678324FeB98645E62A115b49687c8"
+      ),
       wrapper: toChecksumAddress("0x7c5BF43B851c1dff1a4feE8dB225b87f2C223639"),
-      vault: toChecksumAddress("0x0Df09628bAdA515D3b0A3AC8945120C14C725819"),
-      yieldSource: toChecksumAddress("0x7cF1156D254930364966953289052d751079F438"),
+      vault: toChecksumAddress(
+        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || "0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16"
+      ),
+      yieldSource: toChecksumAddress(
+        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0x650091Cca5CA4533de9021e82cf3dd787cD16012"
+      ),
       apy: "12.00%",
       drawFrequency: "1-Minute (Testing) / Weekly (Mainnet)",
     },
@@ -52,14 +64,14 @@ export type ActiveMarketId = "cUSDT" | "cUSDC";
 export const CONTRACT_ADDRESSES = {
   sepolia: {
     depositToken: toChecksumAddress(
-      process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || ZAMA_SEPOLIA_CONFIG.markets.cUSDT.underlying
+      process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0xC30109A6A2f678324FeB98645E62A115b49687c8"
     ),
-    confidentialWrapper: toChecksumAddress(ZAMA_SEPOLIA_CONFIG.markets.cUSDT.wrapper),
+    confidentialWrapper: toChecksumAddress("0x4E7B06D78965594eB5EF5414c357ca21E1554491"),
     prizePool: toChecksumAddress(
-      process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || process.env.NEXT_PUBLIC_AURA_POOL_ADDRESS || ZAMA_SEPOLIA_CONFIG.markets.cUSDT.vault
+      process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || process.env.NEXT_PUBLIC_AURA_POOL_ADDRESS || "0xAcC8e855b3A0035ABFC4f21Ff072aA660DEdbD16"
     ),
     yieldSource: toChecksumAddress(
-      process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || ZAMA_SEPOLIA_CONFIG.markets.cUSDT.yieldSource
+      process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0x650091Cca5CA4533de9021e82cf3dd787cD16012"
     ),
   },
   local: {
@@ -115,7 +127,10 @@ export const CYVERA_PRIZE_POOL_ABI = [
   "function getDepositorCount() view returns (uint256)",
   "function getDepositors() view returns (address[])",
   "function getUserEncryptedBalance(address user) view returns (bytes32)",
+  "function getEncryptedBalanceHandle(address user) view returns (bytes32)",
   "function getUserEncryptedWinnings(address user) view returns (bytes32)",
+  "function getEncryptedWinningsHandle(address user) view returns (bytes32)",
+  "function getLastDrawWinner(uint256 drawId) view returns (address)",
   "function getUnclaimedWinnings(address user) view returns (uint256)",
   "function timeUntilNextDraw() view returns (uint256)",
   "function authorizedKeepers(address) view returns (bool)",
@@ -132,6 +147,14 @@ export const CYVERA_PRIZE_POOL_ABI = [
   "function setWinnersPerDraw(uint256 _winners) returns ()",
   "function setYieldSource(address _yieldSource) returns ()",
   "function setKeeperAuthorization(address keeper, bool authorized) returns ()",
+  // ERC-7984 Confidential Fungible Token Interface
+  "function confidentialBalanceOf(address account) view returns (bytes32)",
+  "function confidentialTransfer(address to, bytes32 amount) returns (bool)",
+  "function confidentialTransferFrom(address from, address to, bytes32 amount) returns (bool)",
+  "function confidentialApprove(address spender, bytes32 amount) returns (bool)",
+  "function confidentialAllowance(address owner, address spender) view returns (bytes32)",
+  "event ConfidentialTransfer(address indexed from, address indexed to, bytes32 amount)",
+  "event ConfidentialApproval(address indexed owner, address indexed spender, bytes32 amount)",
   "event Deposited(address indexed user, bytes32 encryptedBalanceHandle, uint256 timestamp)",
   "event Withdrawn(address indexed user, uint256 amount, bytes32 encryptedBalanceHandle, uint256 timestamp)",
   "event DrawExecuted(uint256 indexed drawId, uint256 prizeAmount, uint256 totalParticipants, uint256 timestamp, bytes32 randomnessHandle)",

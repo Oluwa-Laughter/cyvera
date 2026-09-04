@@ -121,6 +121,24 @@ library FHE {
         ok;
     }
 
+    function allow(ebool handle, address account) internal view {
+        bytes memory payload = abi.encode(OP_ALLOW, handle, account);
+        (bool ok, ) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
+        ok;
+    }
+
+    function allowTransient(ebool handle, address account) internal view {
+        bytes memory payload = abi.encode(OP_ALLOW_TRANSIENT, handle, account, uint64(block.timestamp + 1 hours));
+        (bool ok, ) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
+        ok;
+    }
+
+    function allowThis(ebool handle) internal view {
+        bytes memory payload = abi.encode(OP_ALLOW_THIS, handle, address(this));
+        (bool ok, ) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
+        ok;
+    }
+
     function isInitialized(euint64 handle) internal pure returns (bool) {
         return euint64.unwrap(handle) != bytes32(0);
     }
@@ -135,11 +153,13 @@ library FHE {
         // Fallback: deterministic simulation for vanilla chains / tests.
         uint64 valA = uint64(uint256(euint64.unwrap(a)));
         uint64 valB = uint64(uint256(euint64.unwrap(b)));
-        if (op == OP_ADD) return euint64.wrap(bytes32(uint256(valA + valB)));
-        if (op == OP_SUB) return euint64.wrap(bytes32(uint256(valA >= valB ? valA - valB : 0)));
-        if (op == OP_MUL) return euint64.wrap(bytes32(uint256(valA * valB)));
-        if (op == OP_DIV) return euint64.wrap(bytes32(uint256(valB > 0 ? valA / valB : 0)));
-        if (op == OP_REM) return euint64.wrap(bytes32(uint256(valB > 0 ? valA % valB : 0)));
+        unchecked {
+            if (op == OP_ADD) return euint64.wrap(bytes32(uint256(valA + valB)));
+            if (op == OP_SUB) return euint64.wrap(bytes32(uint256(valA >= valB ? valA - valB : 0)));
+            if (op == OP_MUL) return euint64.wrap(bytes32(uint256(valA * valB)));
+            if (op == OP_DIV) return euint64.wrap(bytes32(uint256(valB > 0 ? valA / valB : 0)));
+            if (op == OP_REM) return euint64.wrap(bytes32(uint256(valB > 0 ? valA % valB : 0)));
+        }
         return euint64.wrap(keccak256(abi.encode(op, a, b, "FHE-bin64")));
     }
 

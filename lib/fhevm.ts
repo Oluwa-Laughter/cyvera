@@ -18,7 +18,7 @@
 
 import { ethers } from "ethers";
 import { zamaRelayer } from "./relayer";
-import { CONTRACT_ADDRESSES, AURA_PRIZE_POOL_ABI } from "./contracts";
+import { CONTRACT_ADDRESSES, CYVERA_PRIZE_POOL_ABI } from "./contracts";
 
 export type DecryptionSource = "relayer" | "fallback";
 
@@ -45,15 +45,16 @@ function domainFor(chainId: number, verifyingContract: string) {
 }
 
 /**
- * Generates an ephemeral X25519-style public key. We use ethers to
- * derive a deterministic but unique pubkey for each decryption request
- * (the real relayer only requires the bytes32 representation).
+ * Generates an ephemeral X25519-style 32-byte public key representation
+ * using cryptographically secure entropy for genuine EIP-712 reencryption.
  */
-function ephemeralPubKey(seed: string): `0x${string}` {
-  const wallet = ethers.Wallet.createRandom();
-  // Pack wallet.address into bytes32 so the EIP-712 payload matches the
-  // relayer's expected shape.
-  return ethers.zeroPadValue(wallet.address, 32) as `0x${string}`;
+function ephemeralPubKey(): `0x${string}` {
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    return `0x${Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("")}` as `0x${string}`;
+  }
+  return ethers.hexlify(ethers.randomBytes(32)) as `0x${string}`;
 }
 
 /**
@@ -80,7 +81,7 @@ export async function decryptUserBalance(
   const chainId = network?.chainId ? Number(network.chainId) : 11155111;
   const verifyingContract = CONTRACT_ADDRESSES.sepolia.prizePool;
 
-  const publicKey = ephemeralPubKey(`${user}-${handle}-${Date.now()}`);
+  const publicKey = ephemeralPubKey();
   const domain = domainFor(chainId, verifyingContract);
   const message = {
     handle: handle as `0x${string}`,
@@ -121,7 +122,7 @@ export async function fetchUnclaimedWinnings(
   provider: ethers.Provider,
   user: string
 ): Promise<bigint> {
-  const pool = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, AURA_PRIZE_POOL_ABI, provider);
+  const pool = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, CYVERA_PRIZE_POOL_ABI, provider);
   try {
     return await pool.getUnclaimedWinnings(user);
   } catch {

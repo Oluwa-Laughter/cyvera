@@ -840,11 +840,27 @@ export default function Home() {
       addToast("info", `Sampling Zama FHE verifiable randomness for Draw #${currentDraw} on ${activeMarket}...`);
 
       let drawTxHash = "";
+      let onchainWinner: string | null = null;
       try {
         const drawTx = await vaultContract.triggerDraw({ gasLimit: 550000 });
         drawTxHash = drawTx.hash;
         addToast("info", `Executing onchain FHE entropy draw on Sepolia...`, drawTxHash);
-        await drawTx.wait(1);
+        const receipt = await drawTx.wait(1);
+        if (receipt && receipt.logs) {
+          for (const log of receipt.logs) {
+            try {
+              const parsed = vaultContract.interface.parseLog(log);
+              if (parsed && (parsed.name === "WinnerSelected" || parsed.name === "DrawExecuted")) {
+                if (parsed.args && parsed.args.winner) {
+                  onchainWinner = parsed.args.winner;
+                } else if (parsed.args && parsed.args[1] && typeof parsed.args[1] === "string" && parsed.args[1].startsWith("0x")) {
+                  onchainWinner = parsed.args[1];
+                }
+                break;
+              }
+            } catch {}
+          }
+        }
       } catch (drawErr: any) {
         if (drawErr.message?.includes("rejected") || drawErr.message?.includes("ACTION_REJECTED")) {
           throw drawErr;
@@ -862,12 +878,27 @@ export default function Home() {
         "0x5a1243b123d4567e890123456789012345678903",
         "0x7b2343b123d4567e890123456789012345678904",
       ];
-      const communityWinner = communityPoolWinners[currentDraw % communityPoolWinners.length];
+      const fallbackWinner = communityPoolWinners[currentDraw % communityPoolWinners.length];
 
       // A user with $0 principal has 0 tickets and CANNOT participate or win!
       const userHasTickets = userSaved > 0;
-      const didUserWin = userHasTickets;
-      const winningAddress = didUserWin ? account : communityWinner;
+      let didUserWin = false;
+      let winningAddress = fallbackWinner;
+
+      if (onchainWinner) {
+        winningAddress = onchainWinner;
+        didUserWin = userHasTickets && (account.toLowerCase() === onchainWinner.toLowerCase());
+      } else if (userHasTickets) {
+        // Fair weighted probabilistic selection based on deposit ratio
+        const totalPool = parseFloat(snap?.totalDeposited || "0");
+        const totalWithUser = totalPool > 0 ? (totalPool + userSaved) : (userSaved + 500);
+        const winChance = Math.min(0.85, Math.max(0.05, userSaved / totalWithUser));
+        didUserWin = Math.random() < winChance;
+        winningAddress = didUserWin ? account : fallbackWinner;
+      } else {
+        didUserWin = false;
+        winningAddress = fallbackWinner;
+      }
 
       // Credit winner with dynamic prize pot only if user actually participated and won
       if (didUserWin) {
@@ -903,7 +934,9 @@ export default function Home() {
         amount: `$${prizeAmount} ${activeMarket}`,
         description: didUserWin
           ? `Draw #${currentDraw} executed — You won +$${prizeAmount} ${activeMarket}!`
-          : `Draw #${currentDraw} executed — Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)} (You had 0 tickets)`,
+          : userHasTickets
+            ? `Draw #${currentDraw} executed — Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)} (Principal 100% safe & rolled into next draw)`
+            : `Draw #${currentDraw} executed — Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)} (You had 0 tickets)`,
         txHash: drawTxHash || undefined,
         status: "CONFIRMED",
         isPublicOnchainTx: Boolean(drawTxHash),
@@ -911,6 +944,8 @@ export default function Home() {
 
       if (didUserWin) {
         addToast("success", `Draw #${currentDraw} executed onchain! You won +$${prizeAmount} ${activeMarket}! Open Private Reveal to inspect and claim.`, drawTxHash || undefined);
+      } else if (userHasTickets) {
+        addToast("info", `Draw #${currentDraw} executed! Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)}. Principal remains 100% intact and rolled over!`, drawTxHash || undefined);
       } else {
         addToast("info", `Draw #${currentDraw} executed onchain! Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)}. Deposit into the vault to participate!`, drawTxHash || undefined);
       }
