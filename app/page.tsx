@@ -28,6 +28,8 @@ import {
 } from "@/lib/contracts";
 import { fetchLiveProtocolState, SEPOLIA_CHAIN_ID, ProtocolSnapshot } from "@/lib/web3";
 import { connectInjectedWallet, disconnectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
+import { useAccount, useDisconnect, useSwitchChain, useChainId } from "wagmi";
+import { useConnectModal, useAccountModal } from "@rainbow-me/rainbowkit";
 import {
   getStoredTheme,
   setStoredTheme,
@@ -110,6 +112,18 @@ export default function Home() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
+
+  // Wagmi & RainbowKit Multi-Wallet Hooks
+  const {
+    address: wagmiAddress,
+    isConnected: wagmiIsConnected,
+    connector: wagmiConnector,
+  } = useAccount();
+  const wagmiChainId = useChainId();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { switchChainAsync } = useSwitchChain();
+  const { openConnectModal } = useConnectModal();
+  const { openAccountModal } = useAccountModal();
 
   // Protocol snapshot
   const [snap, setSnap] = useState<ProtocolSnapshot | null>(null);
@@ -197,14 +211,19 @@ export default function Home() {
     }
   }, [account]);
 
-  // Connect Wallet
+  // Connect Wallet - opens multi-wallet RainbowKit modal with fallback
   const handleConnectWallet = useCallback(async () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cyvera_disconnected");
+    }
+    if (openConnectModal) {
+      openConnectModal();
+      return;
+    }
+
     setIsConnecting(true);
     try {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("cyvera_disconnected");
-      }
-      const res = await connectInjectedWallet(true);
+      const res = await connectInjectedWallet();
       setAccount(res.account);
       setProvider(res.provider);
       setSigner(res.signer);
@@ -218,16 +237,23 @@ export default function Home() {
       setDecryptedWinnings(getStoredWinnings(res.account, activeMarket));
       setActivity(getStoredActivity(res.account));
     } catch (err: any) {
-      if (!err.message?.includes("rejected")) {
+      if (!err.message?.includes("rejected") && !err.message?.includes("ACTION_REJECTED")) {
         addToast("error", err.message || "Failed to connect wallet.");
       }
     } finally {
       setIsConnecting(false);
     }
-  }, [activeMarket, addToast]);
+  }, [openConnectModal, activeMarket, addToast]);
 
   // Disconnect Wallet
   const handleDisconnectWallet = useCallback(async () => {
+    try {
+      if (wagmiDisconnect) {
+        wagmiDisconnect();
+      }
+    } catch (e) {
+      console.warn("Wagmi disconnect notice:", e);
+    }
     await disconnectInjectedWallet();
     setAccount(null);
     setProvider(null);
@@ -237,95 +263,118 @@ export default function Home() {
     setDecryptedWinnings(null);
     setActivity([]);
     addToast("info", "Wallet disconnected.");
-  }, [addToast]);
+  }, [wagmiDisconnect, addToast]);
 
-  // Auto-detect existing authorized wallet connection on mount
+  // Synchronize Wagmi / RainbowKit multi-wallet connection state
   useEffect(() => {
     if (!mounted) return;
-    const trySilentConnect = async () => {
-      if (typeof window === "undefined") return;
-      if (localStorage.getItem("cyvera_disconnected") === "true") return;
+    let isCancelled = false;
 
-      const ethereum = getInjectedProvider();
-      if (!ethereum) return;
+    const syncWagmiSession = async () => {
+      if (wagmiIsConnected && wagmiAddress) {
+        try {
+          let rawProvider: any = null;
+          if (wagmiConnector) {
+            rawProvider = await wagmiConnector.getProvider().catch(() => null);
+          }
+          if (!rawProvider) {
+            rawProvider = getInjectedProvider();
+          }
 
-      try {
-        const accounts: string[] = await ethereum.request({ method: "eth_accounts" });
-        if (accounts && accounts.length > 0) {
-          const bp = new ethers.BrowserProvider(ethereum);
-          const signerInstance = await bp.getSigner().catch(() => null);
-          setAccount(accounts[0]);
-          setProvider(bp);
-          setSigner(signerInstance);
-          const net = await bp.getNetwork().catch(() => null);
-          if (net) setChainId(Number(net.chainId));
+          let bp: ethers.BrowserProvider | null = null;
+          let signerInstance: ethers.Signer | null = null;
+          if (rawProvider) {
+            bp = new ethers.BrowserProvider(rawProvider);
+            signerInstance = await bp.getSigner().catch(() => null);
+          }
 
-          const liveSnapshot = await fetchLiveProtocolState(accounts[0], activeMarket);
+          if (isCancelled) return;
+
+          setAccount(wagmiAddress);
+          if (bp) setProvider(bp);
+          if (signerInstance) setSigner(signerInstance);
+          setChainId(wagmiChainId || SEPOLIA_CHAIN_ID);
+
+          const liveSnapshot = await fetchLiveProtocolState(wagmiAddress, activeMarket);
+          if (isCancelled) return;
           setSnap(liveSnapshot);
-          setDecryptedBalance(getStoredSavings(accounts[0], activeMarket));
-          setDecryptedWinnings(getStoredWinnings(accounts[0], activeMarket));
-          setActivity(getStoredActivity(accounts[0]));
+          setDecryptedBalance(getStoredSavings(wagmiAddress, activeMarket));
+          setDecryptedWinnings(getStoredWinnings(wagmiAddress, activeMarket));
+          setActivity(getStoredActivity(wagmiAddress));
+        } catch (err) {
+          console.warn("Wagmi session sync notice:", err);
         }
-      } catch (err) {
-        console.warn("Silent connect warning:", err);
-      }
-    };
-    trySilentConnect();
-  }, [mounted, activeMarket]);
-
-  // Wallet event listeners for accountsChanged and chainChanged
-  useEffect(() => {
-    const ethereum = getInjectedProvider();
-    if (!ethereum || !ethereum.on) return;
-
-    const onAccountsChanged = (accounts: string[]) => {
-      if (!accounts || accounts.length === 0) {
-        handleDisconnectWallet();
-      } else {
-        setAccount(accounts[0]);
-        refreshProtocolState();
+      } else if (!wagmiIsConnected) {
+        setAccount(null);
+        setProvider(null);
+        setSigner(null);
+        setChainId(null);
+        setDecryptedBalance(null);
+        setDecryptedWinnings(null);
+        setActivity([]);
       }
     };
 
-    const onChainChanged = (chainIdHex: string) => {
-      setChainId(parseInt(chainIdHex, 16));
-      refreshProtocolState();
-    };
-
-    ethereum.on("accountsChanged", onAccountsChanged);
-    ethereum.on("chainChanged", onChainChanged);
-
+    syncWagmiSession();
     return () => {
-      if (ethereum.removeListener) {
-        ethereum.removeListener("accountsChanged", onAccountsChanged);
-        ethereum.removeListener("chainChanged", onChainChanged);
-      }
+      isCancelled = true;
     };
-  }, [handleDisconnectWallet, refreshProtocolState]);
+  }, [mounted, wagmiAddress, wagmiIsConnected, wagmiConnector, wagmiChainId, activeMarket]);
 
-  // Helper to get guaranteed fresh signer directly from provider
+  // Helper to get guaranteed fresh signer directly from active connected wallet
   const getFreshSigner = async (): Promise<ethers.Signer> => {
+    if (wagmiConnector) {
+      try {
+        const rawProvider = await wagmiConnector.getProvider();
+        if (rawProvider) {
+          const bp = new ethers.BrowserProvider(rawProvider as any);
+          return await bp.getSigner();
+        }
+      } catch (e) {
+        console.warn("Could not get signer from Wagmi connector, trying fallback:", e);
+      }
+    }
     const ethereum = getInjectedProvider();
-    if (!ethereum) throw new Error("No Web3 wallet extension found. Please install MetaMask.");
+    if (!ethereum) throw new Error("No Web3 wallet found. Please connect your wallet.");
     const bp = new ethers.BrowserProvider(ethereum);
     return await bp.getSigner();
   };
 
   // Ensure Sepolia
   const ensureSepolia = useCallback(async (): Promise<boolean> => {
-    const ethereum = getInjectedProvider();
-    if (!ethereum) return false;
+    const currentChain = wagmiChainId || chainId;
+    if (currentChain === SEPOLIA_CHAIN_ID) return true;
+
+    if (switchChainAsync) {
+      try {
+        await switchChainAsync({ chainId: SEPOLIA_CHAIN_ID });
+        return true;
+      } catch (switchErr: any) {
+        console.warn("Wagmi switchChain notice:", switchErr);
+      }
+    }
+
     try {
-      await ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0xaa36a7" }],
-      });
-      return true;
+      let rawProvider: any = null;
+      if (wagmiConnector) {
+        rawProvider = await wagmiConnector.getProvider().catch(() => null);
+      }
+      if (!rawProvider) {
+        rawProvider = getInjectedProvider();
+      }
+      if (rawProvider && rawProvider.request) {
+        await rawProvider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0xaa36a7" }],
+        });
+        return true;
+      }
     } catch (err: any) {
       addToast("error", "Please switch your wallet to Ethereum Sepolia network.");
       return false;
     }
-  }, [addToast]);
+    return false;
+  }, [wagmiChainId, chainId, switchChainAsync, wagmiConnector, addToast]);
 
   // Decrypt Balance (Instant Reveal/Hide)
   const handleDecryptBalance = useCallback(() => {
@@ -936,6 +985,7 @@ export default function Home() {
           account={account}
           onConnect={handleConnectWallet}
           onDisconnect={handleDisconnectWallet}
+          onOpenAccountModal={openAccountModal}
           isConnecting={isConnecting}
           onOpenFaucet={() => setIsFaucetOpen(true)}
           walletBalance={snap?.userWalletBalance ?? "0.00"}

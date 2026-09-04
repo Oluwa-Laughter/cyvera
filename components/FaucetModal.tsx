@@ -144,7 +144,7 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
               ) : (
                 <>
                   <PlusCircle className="w-3.5 h-3.5 text-amber-500" />
-                  <span>+Add to MetaMask</span>
+                  <span>+Add to Wallet</span>
                 </>
               )}
             </button>
@@ -188,17 +188,17 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
           >
             <div className="flex items-center gap-2">
               <HelpCircle className="w-4 h-4" />
-              <span>How to manually add {currentCfg.symbol} to MetaMask</span>
+              <span>How to manually add {currentCfg.symbol} to your Wallet</span>
             </div>
             <ChevronDown className={`w-4 h-4 transition-transform ${showManualGuide ? "rotate-180" : ""}`} />
           </button>
 
           {showManualGuide && (
             <div className="p-4 pt-1 border-t border-amber-500/20 text-foreground space-y-2 text-[11px] font-medium leading-relaxed">
-              <p className="text-[var(--muted)]">If MetaMask did not pop up automatically, follow these 3 quick steps:</p>
+              <p className="text-[var(--muted)]">If your wallet did not pop up automatically, follow these 3 quick steps:</p>
               <ol className="list-decimal list-inside space-y-1 text-foreground">
-                <li>Open your <strong>MetaMask</strong> extension and ensure you are on the <strong>Sepolia</strong> network.</li>
-                <li>Scroll down in your Assets tab and click <strong>"Import Tokens"</strong> → <strong>"Custom Token"</strong>.</li>
+                <li>Open your wallet extension (MetaMask, Rabby, Coinbase, etc.) and ensure you are on the <strong>Sepolia</strong> network.</li>
+                <li>Scroll to Assets and click <strong>"Import Tokens"</strong> or <strong>"Custom Token"</strong>.</li>
                 <li>Paste the Contract Address: <strong className="font-mono text-amber-500 break-all">{currentCfg.underlying}</strong></li>
                 <li>Token Symbol will auto-fill as <strong>{currentCfg.symbol}</strong>, Decimals: <strong>6</strong>. Click <strong>"Next"</strong> → <strong>"Import"</strong>!</li>
               </ol>

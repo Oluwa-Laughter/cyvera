@@ -13,6 +13,7 @@ interface TopHeaderProps {
   account: string | null;
   onConnect: () => void;
   onDisconnect: () => void;
+  onOpenAccountModal?: () => void;
   isConnecting: boolean;
   onOpenFaucet: () => void;
   walletBalance: string;
@@ -30,6 +31,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   account,
   onConnect,
   onDisconnect,
+  onOpenAccountModal,
   isConnecting,
   onOpenFaucet,
   walletBalance,
@@ -119,13 +121,22 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             </div>
 
             <button
-              onClick={onDisconnect}
-              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-400 border border-[var(--card-border)] text-foreground font-mono transition-colors group"
-              title="Click to disconnect"
+              onClick={onOpenAccountModal || onDisconnect}
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 border border-[var(--card-border)] text-foreground font-mono transition-colors group cursor-pointer"
+              title="Click to view wallet details"
             >
               <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               <span className="text-[11px] sm:text-xs">{formatAddress(account)}</span>
-              <LogOut className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-rose-500 hidden sm:inline" />
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDisconnect();
+                }}
+                className="p-0.5 rounded-full hover:bg-rose-500/20 text-slate-400 hover:text-rose-500 transition-colors"
+                title="Disconnect wallet"
+              >
+                <LogOut className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+              </span>
             </button>
           </div>
         ) : (

@@ -20,10 +20,12 @@ export const getInjectedProvider = (): any => {
 
   const anyWindow = window as any;
 
-  // Check if multiple providers exist (e.g. MetaMask + Coinbase + Rabby)
+  // Check if multiple providers exist (e.g. MetaMask, Rabby, Coinbase, Brave, etc.)
   if (anyWindow.ethereum?.providers?.length) {
-    const metamask = anyWindow.ethereum.providers.find((p: any) => p.isMetaMask);
-    return metamask || anyWindow.ethereum.providers[0];
+    const activeProvider = anyWindow.ethereum.providers.find(
+      (p: any) => p.selectedAddress || (typeof p.isConnected === "function" && p.isConnected())
+    );
+    return activeProvider || anyWindow.ethereum.providers[0];
   }
 
   if (anyWindow.ethereum) {
@@ -36,11 +38,13 @@ export const getInjectedProvider = (): any => {
 // Check if mobile device
 export const isMobile = (): boolean => {
   if (typeof window === "undefined") return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
 };
 
 // Request wallet connection and switch to Sepolia
-export const connectInjectedWallet = async (forcePrompt: boolean = true): Promise<{
+export const connectInjectedWallet = async (): Promise<{
   account: string;
   provider: ethers.BrowserProvider;
   signer: ethers.Signer;
@@ -48,31 +52,13 @@ export const connectInjectedWallet = async (forcePrompt: boolean = true): Promis
   const ethereum = getInjectedProvider();
 
   if (!ethereum) {
-    if (isMobile()) {
-      const cleanUrl = window.location.href.replace(/^https?:\/\//, "");
-      window.location.href = `https://metamask.app.link/dapp/${cleanUrl}`;
-      throw new Error("Redirecting to MetaMask mobile app...");
-    }
-    throw new Error("No Web3 wallet extension found. Please install MetaMask, Rabby, or Coinbase Wallet.");
+    throw new Error(
+      "No Web3 wallet extension found. Please connect via WalletConnect, Coinbase, or install a wallet extension."
+    );
   }
 
-  // If forcePrompt is true, request permissions so MetaMask explicitly pops up the account selection window
+  // Request accounts via standard EIP-1193
   let accounts: string[] = [];
-  if (forcePrompt) {
-    try {
-      await ethereum.request({
-        method: "wallet_requestPermissions",
-        params: [{ eth_accounts: {} }],
-      });
-    } catch (permErr: any) {
-      if (permErr.code === 4001) {
-        throw new Error("Connection rejected by user in wallet.");
-      }
-      // If wallet_requestPermissions is not supported by the wallet, continue to eth_requestAccounts
-    }
-  }
-
-  // Request accounts
   try {
     accounts = await ethereum.request({ method: "eth_requestAccounts" });
   } catch (err: any) {
@@ -144,14 +130,15 @@ export const disconnectInjectedWallet = async (): Promise<void> => {
 };
 
 /**
- * Adds token to MetaMask / Rabby / Web3 wallet via EIP-747 wallet_watchAsset
+ * Adds token to connected wallet via EIP-747 wallet_watchAsset
  */
 export const addTokenToWallet = async (
   tokenAddress: string,
   symbol: string = "cUSDT",
-  decimals: number = 6
+  decimals: number = 6,
+  customProvider?: any
 ): Promise<boolean> => {
-  const ethereum = getInjectedProvider();
+  const ethereum = customProvider || getInjectedProvider();
   if (!ethereum) return false;
 
   try {

@@ -86,6 +86,8 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
+import { Web3Provider } from "@/components/providers/Web3Provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -98,7 +100,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.svg" />
       </head>
       <body className="antialiased min-h-screen font-sans bg-background text-foreground">
-        {children}
+        <Web3Provider>{children}</Web3Provider>
       </body>
     </html>
   );

@@ -173,7 +173,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
           className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-foreground transition-colors"
         >
           {isTokenAdded ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <PlusCircle className="w-3.5 h-3.5 text-[var(--muted)]" />}
-          <span>Add {marketCfg.symbol} to MetaMask</span>
+          <span>Add {marketCfg.symbol} to Wallet</span>
         </button>
       </div>
 
