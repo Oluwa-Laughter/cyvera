@@ -37,9 +37,8 @@ export const SEPOLIA_HEX_CHAIN_ID = "0xaa36a7";
 
 export const SEPOLIA_RPCS = [
   "https://ethereum-sepolia-rpc.publicnode.com",
-  "https://1rpc.io/sepolia",
-  "https://rpc.sepolia.org",
-  "https://rpc2.sepolia.org",
+  "https://gateway.tenderly.co/public/sepolia",
+  "https://sepolia.gateway.tenderly.co",
 ];
 
 export const getPublicProvider = (index = 0): ethers.JsonRpcProvider => {

@@ -59,9 +59,8 @@ export const wagmiConfig = createConfig({
         process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL ||
           "https://ethereum-sepolia-rpc.publicnode.com"
       ),
-      http("https://rpc.sepolia.org"),
-      http("https://eth-sepolia.public.blastapi.io"),
-      http("https://1rpc.io/sepolia"),
+      http("https://gateway.tenderly.co/public/sepolia"),
+      http("https://sepolia.gateway.tenderly.co"),
     ]),
   },
   ssr: true,
