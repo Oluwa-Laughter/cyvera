@@ -128,7 +128,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             <div className="flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-amber-500/30 rounded-xl sm:rounded-2xl">
               <span className="text-[9px] sm:text-[10px] text-[var(--muted)] font-mono flex items-center gap-1">
                 <Wallet className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-500" />
-                <span>Wallet:</span>
+                <span>{nativeEthBalance && parseFloat(nativeEthBalance) > 0 ? `${nativeEthBalance} ETH` : "Wallet:"}</span>
               </span>
               <span className="text-[11px] sm:text-xs font-mono font-black text-foreground">
                 ${walletBalance || "0.00"}{" "}

@@ -27,6 +27,8 @@ import {
   getStoredLastDrawTime,
   getStoredLiquidityHuntPoints,
   getStoredDepositorsCount,
+  getStoredEthBalance,
+  setStoredEthBalance,
   DrawPhase,
 } from "./store";
 
@@ -116,6 +118,7 @@ async function querySepoliaBalances(userAccount: string) {
       // Save both market balances to storage immediately
       setStoredWalletBalance(userAccount, formattedUsdt, "cUSDT");
       setStoredWalletBalance(userAccount, formattedUsdc, "cUSDC");
+      setStoredEthBalance(userAccount, formattedEth);
 
       return {
         usdt: formattedUsdt,
@@ -145,6 +148,7 @@ async function querySepoliaBalances(userAccount: string) {
         const formattedEth = parseFloat(ethers.formatEther(e)).toFixed(4);
         setStoredWalletBalance(userAccount, formattedUsdt, "cUSDT");
         setStoredWalletBalance(userAccount, formattedUsdc, "cUSDC");
+        setStoredEthBalance(userAccount, formattedEth);
         return { usdt: formattedUsdt, usdc: formattedUsdc, eth: formattedEth };
       }
     } catch {}
@@ -243,7 +247,7 @@ export async function fetchLiveProtocolState(
   const storedLhPoints = getStoredLiquidityHuntPoints(userAccount || null);
 
   let effectiveWalletBal = "0.00";
-  let effectiveEthBal = "0.0000";
+  let effectiveEthBal = getStoredEthBalance(userAccount || null);
 
   if (liveBalances) {
     effectiveWalletBal = market === "cUSDT" ? liveBalances.usdt : liveBalances.usdc;

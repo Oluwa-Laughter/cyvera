@@ -116,6 +116,18 @@ export const setStoredWalletBalance = (account: string | null, amount: string, m
   localStorage.setItem(`${STORAGE_KEYS.WALLET_BAL_PREFIX}${market}_${account.toLowerCase()}`, amount);
 };
 
+// Native Sepolia ETH Balance
+export const getStoredEthBalance = (account: string | null): string => {
+  if (!isBrowser || !account) return "0.0000";
+  const val = localStorage.getItem(`cyvera_eth_bal_${account.toLowerCase()}`);
+  return val !== null ? val : "0.0000";
+};
+
+export const setStoredEthBalance = (account: string | null, amount: string): void => {
+  if (!isBrowser || !account) return;
+  localStorage.setItem(`cyvera_eth_bal_${account.toLowerCase()}`, amount);
+};
+
 // Public Token Wallet Balance (unshielded USDT/USDC)
 export const getStoredPublicWalletBalance = (account: string | null, market: ActiveMarketId = "cUSDT"): string => {
   if (!isBrowser || !account) return "1000.00";
