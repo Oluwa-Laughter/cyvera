@@ -66,11 +66,12 @@ function ephemeralPubKey(): `0x${string}` {
  *                  or the off-chain balance cache. Used when the relayer
  *                  is unreachable so judges can still try the UI.
  */
-export async function decryptUserBalance(
-  handle: string,
-  user: string,
+export async function decryptHandleWithEIP712(
   signer: ethers.Signer,
-  fallback: bigint
+  user: string,
+  handle: string,
+  fallback: bigint,
+  poolAddress?: string
 ): Promise<DecryptionResult> {
   if (!handle || handle === ethers.ZeroHash) {
     return { value: 0n, source: "fallback" };
@@ -79,7 +80,7 @@ export async function decryptUserBalance(
   const provider = signer.provider as ethers.BrowserProvider | null;
   const network = await provider?.getNetwork();
   const chainId = network?.chainId ? Number(network.chainId) : 11155111;
-  const verifyingContract = CONTRACT_ADDRESSES.sepolia.prizePool;
+  const verifyingContract = poolAddress || CONTRACT_ADDRESSES.sepolia.prizePool;
 
   const publicKey = ephemeralPubKey();
   const domain = domainFor(chainId, verifyingContract);
@@ -117,12 +118,27 @@ export async function decryptUserBalance(
   }
 }
 
+/**
+ * Backward-compatible wrapper matching page.tsx signature
+ */
+export async function decryptUserBalance(
+  handle: string,
+  user: string,
+  signer: ethers.Signer,
+  fallback: bigint,
+  poolAddress?: string
+): Promise<DecryptionResult> {
+  return decryptHandleWithEIP712(signer, user, handle, fallback, poolAddress);
+}
+
 /** Convenience helper that pulls the unclaimed winnings mirror. */
 export async function fetchUnclaimedWinnings(
   provider: ethers.Provider,
-  user: string
+  user: string,
+  poolAddress?: string
 ): Promise<bigint> {
-  const pool = new ethers.Contract(CONTRACT_ADDRESSES.sepolia.prizePool, CYVERA_PRIZE_POOL_ABI, provider);
+  const targetPool = poolAddress || CONTRACT_ADDRESSES.sepolia.prizePool;
+  const pool = new ethers.Contract(targetPool, CYVERA_PRIZE_POOL_ABI, provider);
   try {
     return await pool.getUnclaimedWinnings(user);
   } catch {
