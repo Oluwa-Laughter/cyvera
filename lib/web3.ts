@@ -195,6 +195,45 @@ async function querySepoliaPoolState(userAccount: string | null, market: ActiveM
         const onchainDep = parseFloat(ethers.formatUnits(totalDep, marketCfg.decimals)).toFixed(2);
         const onchainPot = parseFloat(ethers.formatUnits(prizeRes, marketCfg.decimals)).toFixed(2);
 
+        let onchainWinnings = "0.00";
+        const winningsHandleHex = (userState[1] as string) || ZERO;
+        if (winningsHandleHex && winningsHandleHex !== ZERO) {
+          try {
+            const rawVal = BigInt(winningsHandleHex);
+            if (rawVal > 0n && rawVal < 1000000000000n) {
+              onchainWinnings = parseFloat(ethers.formatUnits(rawVal, marketCfg.decimals)).toFixed(2);
+            }
+          } catch {}
+        }
+
+        // Query live onchain draw history
+        const onchainDraws: any[] = [];
+        const maxDrawId = Number(curDrawId);
+        if (maxDrawId > 0) {
+          const startDraw = Math.max(1, maxDrawId - 9);
+          const historyPromises = [];
+          for (let d = maxDrawId; d >= startDraw; d--) {
+            historyPromises.push(pool.drawHistory(d).catch(() => null));
+          }
+          const rawRecords = await Promise.all(historyPromises);
+          for (const rec of rawRecords) {
+            if (rec && rec.executed) {
+              const winAddr = rec.winner as string;
+              onchainDraws.push({
+                drawId: Number(rec.drawId),
+                market,
+                phase: "CLAIMING",
+                timestamp: Number(rec.timestamp),
+                totalParticipants: Number(rec.totalParticipants),
+                prizeAmount: parseFloat(ethers.formatUnits(rec.prizeAmount, marketCfg.decimals)).toFixed(2),
+                winner: winAddr,
+                executed: true,
+                isMyWin: userAccount ? winAddr.toLowerCase() === userAccount.toLowerCase() : false,
+              });
+            }
+          }
+        }
+
         return {
           totalDeposits: parseFloat(onchainDep) > 0 ? onchainDep : null,
           totalPrizeReserve: parseFloat(onchainPot) > 0 ? onchainPot : null,
@@ -207,8 +246,9 @@ async function querySepoliaPoolState(userAccount: string | null, market: ActiveM
           depositorCount: Number(depCount),
           userBalanceHandle: (userState[0] as string) || ZERO,
           userWinningsHandle: (userState[1] as string) || ZERO,
-          userUnclaimedWinnings: parseFloat(ethers.formatUnits(userState[2], marketCfg.decimals)).toFixed(2),
+          userUnclaimedWinnings: onchainWinnings,
           userIsDepositor: Boolean(userState[3]),
+          onchainDraws,
         };
       }
     } catch (err) {
@@ -244,6 +284,19 @@ export async function fetchLiveProtocolState(
   const storedDrawId = getStoredCurrentDrawId(market);
   const storedLastDraw = getStoredLastDrawTime(market);
   const storedLhPoints = getStoredLiquidityHuntPoints(userAccount || null);
+
+  // Sync onchain winnings if available
+  if (userAccount && onchainPool?.userUnclaimedWinnings && parseFloat(onchainPool.userUnclaimedWinnings) > 0) {
+    const curStored = parseFloat(storedWin || "0");
+    const curOnchain = parseFloat(onchainPool.userUnclaimedWinnings);
+    if (curOnchain > curStored) {
+      setStoredWinnings(userAccount, onchainPool.userUnclaimedWinnings, market);
+    }
+  }
+
+  const effectiveDraws = (onchainPool?.onchainDraws && onchainPool.onchainDraws.length > 0)
+    ? onchainPool.onchainDraws
+    : storedDraws;
 
   let effectiveWalletBal = "0.00";
   let effectiveEthBal = getStoredEthBalance(userAccount || null);
@@ -309,7 +362,7 @@ export async function fetchLiveProtocolState(
     userEncryptedWinningsHandle: winningsHandle,
     userIsDepositor: onchainPool ? onchainPool.userIsDepositor : userSavedNum > 0,
     liquidityHuntPoints: storedLhPoints,
-    drawHistory: storedDraws,
+    drawHistory: effectiveDraws,
     timeToNextDraw: timeToNext,
   };
 }

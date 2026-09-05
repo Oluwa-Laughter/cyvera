@@ -915,14 +915,21 @@ export default function Home() {
         throw drawErr;
       }
 
+      // Ensure winner address is resolved directly from onchain draw history if not parsed from log
+      if (!onchainWinner) {
+        try {
+          const drawRec = await vaultContract.drawHistory(nextDrawId);
+          if (drawRec && drawRec.winner && drawRec.winner !== ethers.ZeroAddress) {
+            onchainWinner = drawRec.winner;
+          }
+        } catch {}
+      }
+
       const poolParticipants = Number(depositorCount) || (activeMarket === "cUSDT" ? 14 : 18);
-      const communityPoolWinners = [
-        "0x892a43b123d4567e890123456789012345678901",
-        "0x3c9143b123d4567e890123456789012345678902",
-        "0x5a1243b123d4567e890123456789012345678903",
-        "0x7b2343b123d4567e890123456789012345678904",
-      ];
-      const fallbackWinner = communityPoolWinners[nextDrawId % communityPoolWinners.length];
+      const onchainDepositors: string[] = await vaultContract.getDepositors().catch(() => []);
+      const fallbackWinner = onchainDepositors.length > 0
+        ? onchainDepositors[nextDrawId % onchainDepositors.length]
+        : account;
 
       // A user with $0 principal has 0 tickets and CANNOT participate or win!
       const userHasTickets = userSaved > 0;
