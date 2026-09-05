@@ -838,15 +838,52 @@ export default function Home() {
     isActionLockedRef.current = true;
     setIsTriggeringDraw(true);
     try {
-      const currentDraw = snap?.currentDrawId ?? 1;
-      const prizeAmount = snap?.totalPrizeReserve ?? (activeMarket === "cUSDT" ? "15.00" : "25.00");
-      const userSaved = parseFloat(getStoredSavings(account, activeMarket));
-
       const currentSigner = await getFreshSigner();
       const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
       const vaultContract = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, currentSigner);
 
-      addToast("info", `Sampling Zama FHE verifiable randomness for Draw #${currentDraw} on ${activeMarket}...`);
+      // Pre-flight check 1: Cooldown timer
+      const timeUntil: bigint = await vaultContract.timeUntilNextDraw().catch(() => 0n);
+      if (timeUntil > 0n) {
+        addToast("info", `Draw cooldown in effect. Next draw unlocks in ${timeUntil.toString()} seconds.`);
+        setIsTriggeringDraw(false);
+        isActionLockedRef.current = false;
+        return;
+      }
+
+      // Pre-flight check 2: Depositors count
+      const depositorCount: bigint = await vaultContract.getDepositorCount().catch(() => 0n);
+      if (depositorCount === 0n) {
+        addToast("error", `Cannot trigger draw: no active savers in ${activeMarket} vault. Deposit first!`);
+        setIsTriggeringDraw(false);
+        isActionLockedRef.current = false;
+        return;
+      }
+
+      // Pre-flight check 3: Prize reserve (auto-seed if empty)
+      let onchainReserve: bigint = await vaultContract.totalPrizeReserve().catch(() => 0n);
+      if (onchainReserve === 0n) {
+        addToast("info", `Prize reserve is empty onchain. Harvesting DeFi yield to seed ${activeMarket} prize pot...`);
+        const yieldContract = new ethers.Contract(marketCfg.yieldSource, CYVERA_YIELD_SOURCE_ABI, currentSigner);
+        const seedAmount = ethers.parseUnits(activeMarket === "cUSDT" ? "15.00" : "25.00", marketCfg.decimals);
+        let fundTx;
+        try {
+          fundTx = await yieldContract.manualInjectYield(seedAmount, { gasLimit: 350000 });
+        } catch {
+          fundTx = await yieldContract.harvestAndFund(ethers.parseUnits("50000", marketCfg.decimals), { gasLimit: 350000 });
+        }
+        addToast("info", `Funding onchain prize reserve on Sepolia...`, fundTx.hash);
+        await fundTx.wait(1);
+        onchainReserve = await vaultContract.totalPrizeReserve().catch(() => seedAmount);
+        addToast("success", `Prize pot seeded with ${ethers.formatUnits(onchainReserve, marketCfg.decimals)} ${activeMarket}! Running verifiable draw...`);
+      }
+
+      const currentDrawOnchain: bigint = await vaultContract.currentDrawId().catch(() => 0n);
+      const nextDrawId = Number(currentDrawOnchain) + 1;
+      const prizeAmount = parseFloat(ethers.formatUnits(onchainReserve, marketCfg.decimals)).toFixed(2);
+      const userSaved = parseFloat(getStoredSavings(account, activeMarket));
+
+      addToast("info", `Sampling Zama FHE verifiable randomness for Draw #${nextDrawId} on ${activeMarket}...`);
 
       let drawTxHash = "";
       let onchainWinner: string | null = null;
@@ -875,19 +912,17 @@ export default function Home() {
           throw drawErr;
         }
         console.warn("Vault contract triggerDraw attempt:", drawErr);
+        throw drawErr;
       }
 
-      const poolParticipants = (snap?.depositorsCount && snap.depositorsCount > 0)
-        ? snap.depositorsCount
-        : (activeMarket === "cUSDT" ? 14 : 18);
-
+      const poolParticipants = Number(depositorCount) || (activeMarket === "cUSDT" ? 14 : 18);
       const communityPoolWinners = [
         "0x892a43b123d4567e890123456789012345678901",
         "0x3c9143b123d4567e890123456789012345678902",
         "0x5a1243b123d4567e890123456789012345678903",
         "0x7b2343b123d4567e890123456789012345678904",
       ];
-      const fallbackWinner = communityPoolWinners[currentDraw % communityPoolWinners.length];
+      const fallbackWinner = communityPoolWinners[nextDrawId % communityPoolWinners.length];
 
       // A user with $0 principal has 0 tickets and CANNOT participate or win!
       const userHasTickets = userSaved > 0;
@@ -924,7 +959,7 @@ export default function Home() {
 
       // Record draw in verifiable history
       addStoredDraw({
-        drawId: currentDraw,
+        drawId: nextDrawId,
         market: activeMarket,
         phase: "CLAIMING",
         timestamp: Math.floor(Date.now() / 1000),
@@ -942,21 +977,21 @@ export default function Home() {
         account: winningAddress,
         amount: `$${prizeAmount} ${activeMarket}`,
         description: didUserWin
-          ? `Draw #${currentDraw} executed — You won +$${prizeAmount} ${activeMarket}!`
+          ? `Draw #${nextDrawId} executed — You won +$${prizeAmount} ${activeMarket}!`
           : userHasTickets
-            ? `Draw #${currentDraw} executed — Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)} (Principal 100% safe & rolled into next draw)`
-            : `Draw #${currentDraw} executed — Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)} (You had 0 tickets)`,
+            ? `Draw #${nextDrawId} executed — Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)} (Principal 100% safe & rolled into next draw)`
+            : `Draw #${nextDrawId} executed — Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)} (You had 0 tickets)`,
         txHash: drawTxHash || undefined,
         status: "CONFIRMED",
         isPublicOnchainTx: Boolean(drawTxHash),
       });
 
       if (didUserWin) {
-        addToast("success", `Draw #${currentDraw} executed onchain! You won +$${prizeAmount} ${activeMarket}! Open Private Reveal to inspect and claim.`, drawTxHash || undefined);
+        addToast("success", `Draw #${nextDrawId} executed onchain! You won +$${prizeAmount} ${activeMarket}! Open Private Reveal to inspect and claim.`, drawTxHash || undefined);
       } else if (userHasTickets) {
-        addToast("info", `Draw #${currentDraw} executed! Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)}. Principal remains 100% intact and rolled over!`, drawTxHash || undefined);
+        addToast("info", `Draw #${nextDrawId} executed! Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)}. Principal remains 100% intact and rolled over!`, drawTxHash || undefined);
       } else {
-        addToast("info", `Draw #${currentDraw} executed onchain! Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)}. Deposit into the vault to participate!`, drawTxHash || undefined);
+        addToast("info", `Draw #${nextDrawId} executed onchain! Winner: ${winningAddress.slice(0, 6)}...${winningAddress.slice(-4)}. Deposit into the vault to participate!`, drawTxHash || undefined);
       }
       refreshProtocolState();
     } catch (err: any) {
@@ -997,7 +1032,7 @@ export default function Home() {
       addToast("info", `Confirm prize claim for +$${curWin.toFixed(2)} ${activeMarket} in your wallet...`);
       let txHash = "";
       try {
-        const claimTx = await vaultContract.claimPrize({ gasLimit: 350000 });
+        const claimTx = await vaultContract.claimPrize(needed, { gasLimit: 350000 });
         txHash = claimTx.hash;
         addToast("info", `Claiming prize profit on Sepolia...`, txHash);
         await claimTx.wait(1);
@@ -1059,11 +1094,12 @@ export default function Home() {
 
       const currentSigner = await getFreshSigner();
       const vaultContract = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, currentSigner);
+      const needed = ethers.parseUnits(curWin.toFixed(6), marketCfg.decimals);
 
       addToast("info", `Confirm compounding +$${curWin.toFixed(2)} ${activeMarket} in your wallet...`);
       let compTxHash = "";
       try {
-        const compTx = await vaultContract.compoundPrize({ gasLimit: 400000 });
+        const compTx = await vaultContract.compoundPrize(needed, { gasLimit: 400000 });
         compTxHash = compTx.hash;
         addToast("info", `Compounding winnings on Sepolia...`, compTxHash);
         await compTx.wait(1);
@@ -1108,22 +1144,57 @@ export default function Home() {
     }
   };
 
-  // Fund Prize Reserve
+  // Fund Prize Reserve (Harvests DeFi APY into CyveraPrizePool onchain)
   const handleFundPrize = async () => {
     if (isActionLockedRef.current || isLoadingAction) return;
-    if (!account) return;
+    if (!account) {
+      await handleConnectWallet();
+      return;
+    }
+    const isOk = await ensureSepolia();
+    if (!isOk) return;
 
     isActionLockedRef.current = true;
     setIsLoadingAction(true);
     try {
-      const curPot = parseFloat(getStoredPrizePot(activeMarket));
-      const newPot = (curPot + 25.0).toFixed(2);
-      setStoredPrizePot(newPot, activeMarket);
+      const currentSigner = await getFreshSigner();
+      const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[activeMarket];
+      const yieldContract = new ethers.Contract(marketCfg.yieldSource, CYVERA_YIELD_SOURCE_ABI, currentSigner);
 
-      addToast("success", `Funded prize reserve with +$25.00 ${activeMarket}!`);
+      addToast("info", `Harvesting DeFi yield from ${activeMarket} strategy on Sepolia...`);
+      const fundAmount = ethers.parseUnits("25.00", marketCfg.decimals);
+      
+      let fundTx;
+      try {
+        fundTx = await yieldContract.manualInjectYield(fundAmount, { gasLimit: 350000 });
+      } catch {
+        fundTx = await yieldContract.harvestAndFund(ethers.parseUnits("50000", marketCfg.decimals), { gasLimit: 350000 });
+      }
+      addToast("info", `Broadcasting yield harvest transaction on Sepolia...`, fundTx.hash);
+      await fundTx.wait(1);
+
+      const vaultContract = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, currentSigner);
+      const newReserve: bigint = await vaultContract.totalPrizeReserve().catch(() => fundAmount);
+      const formattedReserve = parseFloat(ethers.formatUnits(newReserve, marketCfg.decimals)).toFixed(2);
+      setStoredPrizePot(formattedReserve, activeMarket);
+
+      addActivityEntry({
+        kind: "draw",
+        type: "DRAW",
+        account,
+        amount: `+$${formattedReserve} ${activeMarket}`,
+        description: `Harvested DeFi APY into ${activeMarket} prize reserve onchain`,
+        txHash: fundTx.hash,
+        status: "CONFIRMED",
+        isPublicOnchainTx: true,
+      });
+
+      addToast("success", `Funded ${activeMarket} prize reserve! Total pot: $${formattedReserve}`, fundTx.hash);
       refreshProtocolState();
     } catch (err: any) {
-      addToast("error", err.message || "Failed to fund prize reserve.");
+      if (!err.message?.includes("rejected") && !err.message?.includes("ACTION_REJECTED")) {
+        addToast("error", err.message || "Failed to fund prize reserve.");
+      }
     } finally {
       isActionLockedRef.current = false;
       setIsLoadingAction(false);

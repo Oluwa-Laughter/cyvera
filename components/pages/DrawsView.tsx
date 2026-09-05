@@ -314,7 +314,20 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
                 </span>
               </motion.button>
 
-              {/* Button 2: Private Prize Reveal */}
+              {/* Button 2: Harvest APY (DeFi Yield Stream) */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={onFundPrize}
+                disabled={isFundingPrize}
+                title="Harvest protocol APY from DeFi yield source into the prize pot"
+                className="w-full sm:w-auto px-4 py-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-semibold text-xs transition-all flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+              >
+                {isFundingPrize ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-500" /> : <Sparkles className="w-3.5 h-3.5 text-amber-500" />}
+                <span>{isFundingPrize ? "Harvesting Yield..." : "Harvest APY (+$25)"}</span>
+              </motion.button>
+
+              {/* Button 3: Private Prize Reveal */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
