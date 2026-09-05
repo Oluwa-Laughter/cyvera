@@ -26,7 +26,7 @@
 
 ---
 
-## 💡 Executive Summary
+## 💡 Summary
 
 Traditional prize-savings protocols like PoolTogether pioneered no-loss jackpots, but suffer from a critical architectural vulnerability: **complete lack of financial privacy**. Every depositor's wallet balance, ticket holdings, winning odds, and prize earnings are broadcast publicly to the blockchain. This exposes participants to balance surveillance, front-running, and whale tracking.
 
