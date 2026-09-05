@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Menu, Wallet, Droplets, RefreshCw, LogOut, Sun, Moon } from "lucide-react";
+import { Wallet, Droplets, RefreshCw, LogOut, Sun, Moon } from "lucide-react";
+import { HiBars3, HiXMark } from "react-icons/hi2";
 import { motion } from "framer-motion";
 import { AuraLogo } from "@/components/AuraLogo";
 import { ActiveMarketId } from "@/lib/contracts";
@@ -10,6 +11,7 @@ interface TopHeaderProps {
   pageTitle: string;
   pageSubtitle: string;
   onOpenMobileNav: () => void;
+  isMobileNavOpen?: boolean;
   account: string | null;
   onConnect: () => void;
   onDisconnect: () => void;
@@ -29,6 +31,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   pageTitle,
   pageSubtitle,
   onOpenMobileNav,
+  isMobileNavOpen = false,
   account,
   onConnect,
   onDisconnect,
@@ -50,13 +53,17 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   return (
     <header className="w-full bg-[var(--header-bg)] backdrop-blur-md border-b border-[var(--card-border)] sticky top-0 z-30 px-3 sm:px-8 py-3.5 flex items-center justify-between shadow-sm transition-colors duration-200">
       {/* Left: Mobile Trigger & Title */}
-      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+      <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
         <button
           onClick={onOpenMobileNav}
-          className="lg:hidden p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-black dark:hover:text-white border border-[var(--card-border)] transition-colors shrink-0"
-          aria-label="Open menu"
+          className="lg:hidden p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-black dark:hover:text-white border border-[var(--card-border)] transition-colors shrink-0 cursor-pointer"
+          aria-label={isMobileNavOpen ? "Close menu" : "Open menu"}
         >
-          <Menu className="w-5 h-5" />
+          {isMobileNavOpen ? (
+            <HiXMark className="w-5 h-5 text-amber-500" />
+          ) : (
+            <HiBars3 className="w-5 h-5 text-amber-500" />
+          )}
         </button>
 
         <div className="lg:hidden shrink-0">
@@ -124,8 +131,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         {/* Wallet Connection & Balance */}
         {account ? (
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Always Visible Wallet Balance Box */}
-            <div className="flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-amber-500/30 rounded-xl sm:rounded-2xl">
+            {/* Visible on sm+ screens */}
+            <div className="hidden sm:flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-amber-500/30 rounded-xl sm:rounded-2xl">
               <span className="text-[9px] sm:text-[10px] text-[var(--muted)] font-mono flex items-center gap-1">
                 <Wallet className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-500" />
                 <span>{nativeEthBalance && parseFloat(nativeEthBalance) > 0 ? `${nativeEthBalance} ETH` : "Wallet:"}</span>

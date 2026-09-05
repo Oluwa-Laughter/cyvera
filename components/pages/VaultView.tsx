@@ -148,23 +148,25 @@ export const VaultView: React.FC<VaultViewProps> = ({
         <div className="flex items-center gap-1.5 text-xs font-bold">
           <button
             onClick={() => onChangeMarket("cUSDT")}
-            className={`px-3.5 py-1.5 rounded-xl transition-all ${
+            className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition-all ${
               activeMarket === "cUSDT" 
                 ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
                 : "text-[var(--muted)] hover:text-foreground"
             }`}
           >
-            cUSDT Vault (8.50% APY)
+            <span className="sm:hidden">cUSDT (8.5%)</span>
+            <span className="hidden sm:inline">cUSDT Vault (8.50% APY)</span>
           </button>
           <button
             onClick={() => onChangeMarket("cUSDC")}
-            className={`px-3.5 py-1.5 rounded-xl transition-all ${
+            className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition-all ${
               activeMarket === "cUSDC" 
                 ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
                 : "text-[var(--muted)] hover:text-foreground"
             }`}
           >
-            cUSDC Vault (12.00% APY)
+            <span className="sm:hidden">cUSDC (12%)</span>
+            <span className="hidden sm:inline">cUSDC Vault (12.00% APY)</span>
           </button>
         </div>
 
@@ -311,13 +313,13 @@ export const VaultView: React.FC<VaultViewProps> = ({
               </div>
 
               {/* Quick Presets */}
-              <div className="flex items-center gap-2 pt-1">
+              <div className="grid grid-cols-4 gap-1.5 sm:gap-2 pt-1">
                 {[25, 50, 100, 500].map((val) => (
                   <button
                     key={val}
                     type="button"
                     onClick={() => handleQuickPreset(val)}
-                    className="flex-1 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground text-xs font-semibold transition-colors"
+                    className="py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground text-xs font-semibold transition-colors cursor-pointer"
                   >
                     +${val}
                   </button>

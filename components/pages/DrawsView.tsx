@@ -136,23 +136,25 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
           <div className="flex items-center gap-1.5 text-xs font-bold">
             <button
               onClick={() => onChangeMarket("cUSDT")}
-              className={`px-3.5 py-1.5 rounded-xl transition-all ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition-all ${
                 activeMarket === "cUSDT" 
                   ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              cUSDT Draws (${currentPrizePot} Pot)
+              <span className="sm:hidden">cUSDT (${currentPrizePot})</span>
+              <span className="hidden sm:inline">cUSDT Draws (${currentPrizePot} Pot)</span>
             </button>
             <button
               onClick={() => onChangeMarket("cUSDC")}
-              className={`px-3.5 py-1.5 rounded-xl transition-all ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition-all ${
                 activeMarket === "cUSDC" 
                   ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              cUSDC Draws (${currentPrizePot} Pot)
+              <span className="sm:hidden">cUSDC (${currentPrizePot})</span>
+              <span className="hidden sm:inline">cUSDC Draws (${currentPrizePot} Pot)</span>
             </button>
           </div>
           <span className="text-[11px] font-medium text-[var(--muted)] hidden sm:inline">

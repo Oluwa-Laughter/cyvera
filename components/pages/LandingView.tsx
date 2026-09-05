@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { AuraLogo } from "@/components/AuraLogo";
+import { HiBars3, HiXMark } from "react-icons/hi2";
 import { 
   PiggyBank, 
   Trophy, 
@@ -68,6 +69,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   onToggleTheme,
 }) => {
   const [selectedMarket, setSelectedMarket] = useState<ActiveMarketId>("cUSDT");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [calcDeposit, setCalcDeposit] = useState<string>("100");
   const parsedDeposit = parseFloat(calcDeposit || "0");
   const apyRate = selectedMarket === "cUSDT" ? 0.085 : 0.12;
@@ -109,30 +111,30 @@ export const LandingView: React.FC<LandingViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4 font-medium text-xs">
-          {/* Section Navigation Links */}
+          {/* Section Navigation Links (Desktop) */}
           <nav className="hidden lg:flex items-center gap-1 font-semibold text-[var(--muted)]">
             <button
               onClick={() => scrollToSection("how-it-works")}
-              className="px-3.5 py-1.5 rounded-full hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-3.5 py-1.5 rounded-full hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               How It Works
             </button>
             <button
               onClick={() => scrollToSection("liquidity-hunt")}
-              className="px-3.5 py-1.5 rounded-full hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-full hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Flame className="w-3.5 h-3.5 text-amber-500" />
               <span>Liquidity Hunt</span>
             </button>
             <button
               onClick={() => scrollToSection("privacy-solutions")}
-              className="px-3.5 py-1.5 rounded-full hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-3.5 py-1.5 rounded-full hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               Privacy
             </button>
             <button
               onClick={() => scrollToSection("zero-loss-security")}
-              className="px-3.5 py-1.5 rounded-full hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-3.5 py-1.5 rounded-full hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               Zero-Loss Security
             </button>
@@ -144,7 +146,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.92 }}
               onClick={onToggleTheme}
-              className="p-2 sm:p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-slate-700 dark:text-amber-400 transition-colors shrink-0"
+              className="p-2 sm:p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-slate-700 dark:text-amber-400 transition-colors shrink-0 cursor-pointer"
               title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
               aria-label="Toggle Theme"
             >
@@ -156,10 +158,10 @@ export const LandingView: React.FC<LandingViewProps> = ({
             </motion.button>
           )}
 
-          {/* Wallet State in Home Header */}
+          {/* Wallet State in Home Header (Desktop & Tablet) */}
           {account ? (
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <div className="hidden xs:flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-amber-500/30 rounded-xl sm:rounded-2xl">
+            <div className="hidden sm:flex items-center gap-1.5 sm:gap-2">
+              <div className="hidden md:flex flex-col items-end px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800/90 border border-amber-500/30 rounded-xl sm:rounded-2xl">
                 <span className="text-[9px] sm:text-[10px] text-[var(--muted)] font-mono flex items-center gap-1">
                   <Wallet className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-500" />
                   <span>Wallet:</span>
@@ -186,7 +188,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 whileTap={{ scale: 0.97 }}
                 onClick={onConnect}
                 disabled={isConnecting}
-                className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold transition-all text-xs cursor-pointer disabled:opacity-50"
+                className="hidden sm:flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold transition-all text-xs cursor-pointer disabled:opacity-50"
               >
                 {isConnecting ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -203,46 +205,247 @@ export const LandingView: React.FC<LandingViewProps> = ({
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => onEnterApp("dashboard")}
-            className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold text-xs uppercase tracking-wider shadow-cyvera-glow transition-all shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-cyvera-glow transition-all shrink-0 cursor-pointer"
           >
             <span>Launch App</span>
             <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
           </motion.button>
+
+          {/* Mobile Hamburger / Close Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            className="lg:hidden p-2 sm:p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-foreground hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0 cursor-pointer"
+            aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          >
+            {isMobileMenuOpen ? (
+              <HiXMark className="w-5 h-5 text-amber-500" />
+            ) : (
+              <HiBars3 className="w-5 h-5 text-amber-500" />
+            )}
+          </button>
         </div>
       </header>
 
+      {/* Mobile Navigation Slide-Over Drawer */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden"
+            />
+
+            {/* Slide-in Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 250 }}
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-[320px] bg-[var(--card-bg)] border-l border-[var(--card-border)] p-5 flex flex-col justify-between shadow-2xl lg:hidden overflow-y-auto"
+            >
+              <div className="space-y-5">
+                {/* Drawer Header */}
+                <div className="flex items-center justify-between pb-4 border-b border-[var(--card-border)]">
+                  <AuraLogo size="sm" />
+                  <button
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-foreground hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    aria-label="Close menu"
+                  >
+                    <HiXMark className="w-5 h-5 text-amber-500" />
+                  </button>
+                </div>
+
+                {/* Subtitle Badge */}
+                <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400 text-[11px] font-bold flex items-center gap-1.5">
+                  <FaShieldAlt className="w-3.5 h-3.5 shrink-0" />
+                  <span>Confidential Prize Savings</span>
+                </div>
+
+                {/* Navigation Links */}
+                <nav className="space-y-1.5 text-xs font-semibold">
+                  <button
+                    onClick={() => {
+                      scrollToSection("how-it-works");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-foreground transition-colors text-left cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <HelpCircle className="w-4 h-4 text-amber-500" />
+                      <span>How It Works</span>
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[var(--muted)]" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      scrollToSection("liquidity-hunt");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-foreground transition-colors text-left cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Flame className="w-4 h-4 text-amber-500" />
+                      <span>Liquidity Hunt</span>
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-extrabold border border-amber-500/30">
+                      Active
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      scrollToSection("privacy-solutions");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-foreground transition-colors text-left cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Fingerprint className="w-4 h-4 text-cyan-500" />
+                      <span>Privacy Architecture</span>
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[var(--muted)]" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      scrollToSection("zero-loss-security");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-foreground transition-colors text-left cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Scale className="w-4 h-4 text-emerald-500" />
+                      <span>Zero-Loss Security</span>
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[var(--muted)]" />
+                  </button>
+                </nav>
+
+                {/* Market APY Highlights */}
+                <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-[var(--card-border)] space-y-2">
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-[var(--muted)] block">
+                    Supported Markets
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-[var(--card-border)]">
+                      <span className="text-[10px] text-[var(--muted)] block">cUSDT Vault</span>
+                      <strong className="text-emerald-500 font-bold font-mono text-xs">8.50% APY</strong>
+                    </div>
+                    <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-[var(--card-border)]">
+                      <span className="text-[10px] text-[var(--muted)] block">cUSDC Vault</span>
+                      <strong className="text-emerald-500 font-bold font-mono text-xs">12.00% APY</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Wallet Status */}
+                {account ? (
+                  <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-amber-500/30 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-[var(--muted)] font-mono flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>Connected Wallet</span>
+                      </span>
+                      <span className="text-[11px] font-mono font-bold text-foreground">
+                        {formatAddress(account)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-[var(--card-border)] text-xs">
+                      <span className="text-[var(--muted)]">Balance:</span>
+                      <strong className="font-mono font-bold text-foreground">
+                        ${walletBalance || "0.00"} {activeMarket}
+                      </strong>
+                    </div>
+                  </div>
+                ) : (
+                  onConnect && (
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        onConnect();
+                      }}
+                      disabled={isConnecting}
+                      className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {isConnecting ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Wallet className="w-3.5 h-3.5 text-amber-500" />
+                      )}
+                      <span>{isConnecting ? "Connecting Wallet..." : "Connect Wallet"}</span>
+                    </button>
+                  )
+                )}
+              </div>
+
+              {/* Bottom Drawer CTAs */}
+              <div className="pt-4 border-t border-[var(--card-border)] space-y-2">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onEnterApp("dashboard");
+                  }}
+                  className="w-full py-3 rounded-xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Launch Full App</span>
+                  <ArrowRight className="w-4 h-4 text-black" />
+                </motion.button>
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onEnterApp("vault");
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <PiggyBank className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Go to Vault</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* 2. Hero Section with Live Simulator Preview */}
-      <section className="py-16 sm:py-24 px-4 sm:px-8 max-w-6xl mx-auto w-full">
+      <section className="py-12 sm:py-20 lg:py-24 px-4 sm:px-8 max-w-6xl mx-auto w-full">
         <motion.div 
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
+          className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center"
         >
           {/* Left Column: Vision & Value Proposition */}
-          <motion.div variants={itemVariants} className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 dark:text-amber-400 font-extrabold text-xs">
-              <FaShieldAlt className="w-3.5 h-3.5 text-amber-500" />
+          <motion.div variants={itemVariants} className="lg:col-span-7 space-y-5 sm:space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 dark:text-amber-400 font-extrabold text-[11px] sm:text-xs">
+              <FaShieldAlt className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <span>Confidential No-Loss Prize Savings • Powered by Zama FHEVM</span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.08] text-foreground">
+            <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] sm:leading-[1.08] text-foreground">
               Encrypted Wealth. <br />
               <span className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 bg-clip-text text-transparent">
                 Verifiable Jackpots.
               </span>
             </h1>
 
-            <p className="text-[var(--muted)] text-sm sm:text-base font-medium leading-relaxed max-w-xl">
+            <p className="text-[var(--muted)] text-xs sm:text-sm lg:text-base font-medium leading-relaxed max-w-xl">
               Cyvera enables everyday savers to earn recurring onchain yield and compete for grand prize jackpots with zero risk to their principal — while keeping deposits, pool shares, odds, and winnings 100% encrypted end-to-end.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 pt-2">
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onEnterApp("vault", calcDeposit)}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 transition-all"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 <PiggyBank className="w-4 h-4 text-black" />
                 <span>Launch App to Save (100% Zero-Loss)</span>
@@ -252,7 +455,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onEnterApp("draws")}
-                className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--card-border)] text-foreground font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Dices className="w-4 h-4 text-amber-500" />
                 <span>Explore 4-Phase Draws</span>
@@ -260,31 +463,31 @@ export const LandingView: React.FC<LandingViewProps> = ({
             </div>
 
             {/* Invariant Trust Metrics */}
-            <div className="pt-8 border-t border-[var(--card-border)] grid grid-cols-3 gap-6 text-xs font-medium text-[var(--muted)]">
-              <div>
-                <span className="text-[11px] block opacity-80">Principal Invariant:</span>
-                <strong className="text-emerald-500 font-bold text-sm">100% Protected</strong>
+            <div className="pt-6 sm:pt-8 border-t border-[var(--card-border)] grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-6 text-xs font-medium text-[var(--muted)]">
+              <div className="p-3 sm:p-0 rounded-xl bg-slate-100/60 dark:bg-slate-800/30 sm:bg-transparent">
+                <span className="text-[10px] sm:text-[11px] block opacity-80">Principal Invariant:</span>
+                <strong className="text-emerald-500 font-bold text-xs sm:text-sm">100% Protected</strong>
               </div>
-              <div>
-                <span className="text-[11px] block opacity-80">Privacy Standard:</span>
-                <strong className="text-foreground font-bold text-sm">End-to-End Encrypted</strong>
+              <div className="p-3 sm:p-0 rounded-xl bg-slate-100/60 dark:bg-slate-800/30 sm:bg-transparent">
+                <span className="text-[10px] sm:text-[11px] block opacity-80">Privacy Standard:</span>
+                <strong className="text-foreground font-bold text-xs sm:text-sm">End-to-End Encrypted</strong>
               </div>
-              <div>
-                <span className="text-[11px] block opacity-80">Randomness Engine:</span>
-                <strong className="text-amber-500 font-bold text-sm">Provably Fair Draws</strong>
+              <div className="p-3 sm:p-0 rounded-xl bg-slate-100/60 dark:bg-slate-800/30 sm:bg-transparent">
+                <span className="text-[10px] sm:text-[11px] block opacity-80">Randomness Engine:</span>
+                <strong className="text-amber-500 font-bold text-xs sm:text-sm">Provably Fair Draws</strong>
               </div>
             </div>
           </motion.div>
 
           {/* Right Column: Interactive Multi-Market Calculator Preview */}
           <motion.div variants={itemVariants} className="lg:col-span-5">
-            <div className="cyvera-card p-6 sm:p-8 space-y-6">
+            <div className="cyvera-card p-5 sm:p-8 space-y-5 sm:space-y-6">
               {/* Market Selector Tabs */}
               <div className="flex items-center justify-between pb-4 border-b border-[var(--card-border)]">
                 <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-xs font-bold">
                   <button
                     onClick={() => setSelectedMarket("cUSDT")}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all ${
                       selectedMarket === "cUSDT" 
                         ? "bg-white dark:bg-slate-900 text-foreground shadow-sm font-black" 
                         : "text-[var(--muted)]"
@@ -294,7 +497,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   </button>
                   <button
                     onClick={() => setSelectedMarket("cUSDC")}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all ${
                       selectedMarket === "cUSDC" 
                         ? "bg-white dark:bg-slate-900 text-foreground shadow-sm font-black" 
                         : "text-[var(--muted)]"
@@ -372,9 +575,10 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => onEnterApp("vault", calcDeposit, selectedMarket)}
-                className="w-full py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2"
+                className="w-full py-3.5 sm:py-4 rounded-2xl bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-black text-xs uppercase tracking-wider shadow-cyvera-glow flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Launch App to Deposit in {selectedMarket} Vault</span>
+                <span className="xs:hidden">Deposit in {selectedMarket} Vault</span>
+                <span className="hidden xs:inline">Launch App to Deposit in {selectedMarket} Vault</span>
                 <ChevronRight className="w-4 h-4 text-black" />
               </motion.button>
             </div>

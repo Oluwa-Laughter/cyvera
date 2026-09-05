@@ -1174,8 +1174,8 @@ export default function Home() {
       <div className="flex-1 flex flex-col lg:pl-72 min-h-screen">
         <TopHeader
           pageTitle={TAB_TITLES[currentTab].title}
-          pageSubtitle={TAB_TITLES[currentTab].subtitle}
-          onOpenMobileNav={() => setIsMobileNavOpen(true)}
+          onOpenMobileNav={() => setIsMobileNavOpen((prev) => !prev)}
+          isMobileNavOpen={isMobileNavOpen}
           account={account}
           onConnect={handleConnectWallet}
           onDisconnect={handleDisconnectWallet}

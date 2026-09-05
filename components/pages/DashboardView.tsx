@@ -109,23 +109,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-1.5 text-xs font-bold">
             <button
               onClick={() => onChangeMarket("cUSDT")}
-              className={`px-3.5 py-1.5 rounded-xl transition-all ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition-all ${
                 activeMarket === "cUSDT" 
                   ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              cUSDT Pool (8.50% APY)
+              <span className="sm:hidden">cUSDT (8.5%)</span>
+              <span className="hidden sm:inline">cUSDT Pool (8.50% APY)</span>
             </button>
             <button
               onClick={() => onChangeMarket("cUSDC")}
-              className={`px-3.5 py-1.5 rounded-xl transition-all ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition-all ${
                 activeMarket === "cUSDC" 
                   ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              cUSDC Pool (12.00% APY)
+              <span className="sm:hidden">cUSDC (12%)</span>
+              <span className="hidden sm:inline">cUSDC Pool (12.00% APY)</span>
             </button>
           </div>
 

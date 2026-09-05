@@ -55,23 +55,25 @@ export const EarnView: React.FC<EarnViewProps> = ({
           <div className="flex items-center gap-1.5 text-xs font-bold">
             <button
               onClick={() => onChangeMarket("cUSDT")}
-              className={`px-3.5 py-1.5 rounded-xl transition-all ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition-all ${
                 activeMarket === "cUSDT" 
                   ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              cUSDT Liquidity Hunt
+              <span className="sm:hidden">cUSDT</span>
+              <span className="hidden sm:inline">cUSDT Liquidity Hunt</span>
             </button>
             <button
               onClick={() => onChangeMarket("cUSDC")}
-              className={`px-3.5 py-1.5 rounded-xl transition-all ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition-all ${
                 activeMarket === "cUSDC" 
                   ? "bg-cyvera-gold text-black font-extrabold shadow-cyvera-glow" 
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              cUSDC Liquidity Hunt
+              <span className="sm:hidden">cUSDC</span>
+              <span className="hidden sm:inline">cUSDC Liquidity Hunt</span>
             </button>
           </div>
           <span className="text-[11px] font-medium text-[var(--muted)] hidden sm:inline">

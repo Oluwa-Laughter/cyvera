@@ -2,6 +2,7 @@
 
 import React from "react";
 import { AuraLogo } from "@/components/AuraLogo";
+import { HiXMark } from "react-icons/hi2";
 import { 
   LayoutDashboard, 
   PiggyBank, 
@@ -9,7 +10,6 @@ import {
   Trophy, 
   Droplets, 
   BookOpen, 
-  X, 
   Home,
   ShieldCheck,
   History,
@@ -70,9 +70,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             </div>
             <button 
               onClick={onCloseMobile}
-              className="lg:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-foreground"
+              className="lg:hidden p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-foreground hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              aria-label="Close menu"
             >
-              <X className="w-5 h-5" />
+              <HiXMark className="w-5 h-5 text-amber-500" />
             </button>
           </div>
 

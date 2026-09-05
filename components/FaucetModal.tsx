@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { HiXMark } from "react-icons/hi2";
 import { 
-  X, 
   Droplets, 
   Sparkles, 
   RefreshCw, 
@@ -10,10 +10,10 @@ import {
   Check, 
   Copy, 
   ExternalLink, 
-  HelpCircle,
-  Shield,
-  Layers,
-  ChevronDown
+  HelpCircle, 
+  Shield, 
+  Layers, 
+  ChevronDown 
 } from "lucide-react";
 import { addTokenToWallet } from "@/lib/wallet";
 import { ActiveMarketId, CONTRACT_ADDRESSES, ZAMA_SEPOLIA_CONFIG } from "@/lib/contracts";
@@ -80,9 +80,10 @@ export const FaucetModal: React.FC<FaucetModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-[var(--muted)] hover:text-foreground transition-all"
+          className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-[var(--muted)] hover:text-foreground transition-all cursor-pointer"
+          aria-label="Close modal"
         >
-          <X className="w-4 h-4" />
+          <HiXMark className="w-5 h-5 text-amber-500" />
         </button>
 
         {/* Header */}

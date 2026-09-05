@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { X, PiggyBank, Trophy, ShieldCheck, Sparkles, Lock, ArrowDownRight, RefreshCw } from "lucide-react";
+import { HiXMark } from "react-icons/hi2";
+import { PiggyBank, Trophy, ShieldCheck, Sparkles, Lock, ArrowDownRight, RefreshCw } from "lucide-react";
 
 interface HowItWorksModalProps {
   isOpen: boolean;
@@ -18,9 +19,10 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ isOpen, onClos
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-black dark:hover:text-white transition-all"
+          className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-black dark:hover:text-white transition-all cursor-pointer"
+          aria-label="Close modal"
         >
-          <X className="w-4 h-4" />
+          <HiXMark className="w-5 h-5 text-amber-500" />
         </button>
 
         {/* Header */}
