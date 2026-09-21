@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { Script, console } from "forge-std/Script.sol";
-import { MockERC20 } from "../contracts/MockERC20.sol";
-import { CyveraYieldSource } from "../contracts/CyveraYieldSource.sol";
-import { CyveraPrizePool } from "../contracts/CyveraPrizePool.sol";
+import {Script, console} from "forge-std/Script.sol";
+import {MockERC20} from "../contracts/MockERC20.sol";
+import {CyveraYieldSource} from "../contracts/CyveraYieldSource.sol";
+import {CyveraPrizePool} from "../contracts/CyveraPrizePool.sol";
+import {CyveraSession} from "../contracts/CyveraSession.sol";
 
 /// @notice Deploys the Cyvera stack (token + yield source + prize pool)
 ///         to Ethereum Sepolia in one transaction.
@@ -41,6 +42,10 @@ contract DeployCyvera is Script {
         poolAddr = address(pool);
         console.log("Deployed CyveraPrizePool at", poolAddr);
 
+        CyveraSession sessionManager = new CyveraSession();
+        address sessionAddr = address(sessionManager);
+        console.log("Deployed CyveraSession at", sessionAddr);
+
         if (existingYield == address(0)) {
             CyveraYieldSource(yieldAddr).setPrizePool(poolAddr);
         }
@@ -54,5 +59,6 @@ contract DeployCyvera is Script {
         console.log("NEXT_PUBLIC_DEPOSIT_TOKEN=%s", tokenAddr);
         console.log("NEXT_PUBLIC_YIELD_SOURCE_ADDRESS=%s", yieldAddr);
         console.log("NEXT_PUBLIC_CYVERA_POOL_ADDRESS=%s", poolAddr);
+        console.log("NEXT_PUBLIC_CYVERA_SESSION_ADDRESS=%s", sessionAddr);
     }
 }
