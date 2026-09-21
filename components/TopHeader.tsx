@@ -50,14 +50,18 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
+  const formatAddressCompact = (addr: string) => {
+    return `${addr.slice(0, 4)}...${addr.slice(-2)}`;
+  };
+
   return (
-    <header className="w-full bg-[var(--header-bg)] backdrop-blur-md border-b border-[var(--card-border)] sticky top-0 z-30 px-3 sm:px-8 py-3.5 flex items-center justify-between shadow-sm transition-colors duration-200">
+    <header className="w-full bg-[var(--header-bg)] backdrop-blur-md border-b border-[var(--card-border)] sticky top-0 z-30 px-3 sm:px-8 py-3 flex items-center justify-between shadow-sm transition-colors duration-200">
       {/* Left: Mobile Trigger & Title */}
-      <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         <button
           onClick={onOpenMobileNav}
-          className="lg:hidden p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-black dark:hover:text-white border border-[var(--card-border)] transition-colors shrink-0 cursor-pointer"
-          aria-label={isMobileNavOpen ? "Close menu" : "Open menu"}
+          className="lg:hidden p-2 sm:p-2.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 text-amber-500 hover:bg-amber-500/20 border border-amber-500/30 transition-all shrink-0 cursor-pointer shadow-sm active:scale-95 flex items-center justify-center"
+          aria-label={isMobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
         >
           {isMobileNavOpen ? (
             <HiXMark className="w-5 h-5 text-amber-500" />
@@ -77,7 +81,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       </div>
 
       {/* Right: Network, Balance, Theme Toggle, Wallet / Disconnect */}
-      <div className="flex items-center gap-2 sm:gap-3 text-xs font-semibold shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-3 text-xs font-semibold shrink-0">
         {/* Network Badge */}
         <div
           onClick={isWrongNetwork && onSwitchNetwork ? onSwitchNetwork : undefined}
@@ -104,8 +108,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           whileTap={{ scale: 0.97 }}
           onClick={onOpenFaucet}
           className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-500 dark:text-amber-400 font-bold transition-all shadow-sm shrink-0"
+          title="Get Free Testnet cUSDT / cUSDC"
         >
-          <Droplets className="w-3.5 h-3.5 text-amber-500" />
+          <Droplets className="w-3.5 h-3.5 text-amber-500 shrink-0" />
           <span className="hidden sm:inline">Get Tokens</span>
           <span className="sm:hidden text-[11px]">Faucet</span>
         </motion.button>
@@ -149,7 +154,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               title="Click to view wallet details"
             >
               <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-              <span className="text-[11px] sm:text-xs">{formatAddress(account)}</span>
+              <span className="hidden sm:inline text-[11px] sm:text-xs">{formatAddress(account)}</span>
+              <span className="sm:hidden text-[11px]">{formatAddressCompact(account)}</span>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
@@ -168,14 +174,21 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             whileTap={{ scale: 0.97 }}
             onClick={onConnect}
             disabled={isConnecting}
-            className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold shadow-cyvera-glow transition-all disabled:opacity-50 shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold shadow-cyvera-glow transition-all disabled:opacity-50 shrink-0 cursor-pointer"
           >
             {isConnecting ? (
               <RefreshCw className="w-4 h-4 animate-spin text-black" />
             ) : (
               <Wallet className="w-4 h-4 text-black" />
             )}
-            <span className="text-[11px] sm:text-xs">{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
+            <span className="text-[11px] sm:text-xs">
+              {isConnecting ? "Connecting..." : (
+                <>
+                  <span className="hidden sm:inline">Connect Wallet</span>
+                  <span className="sm:hidden">Connect</span>
+                </>
+              )}
+            </span>
           </motion.button>
         )}
       </div>

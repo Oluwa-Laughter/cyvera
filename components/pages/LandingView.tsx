@@ -205,16 +205,17 @@ export const LandingView: React.FC<LandingViewProps> = ({
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => onEnterApp("dashboard")}
-            className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-cyvera-glow transition-all shrink-0 cursor-pointer"
+            className="flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-full bg-cyvera-gold hover:bg-cyvera-goldHover text-black font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-cyvera-glow transition-all shrink-0 cursor-pointer"
           >
-            <span>Launch App</span>
+            <span className="hidden xs:inline">Launch App</span>
+            <span className="xs:hidden">App</span>
             <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
           </motion.button>
 
           {/* Mobile Hamburger / Close Button */}
           <button
             onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-            className="lg:hidden p-2 sm:p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-[var(--card-border)] text-foreground hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0 cursor-pointer"
+            className="lg:hidden p-2 sm:p-2.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 text-amber-500 hover:bg-amber-500/20 border border-amber-500/30 transition-all shrink-0 cursor-pointer active:scale-95 flex items-center justify-center"
             aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
           >
             {isMobileMenuOpen ? (

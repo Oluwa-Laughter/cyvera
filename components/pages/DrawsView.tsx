@@ -438,12 +438,17 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
                     <div className="font-bold text-foreground flex items-center gap-2">
                       <span>Draw #{draw.drawId}</span>
                       {draw.isMyWin ? (
-                        <span className="text-[10px] bg-amber-500 text-black font-bold px-2 py-0.5 rounded-full">
-                          You Won!
+                        <span className="text-[10px] bg-amber-500 text-black font-bold px-2 py-0.5 rounded-full shadow-sm">
+                          You Won! (Private Reveal Available)
                         </span>
                       ) : (
-                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-[var(--muted)] font-mono px-2 py-0.5 rounded-full border border-[var(--card-border)]">
-                          Winner: {draw.winner ? `${draw.winner.slice(0, 6)}...${draw.winner.slice(-4)}` : "Community Pool"}
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-[var(--muted)] font-mono px-2 py-0.5 rounded-full border border-[var(--card-border)] flex items-center gap-1">
+                          <Lock className="w-2.5 h-2.5 text-amber-500" />
+                          <span>
+                            {draw.winner && draw.winner !== "0x0000000000000000000000000000000000000000" && !draw.winner.startsWith("0x0000")
+                              ? `Winner: ${draw.winner.slice(0, 6)}...${draw.winner.slice(-4)}`
+                              : "Private Winner (Encrypted FHE Selection)"}
+                          </span>
                         </span>
                       )}
                     </div>

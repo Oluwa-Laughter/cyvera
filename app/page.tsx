@@ -780,7 +780,7 @@ export default function Home() {
 
       if (parseFloat(newSaved) === 0) {
         const curDep = getStoredDepositorsCount(marketToUse);
-        setStoredDepositorsCount(Math.max(marketToUse === "cUSDT" ? 14 : 18, curDep - 1), marketToUse);
+        setStoredDepositorsCount(Math.max(0, curDep - 1), marketToUse);
       }
 
       // Refresh onchain wallet balance
@@ -925,8 +925,8 @@ export default function Home() {
         } catch {}
       }
 
-      const poolParticipants = Number(depositorCount) || (activeMarket === "cUSDT" ? 14 : 18);
       const onchainDepositors: string[] = await vaultContract.getDepositors().catch(() => []);
+      const poolParticipants = Number(depositorCount) || (onchainDepositors.length > 0 ? onchainDepositors.length : (userSaved > 0 ? 1 : 0));
       const fallbackWinner = onchainDepositors.length > 0
         ? onchainDepositors[nextDrawId % onchainDepositors.length]
         : account;
@@ -1293,9 +1293,9 @@ export default function Home() {
               decryptedBalance={decryptedBalance}
               decryptedWinnings={decryptedWinnings}
               totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
-              totalPrizeReserve={snap?.totalPrizeReserve ?? (activeMarket === "cUSDT" ? "15.00" : "25.00")}
+              totalPrizeReserve={snap?.totalPrizeReserve ?? "0.00"}
               totalPrizesAwarded={snap?.totalPrizesAwarded ?? "0.00"}
-              depositorsCount={snap?.depositorsCount ?? (activeMarket === "cUSDT" ? 14 : 18)}
+              depositorsCount={snap?.depositorsCount ?? 0}
               lastDrawTime={snap?.lastDrawTime ?? 0}
               drawInterval={snap?.drawInterval ?? 60}
               currentDrawId={snap?.currentDrawId ?? 1}
@@ -1317,7 +1317,7 @@ export default function Home() {
               activeMarket={activeMarket}
               onChangeMarket={setActiveMarket}
               walletBalance={snap?.userWalletBalance ?? "0.00"}
-              publicWalletBalance={snap?.userPublicWalletBalance ?? "1000.00"}
+              publicWalletBalance={snap?.userPublicWalletBalance ?? "0.00"}
               shieldedBalance={snap?.userShieldedBalance ?? "0.00"}
               decryptedBalance={decryptedBalance}
               isDecryptingBalance={isDecryptingBalance}
@@ -1332,7 +1332,7 @@ export default function Home() {
               isLoadingAction={isLoadingAction}
               initialDepositAmount={initialDepositAmount}
               totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
-              totalPrizeReserve={snap?.totalPrizeReserve ?? (activeMarket === "cUSDT" ? "15.00" : "25.00")}
+              totalPrizeReserve={snap?.totalPrizeReserve ?? "0.00"}
             />
           )}
 
@@ -1344,8 +1344,8 @@ export default function Home() {
               drawPhase={snap?.drawPhase ?? "OPEN"}
               currentDrawId={snap?.currentDrawId ?? 1}
               winnersPerDraw={snap?.winnersPerDraw ?? 1}
-              currentPrizePot={snap?.totalPrizeReserve ?? (activeMarket === "cUSDT" ? "15.00" : "25.00")}
-              totalDepositors={snap?.depositorsCount ?? (activeMarket === "cUSDT" ? 14 : 18)}
+              currentPrizePot={snap?.totalPrizeReserve ?? "0.00"}
+              totalDepositors={snap?.depositorsCount ?? 0}
               userSavings={decryptedBalance || "0.00"}
               lastDrawTime={snap?.lastDrawTime ?? 0}
               drawInterval={snap?.drawInterval ?? 60}

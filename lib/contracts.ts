@@ -57,6 +57,13 @@ export const ZAMA_SEPOLIA_CONFIG = {
       drawFrequency: "1-Minute (Testing) / Weekly (Mainnet)",
     },
   },
+  infrastructure: {
+    cusdc: toChecksumAddress("0x7c5BF43B851c1dff1a4feE8dB225b87f2C223639"),
+    depositBatcher: toChecksumAddress("0x48758559c14d4d92b4C74A99660B6a8dbe85F53b"),
+    redeemBatcher: toChecksumAddress("0xe94E9afdDd43a19C2914739e9279cb6Fe287BEb0"),
+    steakhouseVault: toChecksumAddress("0x6AB54988261AEC573a2CA13cF802d3B1114f864C"),
+    sessionModule: toChecksumAddress("0xE5c667c0A2B936Cf6a2A0d8858348B4e758e58a2"),
+  },
 };
 
 export type ActiveMarketId = "cUSDT" | "cUSDC";
@@ -146,7 +153,16 @@ export const CYVERA_PRIZE_POOL_ABI = [
   "function setDrawInterval(uint256 _drawInterval) returns ()",
   "function setWinnersPerDraw(uint256 _winners) returns ()",
   "function setYieldSource(address _yieldSource) returns ()",
-  "function setKeeperAuthorization(address keeper, bool authorized) returns ()",
+  "function thresholdFor(uint256 drawId, address user, uint8 tier) view returns (uint128)",
+  "function thresholdFor(uint256 drawId, address user) view returns (uint128)",
+  "function tierK(uint256) view returns (uint128)",
+  "function tierPrize(uint256) view returns (uint64)",
+  "function grandPrize() view returns (uint64)",
+  "function TIERS() view returns (uint8)",
+  "function getTierInfo(uint8 tier) view returns (uint64 prize, uint128 k)",
+  "function accrue(address user, uint256 drawId) returns (bool)",
+  "function accrueMany(address[] users, uint256 drawId) returns ()",
+  "function setTiers(uint64[3] prizes, uint128[3] k) returns ()",
   // ERC-7984 Confidential Fungible Token Interface
   "function confidentialBalanceOf(address account) view returns (bytes32)",
   "function confidentialTransfer(address to, bytes32 amount) returns (bool)",
@@ -158,6 +174,7 @@ export const CYVERA_PRIZE_POOL_ABI = [
   "event Deposited(address indexed user, uint256 amount, uint256 timestamp)",
   "event Withdrawn(address indexed user, uint256 amount, uint256 timestamp)",
   "event DrawExecuted(uint256 indexed drawId, uint256 prizeAmount, uint256 totalParticipants, uint256 timestamp, bytes32 randomnessHandle)",
+  "event Accrued(address indexed user, uint256 indexed drawId)",
   "event WinnerSelected(uint256 indexed drawId, address indexed winner)",
   "event PrizeClaimed(address indexed winner, uint256 amount, uint256 timestamp)",
   "event PrizeCompounded(address indexed winner, uint256 amount, uint256 timestamp)",
@@ -166,6 +183,28 @@ export const CYVERA_PRIZE_POOL_ABI = [
   "event WinnerCountUpdated(uint256 newCount)",
   "event YieldSourceUpdated(address newYieldSource)",
   "event KeeperAuthorizationUpdated(address indexed keeper, bool authorized)",
+  "event TiersSet(uint64[3] prizes, uint128[3] k)",
+] as const;
+
+export const CYVERA_SESSION_ABI = [
+  "function openSession((address sessionKey, uint48 expiry, uint24 maxTxCount, address[] tokens, uint64[] budgets, address[] recipients) params, bytes sessionKeySignature) returns ()",
+  "function send(address token, address to, uint64 amount) returns ()",
+  "function increaseBudget(address sessionKey, address token, uint64 amount) returns ()",
+  "function addRecipient(address sessionKey, address to) returns ()",
+  "function removeRecipient(address sessionKey, address to) returns ()",
+  "function closeSession(address sessionKey) returns ()",
+  "function sessionOf(address sessionKey) view returns ((address owner, uint48 expiry, uint24 maxTxCount, uint24 txCount))",
+  "function remainingOf(address sessionKey, address token) view returns (bytes32)",
+  "function isRecipientAllowed(address sessionKey, address to) view returns (bool)",
+  "function recipientsOf(address sessionKey) view returns (address[])",
+  "function tokensOf(address sessionKey) view returns (address[])",
+  "function openSessionDigest(address owner, address sessionKey, uint48 expiry, uint24 maxTxCount) view returns (bytes32)",
+  "event SessionOpened(address indexed owner, address indexed sessionKey, uint48 expiry, uint24 maxTxCount, address[] tokens, address[] recipients)",
+  "event Sent(address indexed sessionKey, address indexed token, address indexed to, bytes32 within, bytes32 sent)",
+  "event BudgetIncreased(address indexed sessionKey, address indexed token)",
+  "event RecipientAdded(address indexed sessionKey, address indexed recipient)",
+  "event RecipientRemoved(address indexed sessionKey, address indexed recipient, address indexed by)",
+  "event SessionClosed(address indexed sessionKey, address indexed by)",
 ] as const;
 
 export const AURA_PRIZE_POOL_ABI = CYVERA_PRIZE_POOL_ABI;

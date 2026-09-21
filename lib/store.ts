@@ -130,9 +130,9 @@ export const setStoredEthBalance = (account: string | null, amount: string): voi
 
 // Public Token Wallet Balance (unshielded USDT/USDC)
 export const getStoredPublicWalletBalance = (account: string | null, market: ActiveMarketId = "cUSDT"): string => {
-  if (!isBrowser || !account) return "1000.00";
+  if (!isBrowser || !account) return "0.00";
   const val = localStorage.getItem(`${STORAGE_KEYS.PUBLIC_BAL_PREFIX}${market}_${account.toLowerCase()}`);
-  return val !== null ? val : "1000.00";
+  return val !== null ? val : "0.00";
 };
 
 export const setStoredPublicWalletBalance = (account: string | null, amount: string, market: ActiveMarketId = "cUSDT"): void => {
@@ -153,9 +153,9 @@ export const setStoredTVL = (tvl: string, market: ActiveMarketId = "cUSDT"): voi
 };
 
 export const getStoredPrizePot = (market: ActiveMarketId = "cUSDT"): string => {
-  if (!isBrowser) return market === "cUSDT" ? "15.00" : "25.00";
+  if (!isBrowser) return "0.00";
   const val = localStorage.getItem(`${STORAGE_KEYS.PRIZE_POT_PREFIX}${market}`);
-  return val !== null ? val : market === "cUSDT" ? "15.00" : "25.00";
+  return val !== null ? val : "0.00";
 };
 
 export const setStoredPrizePot = (pot: string, market: ActiveMarketId = "cUSDT"): void => {
@@ -242,85 +242,15 @@ export const addStoredLiquidityHuntPoints = (account: string | null, pts: number
 
 // Depositors Count (Multi-User Community Pool Tracking)
 export const getStoredDepositorsCount = (market: ActiveMarketId = "cUSDT"): number => {
-  if (!isBrowser) return market === "cUSDT" ? 14 : 18;
+  if (!isBrowser) return 0;
   const val = localStorage.getItem(`${STORAGE_KEYS.DEPOSITORS_COUNT_PREFIX}${market}`);
-  return val !== null ? parseInt(val, 10) : market === "cUSDT" ? 14 : 18;
+  return val !== null ? parseInt(val, 10) : 0;
 };
 
 export const setStoredDepositorsCount = (count: number, market: ActiveMarketId = "cUSDT"): void => {
   if (!isBrowser) return;
   localStorage.setItem(`${STORAGE_KEYS.DEPOSITORS_COUNT_PREFIX}${market}`, String(count));
 };
-
-// Protocol-Wide Global Default Audit Events
-const DEFAULT_GLOBAL_AUDIT_EVENTS: StoredActivityEntry[] = [
-  {
-    id: "proto-seed-1",
-    kind: "seed",
-    type: "SPONSOR_SEED",
-    description: "Sponsor DAO seeded 10,000 cUSDT initial prize reserve into Shielded Pool",
-    amount: "+10,000 cUSDT",
-    timestamp: Date.now() - 3600000 * 5,
-    ts: Date.now() - 3600000 * 5,
-    status: "CONFIRMED",
-    market: "cUSDT",
-    isPublicOnchainTx: false,
-    isGlobalOnly: true,
-  },
-  {
-    id: "proto-harvest-1",
-    kind: "harvest",
-    type: "YIELD_HARVEST",
-    description: "Automated Keeper harvested +68.40 cUSDT lending yield into Prize Pot",
-    amount: "+$68.40 cUSDT",
-    timestamp: Date.now() - 3600000 * 3,
-    ts: Date.now() - 3600000 * 3,
-    status: "CONFIRMED",
-    market: "cUSDT",
-    isPublicOnchainTx: false,
-    isGlobalOnly: true,
-  },
-  {
-    id: "proto-deposit-1",
-    kind: "deposit",
-    type: "DEPOSIT",
-    account: "0x892a43b123d4567e890123456789012345678901",
-    description: "Private zero-loss deposit of 500.00 cUSDT",
-    amount: "$500.00 cUSDT",
-    timestamp: Date.now() - 3600000 * 2,
-    ts: Date.now() - 3600000 * 2,
-    status: "CONFIRMED",
-    market: "cUSDT",
-    isPublicOnchainTx: false,
-    isGlobalOnly: true,
-  },
-  {
-    id: "proto-draw-1",
-    kind: "draw",
-    type: "DRAW",
-    description: "Automated Keeper executed Draw #0 via verifiable onchain randomness",
-    amount: "$25.00 cUSDT",
-    timestamp: Date.now() - 3600000 * 1,
-    ts: Date.now() - 3600000 * 1,
-    status: "CONFIRMED",
-    market: "cUSDT",
-    isPublicOnchainTx: false,
-    isGlobalOnly: true,
-  },
-  {
-    id: "proto-seed-2",
-    kind: "seed",
-    type: "SPONSOR_SEED",
-    description: "Sponsor DAO seeded 10,000 cUSDC initial prize reserve into Shielded Pool",
-    amount: "+10,000 cUSDC",
-    timestamp: Date.now() - 3600000 * 4,
-    ts: Date.now() - 3600000 * 4,
-    status: "CONFIRMED",
-    market: "cUSDC",
-    isPublicOnchainTx: false,
-    isGlobalOnly: true,
-  },
-];
 
 // Activity Log: Strictly personal wallet events
 export const getStoredActivity = (account?: string | null): StoredActivityEntry[] => {
@@ -329,11 +259,12 @@ export const getStoredActivity = (account?: string | null): StoredActivityEntry[
   if (!raw) return [];
   try {
     const list: StoredActivityEntry[] = JSON.parse(raw);
+    const cleaned = list.filter((e) => !e.id?.startsWith("proto-") && !e.isGlobalOnly);
     if (account) {
       const lower = account.toLowerCase();
-      return list.filter((e) => !e.isGlobalOnly && e.account && e.account.toLowerCase() === lower);
+      return cleaned.filter((e) => e.account && e.account.toLowerCase() === lower);
     }
-    return list.filter((e) => !e.isGlobalOnly);
+    return cleaned;
   } catch {
     return [];
   }
@@ -341,20 +272,16 @@ export const getStoredActivity = (account?: string | null): StoredActivityEntry[
 
 // Protocol-wide Global Audit Log
 export const getAllStoredActivity = (): StoredActivityEntry[] => {
-  if (!isBrowser) return DEFAULT_GLOBAL_AUDIT_EVENTS;
+  if (!isBrowser) return [];
   const raw = localStorage.getItem(STORAGE_KEYS.ACTIVITY);
-  let userList: StoredActivityEntry[] = [];
-  if (raw) {
-    try {
-      userList = JSON.parse(raw);
-    } catch {
-      userList = [];
-    }
+  if (!raw) return [];
+  try {
+    const list: StoredActivityEntry[] = JSON.parse(raw);
+    const cleaned = list.filter((e) => !e.id?.startsWith("proto-") && !e.isGlobalOnly);
+    return cleaned.sort((a, b) => (b.timestamp || b.ts || 0) - (a.timestamp || a.ts || 0));
+  } catch {
+    return [];
   }
-  // Combine user actions with protocol-wide events
-  const combined = [...userList, ...DEFAULT_GLOBAL_AUDIT_EVENTS];
-  // Sort descending by timestamp
-  return combined.sort((a, b) => (b.timestamp || b.ts || 0) - (a.timestamp || a.ts || 0));
 };
 
 export const addStoredActivity = (entry: StoredActivityEntry): void => {

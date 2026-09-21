@@ -8,3 +8,5 @@ broadcast
 .env.local
 *.tsbuildinfo
 .DS_Store
+DEMO_VIDEO.md
+X_THREAD.md

@@ -21,9 +21,15 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
   const [filterMode, setFilterMode] = useState<"my" | "all">("my");
 
   // Filter activities strictly for the active wallet when in "my" mode
-  const displayedEntries = filterMode === "my" && account 
-    ? getStoredActivity(account)
+  const displayedEntries = filterMode === "my"
+    ? (account ? getStoredActivity(account) : [])
     : getAllStoredActivity();
+
+  const emptyMessage = filterMode === "my"
+    ? (!account
+        ? "Please connect your wallet to view your personal onchain activity log."
+        : "No transactions found for this wallet yet. Get test tokens from the faucet and make a deposit in the vault to see your onchain activity!")
+    : "No protocol transactions recorded yet.";
 
   return (
     <div className="space-y-6 w-full max-w-5xl mx-auto text-foreground">
@@ -88,11 +94,7 @@ export const ActivityView: React.FC<ActivityViewProps> = ({
         <ActivityFeed
           items={displayedEntries as any}
           title={filterMode === "my" ? "Personal Wallet Transactions" : "Protocol-Wide Verified Audit Feed"}
-          emptyMessage={
-            filterMode === "my"
-              ? "No transactions found for this wallet yet. Get test tokens and make a deposit in the vault to see your onchain activity!"
-              : "No protocol transactions recorded yet."
-          }
+          emptyMessage={emptyMessage}
         />
       </div>
     </div>

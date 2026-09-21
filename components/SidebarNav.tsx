@@ -59,7 +59,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
       {/* Sidebar Navigation */}
       <aside className={`
-        fixed top-0 bottom-0 left-0 z-50 w-72 bg-[var(--card-bg)] border-r border-[var(--card-border)] flex flex-col justify-between p-6 transition-all duration-300 ease-in-out shadow-sm
+        fixed top-0 bottom-0 left-0 z-50 w-72 bg-[var(--card-bg)] border-r border-[var(--card-border)] flex flex-col justify-between p-5 sm:p-6 transition-all duration-300 ease-in-out shadow-2xl overflow-y-auto max-h-screen
         ${isOpenMobile ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
         <div>

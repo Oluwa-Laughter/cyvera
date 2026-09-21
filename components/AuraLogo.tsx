@@ -70,7 +70,7 @@ export const AuraLogo: React.FC<CyveraLogoProps> = ({ size = "md", showText = tr
             <span className="text-foreground">Cy</span>
             <span className="text-amber-500">vera</span>
           </span>
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase leading-none">
+          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase leading-none hidden sm:block">
             Confidential Prize Protocol
           </span>
         </div>

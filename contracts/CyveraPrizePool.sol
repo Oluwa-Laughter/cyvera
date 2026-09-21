@@ -7,6 +7,8 @@ import { IERC7984 } from "./interfaces/IERC7984.sol";
 
 /// @title CyveraPrizePool
 /// @notice Confidential no-loss prize-savings pool powered by Zama fhEVM and ERC-7984.
+///         Implements 3-tier randomized uniform threshold selection (PoolTogether V5 style)
+///         with zero-knowledge winner privacy and unbiased rejection sampling.
 contract CyveraPrizePool is IERC7984 {
     error InvalidToken();
     error InvalidAmount();
@@ -19,6 +21,7 @@ contract CyveraPrizePool is IERC7984 {
     error OnlyOwner();
     error OnlyYieldSource();
     error InvalidAddress();
+    error BadTierShape();
 
     event Deposited(address indexed user, uint256 amount, uint256 timestamp);
     event Withdrawn(address indexed user, uint256 amount, uint256 timestamp);
@@ -30,10 +33,12 @@ contract CyveraPrizePool is IERC7984 {
         uint256 timestamp,
         bytes32 randomnessHandle
     );
+    event Accrued(address indexed user, uint256 indexed drawId);
     event WinnerSelected(uint256 indexed drawId, address indexed winner);
     event PrizeClaimed(address indexed winner, uint256 amount, uint256 timestamp);
     event DrawIntervalUpdated(uint256 newInterval);
     event YieldSourceUpdated(address newYieldSource);
+    event TiersSet(uint64[3] prizes, uint128[3] k);
 
     MockERC20 public immutable depositToken;
     address public immutable deployer;
@@ -57,6 +62,19 @@ contract CyveraPrizePool is IERC7984 {
     mapping(address => euint64) internal _encryptedBalances;
     mapping(address => euint64) internal _encryptedWinnings;
 
+    // ---------------------------------------------------------------------
+    // 3-Tier Prize Architecture (PoolTogether V5 & SaveTogether derivation)
+    // ---------------------------------------------------------------------
+    uint8 public constant TIERS = 3;
+    // Tier 0: Grand Prize (50% of pot), k = 100 (1 in 100 odds per draw)
+    // Tier 1: Middle Prize (30% of pot), k = 10 (1 in 10 odds per draw)
+    // Tier 2: Ordinary Prize (20% of pot), k = 1 (1 in 1 odds per draw)
+    uint128[TIERS] public tierK = [100, 10, 1];
+    uint64[TIERS] public tierPrize;
+    uint64 public grandPrize;
+
+    mapping(uint256 => mapping(address => bool)) public accrued;
+
     struct DrawRecord {
         uint256 drawId;
         uint256 timestamp;
@@ -64,6 +82,8 @@ contract CyveraPrizePool is IERC7984 {
         uint256 prizeAmount;
         address winner;
         bool executed;
+        bytes32 randomnessHandle;
+        uint256 totalDepositsSnapshot;
     }
     mapping(uint256 => DrawRecord) public drawHistory;
 
@@ -108,6 +128,25 @@ contract CyveraPrizePool is IERC7984 {
     function setWinnersPerDraw(uint256 _winners) external onlyOwner {
         if (_winners == 0 || _winners > 20) revert InvalidAmount();
         winnersPerDraw = _winners;
+    }
+
+    function setTiers(uint64[TIERS] calldata prizes, uint128[TIERS] calldata k) external onlyOwner {
+        if (k[TIERS - 1] != 1) revert BadTierShape();
+        for (uint8 t = 0; t + 1 < TIERS; t++) {
+            if (k[t] <= k[t + 1]) revert BadTierShape();
+            if (prizes[t] <= prizes[t + 1]) revert BadTierShape();
+        }
+        for (uint8 t = 0; t < TIERS; t++) {
+            tierPrize[t] = prizes[t];
+            tierK[t] = k[t];
+        }
+        grandPrize = prizes[0];
+        emit TiersSet(prizes, k);
+    }
+
+    function getTierInfo(uint8 tier) external view returns (uint64 prize, uint128 k) {
+        if (tier >= TIERS) revert InvalidAmount();
+        return (tierPrize[tier], tierK[tier]);
     }
 
     function fundPrizeReserve(uint256 amount) external {
@@ -198,8 +237,7 @@ contract CyveraPrizePool is IERC7984 {
         emit PrizeClaimed(msg.sender, amount, block.timestamp);
     }
 
-    /// @notice Compound a plaintext `amount` of winnings back into
-    ///         encrypted principal.
+    /// @notice Compound a plaintext `amount` of winnings back into encrypted principal.
     function compoundPrize(uint256 amount) external nonReentrant {
         if (amount == 0) revert InvalidAmount();
 
@@ -231,6 +269,42 @@ contract CyveraPrizePool is IERC7984 {
         totalDeposits += amount;
     }
 
+    /// @notice Uniform random number sampling via rejection sampling to eliminate modulo bias.
+    /// @param entropy Pseudorandom seed derived from FHE randomness.
+    /// @param upperBound Exclusive upper limit.
+    function _uniform(uint256 entropy, uint256 upperBound) internal pure returns (uint256) {
+        if (upperBound == 0) return 0;
+        uint256 min = (type(uint256).max - upperBound + 1) % upperBound;
+        uint256 random = entropy;
+        while (random < min) {
+            random = uint256(keccak256(abi.encode(random)));
+        }
+        return random % upperBound;
+    }
+
+    /// @notice Deterministic uniform threshold for user on a specific draw and tier.
+    ///         P(user i wins tier t) = weight_i / (totalWeight * k[t]).
+    /// @param drawId Draw identifier.
+    /// @param user Participant address.
+    /// @param tier Prize tier (0 = Grand, 1 = Middle, 2 = Ordinary).
+    function thresholdFor(uint256 drawId, address user, uint8 tier) public view returns (uint128) {
+        if (tier >= TIERS) revert BadTierShape();
+        DrawRecord storage d = drawHistory[drawId];
+        if (!d.executed) revert PoolEmpty();
+        uint256 totalWeight = d.totalDepositsSnapshot > 0 ? d.totalDepositsSnapshot : totalDeposits;
+        if (totalWeight == 0) return 0;
+        uint256 upper = totalWeight * uint256(tierK[tier]);
+        return uint128(_uniform(uint256(keccak256(abi.encode(d.randomnessHandle, drawId, user, tier))), upper));
+    }
+
+    /// @notice Backward-compatible ordinary tier threshold.
+    function thresholdFor(uint256 drawId, address user) external view returns (uint128) {
+        return thresholdFor(drawId, user, TIERS - 1);
+    }
+
+    /// @notice Triggers an automated draw using Zama FHE randomness.
+    ///         Allocates 3 tiers (50% Grand, 30% Middle, 20% Ordinary).
+    ///         Homomorphically credits winners without leaking their identity onchain.
     function triggerDraw() external nonReentrant {
         if (block.timestamp < lastDrawTime + drawInterval) revert DrawTooEarly(lastDrawTime + drawInterval);
         if (_depositors.length == 0) revert PoolEmpty();
@@ -242,88 +316,97 @@ contract CyveraPrizePool is IERC7984 {
         lastDrawTime = block.timestamp;
 
         uint256 participantCount = _depositors.length;
-        uint256 winnersToPick = winnersPerDraw > participantCount ? participantCount : winnersPerDraw;
-        uint256 basePrize = totalPrize / winnersToPick;
-        uint256 remainder = totalPrize - (basePrize * winnersToPick);
 
+        // FHE Random seed generation
         euint64 seed = FHE.randEuint64();
         FHE.allowThis(seed);
         bytes32 seedHandle = euint64.unwrap(seed);
 
-        uint256 totalAwarded;
-        address lastWinner;
-        for (uint256 s = 0; s < winnersToPick; s++) {
-            address winner = _pickWinner(seedHandle, drawId, s);
-            uint256 prizeForWinner = basePrize + (s == winnersToPick - 1 ? remainder : 0);
-            _creditWinner(winner, prizeForWinner, drawId);
-            lastWinner = winner;
-            totalAwarded += prizeForWinner;
-        }
-        totalPrizesAwarded += totalAwarded;
+        // 3-Tier prize split: 50% Grand, 30% Middle, 20% Ordinary
+        uint64 pGrand = uint64((totalPrize * 50) / 100);
+        uint64 pMiddle = uint64((totalPrize * 30) / 100);
+        uint64 pOrdinary = uint64(totalPrize - pGrand - pMiddle);
+        tierPrize[0] = pGrand;
+        tierPrize[1] = pMiddle;
+        tierPrize[2] = pOrdinary;
+        grandPrize = pGrand;
+
+        uint256 snapshotDeposits = totalDeposits;
+
+        // In multi-saver draws, winner is address(0) to ensure strict confidentiality.
+        // If single saver in pool, they own 100% of deposits and get recorded.
+        address recordedWinner = participantCount == 1 ? _depositors[0] : address(0);
 
         drawHistory[drawId] = DrawRecord({
             drawId: drawId,
             timestamp: block.timestamp,
             totalParticipants: participantCount,
-            prizeAmount: totalAwarded,
-            winner: lastWinner,
-            executed: true
+            prizeAmount: totalPrize,
+            winner: recordedWinner,
+            executed: true,
+            randomnessHandle: seedHandle,
+            totalDepositsSnapshot: snapshotDeposits
         });
 
-        emit DrawExecuted(drawId, totalAwarded, participantCount, block.timestamp, seedHandle);
-    }
-
-    /// @notice Materialise the address of the winner for the (drawId,
-    ///         slot) tuple. The seed is `FHE.randEuint64()`; the index
-    ///         is drawn uniformly over the depositor array (uniform
-    ///         fallback) or over the public ticket space derived from
-    ///         `totalDeposits` (weighted by aggregate weight on a real
-    ///         fhEVM deployment, where the per-depositor cumulative
-    ///         ladder is materialised via the relayer). Both paths use
-    ///         the same seedHandle so the audit trail is identical.
-    function _pickWinner(
-        bytes32 seedHandle,
-        uint256 drawId,
-        uint256 slot
-    ) internal view returns (address) {
-        uint256 n = _depositors.length;
-        if (n == 0) return address(0);
-        if (n == 1) return _depositors[0];
-
-        // Homomorphic weighted tournament selection over encrypted balances:
-        // Each depositor's confidential balance is weighted with onchain FHE randomness
-        euint64 maxScore = FHE.asEuint64(0);
-        uint256 winningIndex = 0;
-        for (uint256 i = 0; i < n; i++) {
-            // Pseudo-random factor derived from FHE seed (bounded to [1, 10000] for scale)
-            uint64 r = uint64((uint256(keccak256(abi.encode(seedHandle, drawId, slot, i, _depositors[i]))) % 10000) + 1);
-            euint64 randWeight = FHE.asEuint64(r);
-            // Homomorphic multiplication: score = encryptedBalance * randWeight
-            euint64 depositorScore = FHE.mul(_encryptedBalances[_depositors[i]], randWeight);
-            ebool isHigher = FHE.gt(depositorScore, maxScore);
-            maxScore = FHE.select(isHigher, depositorScore, maxScore);
-            if (ebool.unwrap(isHigher) != bytes32(0)) {
-                winningIndex = i;
+        // Homomorphically accrue prizes to depositors
+        if (participantCount == 1) {
+            address soleUser = _depositors[0];
+            accrued[drawId][soleUser] = true;
+            euint64 credit = FHE.asEuint64(uint64(totalPrize));
+            _encryptedWinnings[soleUser] = FHE.add(_encryptedWinnings[soleUser], credit);
+            FHE.allowThis(_encryptedWinnings[soleUser]);
+            FHE.allow(_encryptedWinnings[soleUser], soleUser);
+            emit Accrued(soleUser, drawId);
+            emit WinnerSelected(drawId, soleUser);
+        } else {
+            for (uint256 i = 0; i < participantCount; i++) {
+                _accrueSaver(_depositors[i], drawId, seedHandle, snapshotDeposits);
             }
         }
 
-        return _depositors[winningIndex];
+        totalPrizesAwarded += totalPrize;
+        emit DrawExecuted(drawId, totalPrize, participantCount, block.timestamp, seedHandle);
     }
 
-    function _creditWinner(address winner, uint256 amount, uint256 drawId) internal {
-        euint64 inc = FHE.asEuint64(uint64(amount));
-        _encryptedWinnings[winner] = FHE.add(_encryptedWinnings[winner], inc);
-        FHE.allowThis(_encryptedWinnings[winner]);
-        FHE.allow(_encryptedWinnings[winner], winner);
-        emit WinnerSelected(drawId, winner);
+    /// @dev Homomorphically scores depositor against the 3 tiers.
+    ///      Evaluated from Ordinary (2) up to Grand (0) so best tier overrides.
+    function _accrueSaver(address user, uint256 drawId, bytes32 seedHandle, uint256 snapshotDeposits) internal {
+        if (accrued[drawId][user]) return;
+        accrued[drawId][user] = true;
+
+        euint64 credit = FHE.asEuint64(0);
+        for (uint8 i = TIERS; i > 0; i--) {
+            uint8 t = i - 1;
+            uint256 upper = snapshotDeposits * uint256(tierK[t]);
+            uint128 thresh = uint128(_uniform(uint256(keccak256(abi.encode(seedHandle, drawId, user, t))), upper));
+            ebool won = FHE.gt(_encryptedBalances[user], FHE.asEuint64(uint64(thresh)));
+            credit = FHE.select(won, FHE.asEuint64(tierPrize[t]), credit);
+        }
+
+        _encryptedWinnings[user] = FHE.add(_encryptedWinnings[user], credit);
+        FHE.allowThis(_encryptedWinnings[user]);
+        FHE.allow(_encryptedWinnings[user], user);
+
+        emit Accrued(user, drawId);
     }
 
-    /// @dev    Gates a state-changing op on a ciphertext boolean. The
-    ///         FHE library materialises the result via the coprocessor
-    ///         on real fhEVM and via a deterministic fallback on
-    ///         Sepolia; either way the comparison was performed by the
-    ///         same `FHE.ge(...)` call, so the storage and ACL flow
-    ///         match the production deployment.
+    /// @notice Permissionless accrual for any saver on any executed draw.
+    function accrue(address user, uint256 drawId) public nonReentrant returns (bool) {
+        DrawRecord storage d = drawHistory[drawId];
+        if (!d.executed) revert PoolEmpty();
+        if (accrued[drawId][user]) return false;
+        _accrueSaver(user, drawId, d.randomnessHandle, d.totalDepositsSnapshot);
+        return true;
+    }
+
+    /// @notice Batch accrual for keeper networks.
+    function accrueMany(address[] calldata users, uint256 drawId) external nonReentrant {
+        for (uint256 i = 0; i < users.length; i++) {
+            accrue(users[i], drawId);
+        }
+    }
+
+    /// @dev Gates a state-changing op on a ciphertext boolean.
     function _enforceTrueHandle(bytes32 okHandle) internal pure {
         if (!_eboolTrueHandle(okHandle)) revert InsufficientBalance();
     }
@@ -373,7 +456,10 @@ contract CyveraPrizePool is IERC7984 {
     }
 
     function getLastDrawWinner(uint256 drawId) external view returns (address) {
-        return drawHistory[drawId].winner;
+        address w = drawHistory[drawId].winner;
+        if (w != address(0)) return w;
+        if (_depositors.length == 1) return _depositors[0];
+        return address(0);
     }
 
     function getDepositorCount() external view returns (uint256) {
@@ -454,8 +540,29 @@ contract CyveraPrizePool is IERC7984 {
         return true;
     }
 
-    function confidentialTransferFrom(address /* from */, address to, euint64 amount) external override returns (bool) {
-        return this.confidentialTransfer(to, amount);
+    function confidentialTransferFrom(address from, address to, euint64 amount) external override returns (bool) {
+        require(to != address(0), "Invalid recipient");
+        euint64 userBal = _encryptedBalances[from];
+        ebool hasBalance = FHE.ge(userBal, amount);
+        require(ebool.unwrap(hasBalance) != bytes32(0), "Insufficient confidential balance");
+
+        _encryptedBalances[from] = FHE.sub(userBal, amount);
+        FHE.allowThis(_encryptedBalances[from]);
+        FHE.allow(_encryptedBalances[from], from);
+
+        if (!_isDepositor[to]) {
+            _isDepositor[to] = true;
+            _depositorIndex[to] = _depositors.length;
+            _depositors.push(to);
+            _encryptedBalances[to] = amount;
+        } else {
+            _encryptedBalances[to] = FHE.add(_encryptedBalances[to], amount);
+        }
+        FHE.allowThis(_encryptedBalances[to]);
+        FHE.allow(_encryptedBalances[to], to);
+
+        emit ConfidentialTransfer(from, to, euint64.unwrap(amount));
+        return true;
     }
 
     function confidentialApprove(address spender, euint64 amount) external override returns (bool) {

@@ -235,8 +235,8 @@ async function querySepoliaPoolState(userAccount: string | null, market: ActiveM
         }
 
         return {
-          totalDeposits: parseFloat(onchainDep) > 0 ? onchainDep : null,
-          totalPrizeReserve: parseFloat(onchainPot) > 0 ? onchainPot : null,
+          totalDeposits: onchainDep,
+          totalPrizeReserve: onchainPot,
           totalPrizesAwarded: parseFloat(ethers.formatUnits(prizesAw, marketCfg.decimals)).toFixed(2),
           totalWithdrawn: parseFloat(ethers.formatUnits(totalWith, marketCfg.decimals)).toFixed(2),
           lastDrawTime: Number(lastDraw),
@@ -312,17 +312,17 @@ export async function fetchLiveProtocolState(
   const now = Math.floor(Date.now() / 1000);
   const drawInterval = onchainPool?.drawInterval || 60;
   const lastDrawTime = onchainPool?.lastDrawTime || storedLastDraw;
-  const nextDrawTime = lastDrawTime + drawInterval;
-  const timeToNext = Math.max(0, nextDrawTime - now);
-
-  const baseTVL = market === "cUSDT" ? "14500.00" : "18200.00";
-  const effectiveTVL = onchainPool?.totalDeposits || (parseFloat(storedTVL) > 0 ? storedTVL : (userSavedNum > 0 ? (parseFloat(baseTVL) + userSavedNum).toFixed(2) : baseTVL));
-  const effectivePot = onchainPool?.totalPrizeReserve || storedPot;
+  const effectiveTVL = (onchainPool?.totalDeposits !== null && onchainPool?.totalDeposits !== undefined)
+    ? onchainPool.totalDeposits
+    : (parseFloat(storedTVL) > 0 ? storedTVL : (userSavedNum > 0 ? userSavedNum.toFixed(2) : "0.00"));
+  const effectivePot = (onchainPool?.totalPrizeReserve !== null && onchainPool?.totalPrizeReserve !== undefined)
+    ? onchainPool.totalPrizeReserve
+    : (parseFloat(storedPot) > 0 ? storedPot : "0.00");
   const effectiveCurrentDraw = onchainPool?.currentDrawId || storedDrawId;
   const baseDepositors = getStoredDepositorsCount(market);
-  const effectiveDepositors = (onchainPool?.depositorCount && onchainPool.depositorCount > 0)
+  const effectiveDepositors = (onchainPool?.depositorCount !== undefined && onchainPool.depositorCount !== null)
     ? onchainPool.depositorCount
-    : baseDepositors + (userSavedNum > 0 ? 1 : 0);
+    : (userSavedNum > 0 ? Math.max(1, baseDepositors) : baseDepositors);
   const apyBps = market === "cUSDT" ? 850 : 1200;
 
   // Derive ciphertext handles from onchain contract if available, otherwise generate deterministic handle

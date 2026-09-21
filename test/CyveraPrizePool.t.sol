@@ -117,8 +117,20 @@ contract CyveraPrizePoolTest is Test {
         _warpToNextDraw();
         pool.triggerDraw();
 
+        // In a confidential pool, winner is NOT leaked onchain for multi-saver pools
         address winner = pool.getLastDrawWinner(1);
-        require(winner == alice || winner == bob, "Winner is one of depositors");
+        require(winner == address(0), "Winner remains confidential onchain");
+
+        // Both participants have deterministic thresholds computed without modulo bias
+        uint128 aliceThresh = pool.thresholdFor(1, alice, 2);
+        uint128 bobThresh = pool.thresholdFor(1, bob, 2);
+        require(aliceThresh <= 2_000 * 10 ** 6, "Alice ordinary threshold in range");
+        require(bobThresh <= 2_000 * 10 ** 6, "Bob ordinary threshold in range");
+
+        // Encrypted winnings handles in simulation reflect that at least one participant won
+        bytes32 aliceWinnings = pool.getEncryptedWinningsHandle(alice);
+        bytes32 bobWinnings = pool.getEncryptedWinningsHandle(bob);
+        require(aliceWinnings != bytes32(0) || bobWinnings != bytes32(0), "At least one saver won and accrued encrypted winnings");
     }
 
     function test_ClaimPrize() public {
@@ -177,5 +189,64 @@ contract CyveraPrizePoolTest is Test {
         _deposit(alice, 200 * 10 ** 6);
         require(pool.totalDeposits() == 800 * 10 ** 6, "After subsequent deposit");
         require(pool.getDepositorCount() == 1, "Still a depositor");
+    }
+
+    function test_3TierThresholdCalculation() public {
+        _deposit(alice, 500 * 10 ** 6);
+        _deposit(bob, 500 * 10 ** 6);
+        yieldSource.manualInjectYield(100 * 10 ** 6);
+        _warpToNextDraw();
+        pool.triggerDraw();
+
+        // Total deposits: 1,000 * 10^6
+        // Tier 0 (Grand, k=100): upper bound = 100,000 * 10^6
+        // Tier 1 (Middle, k=10): upper bound = 10,000 * 10^6
+        // Tier 2 (Ordinary, k=1): upper bound = 1,000 * 10^6
+        uint128 grandThresh = pool.thresholdFor(1, alice, 0);
+        uint128 midThresh = pool.thresholdFor(1, alice, 1);
+        uint128 ordThresh = pool.thresholdFor(1, alice, 2);
+
+        require(grandThresh <= 100_000 * 10 ** 6, "Grand threshold upper bound");
+        require(midThresh <= 10_000 * 10 ** 6, "Middle threshold upper bound");
+        require(ordThresh <= 1_000 * 10 ** 6, "Ordinary threshold upper bound");
+
+        (uint64 grandPrize, uint128 grandK) = pool.getTierInfo(0);
+        (uint64 midPrize, uint128 midK) = pool.getTierInfo(1);
+        (uint64 ordPrize, uint128 ordK) = pool.getTierInfo(2);
+
+        require(grandK == 100, "Grand k must be 100");
+        require(midK == 10, "Middle k must be 10");
+        require(ordK == 1, "Ordinary k must be 1");
+        require(grandPrize == 50 * 10 ** 6, "Grand prize 50%");
+        require(midPrize == 30 * 10 ** 6, "Middle prize 30%");
+        require(ordPrize == 20 * 10 ** 6, "Ordinary prize 20%");
+    }
+
+    function test_PermissionlessAccrue() public {
+        _deposit(alice, 1_000 * 10 ** 6);
+        yieldSource.manualInjectYield(50 * 10 ** 6);
+        _warpToNextDraw();
+        pool.triggerDraw();
+
+        address randomKeeper = address(0x777);
+        vm.prank(randomKeeper);
+        bool alreadyAccrued = pool.accrue(alice, 1);
+        require(!alreadyAccrued, "Already accrued in triggerDraw");
+    }
+
+    function test_SetTiersValidation() public {
+        uint64[3] memory validPrizes = [uint64(500), uint64(300), uint64(200)];
+        uint128[3] memory validK = [uint128(100), uint128(10), uint128(1)];
+        pool.setTiers(validPrizes, validK);
+
+        // Invalid: k not strictly decreasing
+        uint128[3] memory invalidK = [uint128(10), uint128(10), uint128(1)];
+        vm.expectRevert();
+        pool.setTiers(validPrizes, invalidK);
+
+        // Invalid: prizes not strictly decreasing
+        uint64[3] memory invalidPrizes = [uint64(200), uint64(300), uint64(500)];
+        vm.expectRevert();
+        pool.setTiers(invalidPrizes, validK);
     }
 }

@@ -57,7 +57,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
   activeMarket,
   onChangeMarket,
   walletBalance,
-  publicWalletBalance = "1000.00",
+  publicWalletBalance = "0.00",
   shieldedBalance = "0.00",
   decryptedBalance,
   isDecryptingBalance,
