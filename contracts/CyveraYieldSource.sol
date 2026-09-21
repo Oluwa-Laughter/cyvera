@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { MockERC20 } from "./MockERC20.sol";
+import {MockERC20} from "./MockERC20.sol";
 
 interface IYieldReceiver {
     function fundPrizeReserve(uint256 amount) external;

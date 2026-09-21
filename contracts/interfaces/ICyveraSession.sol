@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { ebool, euint64 } from "../fhevm/FHE.sol";
+import {ebool, euint64} from "../fhevm/FHE.sol";
 
 /**
  * @title  ICyveraSession
@@ -33,35 +33,18 @@ interface ICyveraSession {
         address[] recipients
     );
 
-    event Sent(
-        address indexed sessionKey,
-        address indexed token,
-        address indexed to,
-        ebool within,
-        euint64 sent
-    );
+    event Sent(address indexed sessionKey, address indexed token, address indexed to, ebool within, euint64 sent);
 
     event BudgetIncreased(address indexed sessionKey, address indexed token);
     event RecipientAdded(address indexed sessionKey, address indexed recipient);
     event RecipientRemoved(address indexed sessionKey, address indexed recipient, address indexed by);
     event SessionClosed(address indexed sessionKey, address indexed by);
 
-    function openSession(
-        SessionParams calldata params,
-        bytes calldata sessionKeySignature
-    ) external;
+    function openSession(SessionParams calldata params, bytes calldata sessionKeySignature) external;
 
-    function send(
-        address token,
-        address to,
-        uint64 amount
-    ) external;
+    function send(address token, address to, uint64 amount) external;
 
-    function increaseBudget(
-        address sessionKey,
-        address token,
-        uint64 amount
-    ) external;
+    function increaseBudget(address sessionKey, address token, uint64 amount) external;
 
     function addRecipient(address sessionKey, address to) external;
     function removeRecipient(address sessionKey, address to) external;
@@ -72,10 +55,8 @@ interface ICyveraSession {
     function isRecipientAllowed(address sessionKey, address to) external view returns (bool);
     function recipientsOf(address sessionKey) external view returns (address[] memory);
     function tokensOf(address sessionKey) external view returns (address[] memory);
-    function openSessionDigest(
-        address owner,
-        address sessionKey,
-        uint48 expiry,
-        uint24 maxTxCount
-    ) external view returns (bytes32);
+    function openSessionDigest(address owner, address sessionKey, uint48 expiry, uint24 maxTxCount)
+        external
+        view
+        returns (bytes32);
 }

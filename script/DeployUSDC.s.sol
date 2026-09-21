@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { Script, console } from "forge-std/Script.sol";
-import { MockERC20 } from "../contracts/MockERC20.sol";
-import { CyveraYieldSource } from "../contracts/CyveraYieldSource.sol";
-import { CyveraPrizePool } from "../contracts/CyveraPrizePool.sol";
+import {Script, console} from "forge-std/Script.sol";
+import {MockERC20} from "../contracts/MockERC20.sol";
+import {CyveraYieldSource} from "../contracts/CyveraYieldSource.sol";
+import {CyveraPrizePool} from "../contracts/CyveraPrizePool.sol";
 
 /// @notice Deploys a dedicated cUSDC market (token + yield source + prize pool)
 ///         to Ethereum Sepolia for independent multi-vault accounting.

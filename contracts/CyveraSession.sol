@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { FHE, ebool, euint64 } from "./fhevm/FHE.sol";
-import { IERC7984 } from "./interfaces/IERC7984.sol";
-import { ICyveraSession } from "./interfaces/ICyveraSession.sol";
-import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {FHE, ebool, euint64} from "./fhevm/FHE.sol";
+import {IERC7984} from "./interfaces/IERC7984.sol";
+import {ICyveraSession} from "./interfaces/ICyveraSession.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
  * @title  CyveraSession
@@ -41,12 +41,10 @@ contract CyveraSession is ICyveraSession {
     uint256 public constant MAX_TOKENS = 32;
     uint256 public constant MAX_RECIPIENTS = 128;
 
-    bytes32 private constant _TYPE_HASH = keccak256(
-        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-    );
-    bytes32 private constant _OPEN_TYPEHASH = keccak256(
-        "OpenSession(address owner,address sessionKey,uint48 expiry,uint24 maxTxCount)"
-    );
+    bytes32 private constant _TYPE_HASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 private constant _OPEN_TYPEHASH =
+        keccak256("OpenSession(address owner,address sessionKey,uint48 expiry,uint24 maxTxCount)");
 
     bytes32 private immutable _NAME_HASH;
     bytes32 private immutable _VERSION_HASH;
@@ -79,10 +77,7 @@ contract CyveraSession is ICyveraSession {
     }
 
     /// @inheritdoc ICyveraSession
-    function openSession(
-        SessionParams calldata params,
-        bytes calldata sessionKeySignature
-    ) external override {
+    function openSession(SessionParams calldata params, bytes calldata sessionKeySignature) external override {
         if (params.sessionKey == address(0)) revert ZeroAddress();
         if (params.tokens.length != params.budgets.length) revert ArrayLengthMismatch();
         if (params.tokens.length == 0 || params.recipients.length == 0) revert EmptySessionScope();
@@ -94,22 +89,13 @@ contract CyveraSession is ICyveraSession {
             revert SessionKeyAlreadyUsed(params.sessionKey);
         }
 
-        bytes32 digest = openSessionDigest(
-            msg.sender,
-            params.sessionKey,
-            params.expiry,
-            params.maxTxCount
-        );
+        bytes32 digest = openSessionDigest(msg.sender, params.sessionKey, params.expiry, params.maxTxCount);
         if (ECDSA.recover(digest, sessionKeySignature) != params.sessionKey) {
             revert InvalidSessionKeySignature();
         }
 
-        _sessions[params.sessionKey] = Session({
-            owner: msg.sender,
-            expiry: params.expiry,
-            maxTxCount: params.maxTxCount,
-            txCount: 0
-        });
+        _sessions[params.sessionKey] =
+            Session({owner: msg.sender, expiry: params.expiry, maxTxCount: params.maxTxCount, txCount: 0});
 
         for (uint256 i = 0; i < params.tokens.length; ++i) {
             address token = params.tokens[i];
@@ -132,21 +118,12 @@ contract CyveraSession is ICyveraSession {
         }
 
         emit SessionOpened(
-            msg.sender,
-            params.sessionKey,
-            params.expiry,
-            params.maxTxCount,
-            params.tokens,
-            params.recipients
+            msg.sender, params.sessionKey, params.expiry, params.maxTxCount, params.tokens, params.recipients
         );
     }
 
     /// @inheritdoc ICyveraSession
-    function send(
-        address token,
-        address to,
-        uint64 amount
-    ) external override nonReentrant {
+    function send(address token, address to, uint64 amount) external override nonReentrant {
         Session storage s = _sessions[msg.sender];
         address owner_ = s.owner;
 
@@ -188,11 +165,7 @@ contract CyveraSession is ICyveraSession {
     }
 
     /// @inheritdoc ICyveraSession
-    function increaseBudget(
-        address sessionKey,
-        address token,
-        uint64 amount
-    ) external override {
+    function increaseBudget(address sessionKey, address token, uint64 amount) external override {
         Session storage s = _sessions[sessionKey];
         if (s.owner == address(0)) revert NoSuchSession(sessionKey);
         if (s.owner != msg.sender) revert NotSessionOwner(sessionKey);
@@ -263,15 +236,13 @@ contract CyveraSession is ICyveraSession {
     }
 
     /// @inheritdoc ICyveraSession
-    function openSessionDigest(
-        address owner,
-        address sessionKey,
-        uint48 expiry,
-        uint24 maxTxCount
-    ) public view override returns (bytes32) {
-        return _hashTypedDataV4(
-            keccak256(abi.encode(_OPEN_TYPEHASH, owner, sessionKey, expiry, maxTxCount))
-        );
+    function openSessionDigest(address owner, address sessionKey, uint48 expiry, uint24 maxTxCount)
+        public
+        view
+        override
+        returns (bytes32)
+    {
+        return _hashTypedDataV4(keccak256(abi.encode(_OPEN_TYPEHASH, owner, sessionKey, expiry, maxTxCount)));
     }
 
     /// @inheritdoc ICyveraSession

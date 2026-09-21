@@ -26,14 +26,14 @@ export const ZAMA_SEPOLIA_CONFIG = {
       publicSymbol: "USDT",
       decimals: 6,
       underlying: toChecksumAddress(
-        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838"
+        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0xBB7A2409F083C8BF8a083222959e356EBCCB5153"
       ),
       wrapper: toChecksumAddress("0x4E7B06D78965594eB5EF5414c357ca21E1554491"),
       vault: toChecksumAddress(
-        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || "0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF"
+        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || "0xdDC923846eb23AbeD5f020C3DF7c897e2bDce2D4"
       ),
       yieldSource: toChecksumAddress(
-        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0xe1699F23031C9CB430124232C1eAb5f20F676C66"
+        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0xF6314F966985eED395F0FC3C5D50C0c00cE49b09"
       ),
       apy: "8.50%",
       drawFrequency: "1-Minute (Testing) / Daily (Mainnet)",
@@ -44,14 +44,14 @@ export const ZAMA_SEPOLIA_CONFIG = {
       publicSymbol: "USDC",
       decimals: 6,
       underlying: toChecksumAddress(
-        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN_USDC || "0xE0E6aA26a248795C8a4a89Feb4b5D78CBe2c98c5"
+        process.env.NEXT_PUBLIC_DEPOSIT_TOKEN_USDC || "0xf1BC5e35bF3a97Da12c764B34109d7406d676c4e"
       ),
       wrapper: toChecksumAddress("0x7c5BF43B851c1dff1a4feE8dB225b87f2C223639"),
       vault: toChecksumAddress(
-        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS_USDC || "0xC669F93c667Acf060713aB35d83d53a9688CC265"
+        process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS_USDC || "0x591985294e08c7e837Fab14e796E7957BfC6bC6B"
       ),
       yieldSource: toChecksumAddress(
-        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS_USDC || "0x9C32bA329CC28474b3f52609e61F7c11C30bc643"
+        process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS_USDC || "0xfD95F2C9E965224c3A07E77EFc2c7aC6F3b0bB1b"
       ),
       apy: "12.00%",
       drawFrequency: "1-Minute (Testing) / Weekly (Mainnet)",
@@ -62,7 +62,7 @@ export const ZAMA_SEPOLIA_CONFIG = {
     depositBatcher: toChecksumAddress("0x48758559c14d4d92b4C74A99660B6a8dbe85F53b"),
     redeemBatcher: toChecksumAddress("0xe94E9afdDd43a19C2914739e9279cb6Fe287BEb0"),
     steakhouseVault: toChecksumAddress("0x6AB54988261AEC573a2CA13cF802d3B1114f864C"),
-    sessionModule: toChecksumAddress("0xE5c667c0A2B936Cf6a2A0d8858348B4e758e58a2"),
+    sessionModule: toChecksumAddress("0x3f5Be0F9348197269fAACC9525131E09F85f8198"),
   },
 };
 
@@ -71,14 +71,17 @@ export type ActiveMarketId = "cUSDT" | "cUSDC";
 export const CONTRACT_ADDRESSES = {
   sepolia: {
     depositToken: toChecksumAddress(
-      process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838"
+      process.env.NEXT_PUBLIC_DEPOSIT_TOKEN || "0xBB7A2409F083C8BF8a083222959e356EBCCB5153"
     ),
     confidentialWrapper: toChecksumAddress("0x4E7B06D78965594eB5EF5414c357ca21E1554491"),
     prizePool: toChecksumAddress(
-      process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || process.env.NEXT_PUBLIC_AURA_POOL_ADDRESS || "0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF"
+      process.env.NEXT_PUBLIC_CYVERA_POOL_ADDRESS || process.env.NEXT_PUBLIC_AURA_POOL_ADDRESS || "0xdDC923846eb23AbeD5f020C3DF7c897e2bDce2D4"
     ),
     yieldSource: toChecksumAddress(
-      process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0xe1699F23031C9CB430124232C1eAb5f20F676C66"
+      process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS || "0xF6314F966985eED395F0FC3C5D50C0c00cE49b09"
+    ),
+    sessionModule: toChecksumAddress(
+      process.env.NEXT_PUBLIC_CYVERA_SESSION_ADDRESS || "0x3f5Be0F9348197269fAACC9525131E09F85f8198"
     ),
   },
   local: {

@@ -16,13 +16,13 @@
 | Component | Network | Address / Link | Verification |
 | :--- | :--- | :--- | :--- |
 | **Production DApp** | Vercel | [https://cyvera-one.vercel.app/](https://cyvera-one.vercel.app/) | Live responsive UI with Wagmi, RainbowKit, 3-Tier tracker & Zama EIP-712 decryption |
-| **cUSDT Prize Pool Vault** | Sepolia | [`0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF`](https://sepolia.etherscan.io/address/0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF#code) | Core vault contract with FHE randomness & ERC-7984 accounting |
-| **cUSDT Deposit Token** | Sepolia | [`0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838`](https://sepolia.etherscan.io/address/0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838#code) | 6-decimal test token with free onchain faucet |
-| **cUSDT Yield Source** | Sepolia | [`0xe1699F23031C9CB430124232C1eAb5f20F676C66`](https://sepolia.etherscan.io/address/0xe1699F23031C9CB430124232C1eAb5f20F676C66#code) | Autonomous yield strategy funding cUSDT prize reserves |
-| **cUSDC Prize Pool Vault** | Sepolia | [`0xC669F93c667Acf060713aB35d83d53a9688CC265`](https://sepolia.etherscan.io/address/0xC669F93c667Acf060713aB35d83d53a9688CC265#code) | Dedicated cUSDC vault for isolated multi-market prize savings |
-| **cUSDC Deposit Token** | Sepolia | [`0xE0E6aA26a248795C8a4a89Feb4b5D78CBe2c98c5`](https://sepolia.etherscan.io/address/0xE0E6aA26a248795C8a4a89Feb4b5D78CBe2c98c5#code) | 6-decimal USDC test token with free onchain faucet |
-| **cUSDC Yield Source** | Sepolia | [`0x9C32bA329CC28474b3f52609e61F7c11C30bc643`](https://sepolia.etherscan.io/address/0x9C32bA329CC28474b3f52609e61F7c11C30bc643#code) | Autonomous yield strategy funding cUSDC prize reserves |
-| **AI Agent Session Module** | Sepolia | [`0xE5c667c0A2B936Cf6a2A0d8858348B4e758e58a2`](https://sepolia.etherscan.io/address/0xE5c667c0A2B936Cf6a2A0d8858348B4e758e58a2#code) | Encrypted budget manager for AI agents & MCP session keys |
+| **cUSDT Prize Pool Vault** | Sepolia | [`0xdDC923846eb23AbeD5f020C3DF7c897e2bDce2D4`](https://sepolia.etherscan.io/address/0xdDC923846eb23AbeD5f020C3DF7c897e2bDce2D4#code) | Core vault contract with FHE randomness & ERC-7984 accounting |
+| **cUSDT Deposit Token** | Sepolia | [`0xBB7A2409F083C8BF8a083222959e356EBCCB5153`](https://sepolia.etherscan.io/address/0xBB7A2409F083C8BF8a083222959e356EBCCB5153#code) | 6-decimal test token with free onchain faucet |
+| **cUSDT Yield Source** | Sepolia | [`0xF6314F966985eED395F0FC3C5D50C0c00cE49b09`](https://sepolia.etherscan.io/address/0xF6314F966985eED395F0FC3C5D50C0c00cE49b09#code) | Autonomous yield strategy funding cUSDT prize reserves |
+| **cUSDC Prize Pool Vault** | Sepolia | [`0x591985294e08c7e837Fab14e796E7957BfC6bC6B`](https://sepolia.etherscan.io/address/0x591985294e08c7e837Fab14e796E7957BfC6bC6B#code) | Dedicated cUSDC vault for isolated multi-market prize savings |
+| **cUSDC Deposit Token** | Sepolia | [`0xf1BC5e35bF3a97Da12c764B34109d7406d676c4e`](https://sepolia.etherscan.io/address/0xf1BC5e35bF3a97Da12c764B34109d7406d676c4e#code) | 6-decimal USDC test token with free onchain faucet |
+| **cUSDC Yield Source** | Sepolia | [`0xfD95F2C9E965224c3A07E77EFc2c7aC6F3b0bB1b`](https://sepolia.etherscan.io/address/0xfD95F2C9E965224c3A07E77EFc2c7aC6F3b0bB1b#code) | Autonomous yield strategy funding cUSDC prize reserves |
+| **AI Agent Session Module** | Sepolia | [`0x3f5Be0F9348197269fAACC9525131E09F85f8198`](https://sepolia.etherscan.io/address/0x3f5Be0F9348197269fAACC9525131E09F85f8198#code) | Encrypted budget manager for AI agents & MCP session keys |
 | **Steakhouse Prime USDC** | Sepolia | [`0x6AB54988261AEC573a2CA13cF802d3B1114f864C`](https://sepolia.etherscan.io/address/0x6AB54988261AEC573a2CA13cF802d3B1114f864C) | Zama confidential institutional yield vault composition |
 | **Zama Deposit Batcher** | Sepolia | [`0x48758559c14d4d92b4C74A99660B6a8dbe85F53b`](https://sepolia.etherscan.io/address/0x48758559c14d4d92b4C74A99660B6a8dbe85F53b) | Zama confidential token deposit queue |
 | **Zama Redeem Batcher** | Sepolia | [`0xe94E9afdDd43a19C2914739e9279cb6Fe287BEb0`](https://sepolia.etherscan.io/address/0xe94E9afdDd43a19C2914739e9279cb6Fe287BEb0) | Zama confidential token redemption queue |
@@ -129,7 +129,7 @@ To inspect balances without gas fees or RPC data leakage:
        "name": "Cyvera fhEVM User Decryption",
        "version": "1",
        "chainId": 11155111,
-       "verifyingContract": "0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF"
+       "verifyingContract": "0xdDC923846eb23AbeD5f020C3DF7c897e2bDce2D4"
      }
    }
    ```
@@ -201,13 +201,14 @@ SEPOLIA_RPC_URL="https://ethereum-sepolia-rpc.publicnode.com"
 PRIVATE_KEY="0x..."
 ETHERSCAN_API_KEY="..."
 
-NEXT_PUBLIC_DEPOSIT_TOKEN="0x85e5fFCa2db5216849A7D515F8dD0f5b7D8e2838"
-NEXT_PUBLIC_CYVERA_POOL_ADDRESS="0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF"
-NEXT_PUBLIC_YIELD_SOURCE_ADDRESS="0xe1699F23031C9CB430124232C1eAb5f20F676C66"
+NEXT_PUBLIC_DEPOSIT_TOKEN="0xBB7A2409F083C8BF8a083222959e356EBCCB5153"
+NEXT_PUBLIC_CYVERA_POOL_ADDRESS="0xdDC923846eb23AbeD5f020C3DF7c897e2bDce2D4"
+NEXT_PUBLIC_YIELD_SOURCE_ADDRESS="0xF6314F966985eED395F0FC3C5D50C0c00cE49b09"
+NEXT_PUBLIC_CYVERA_SESSION_ADDRESS="0x3f5Be0F9348197269fAACC9525131E09F85f8198"
 
-NEXT_PUBLIC_DEPOSIT_TOKEN_USDC="0xE0E6aA26a248795C8a4a89Feb4b5D78CBe2c98c5"
-NEXT_PUBLIC_CYVERA_POOL_ADDRESS_USDC="0xC669F93c667Acf060713aB35d83d53a9688CC265"
-NEXT_PUBLIC_YIELD_SOURCE_ADDRESS_USDC="0x9C32bA329CC28474b3f52609e61F7c11C30bc643"
+NEXT_PUBLIC_DEPOSIT_TOKEN_USDC="0xf1BC5e35bF3a97Da12c764B34109d7406d676c4e"
+NEXT_PUBLIC_CYVERA_POOL_ADDRESS_USDC="0x591985294e08c7e837Fab14e796E7957BfC6bC6B"
+NEXT_PUBLIC_YIELD_SOURCE_ADDRESS_USDC="0xfD95F2C9E965224c3A07E77EFc2c7aC6F3b0bB1b"
 ```
 
 ### 3. Running Foundry Test Suites

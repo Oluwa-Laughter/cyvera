@@ -3,9 +3,9 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 
-import { MockERC20 } from "../contracts/MockERC20.sol";
-import { CyveraYieldSource } from "../contracts/CyveraYieldSource.sol";
-import { CyveraPrizePool } from "../contracts/CyveraPrizePool.sol";
+import {MockERC20} from "../contracts/MockERC20.sol";
+import {CyveraYieldSource} from "../contracts/CyveraYieldSource.sol";
+import {CyveraPrizePool} from "../contracts/CyveraPrizePool.sol";
 
 contract CyveraPrizePoolTest is Test {
     MockERC20 public token;
@@ -130,7 +130,10 @@ contract CyveraPrizePoolTest is Test {
         // Encrypted winnings handles in simulation reflect that at least one participant won
         bytes32 aliceWinnings = pool.getEncryptedWinningsHandle(alice);
         bytes32 bobWinnings = pool.getEncryptedWinningsHandle(bob);
-        require(aliceWinnings != bytes32(0) || bobWinnings != bytes32(0), "At least one saver won and accrued encrypted winnings");
+        require(
+            aliceWinnings != bytes32(0) || bobWinnings != bytes32(0),
+            "At least one saver won and accrued encrypted winnings"
+        );
     }
 
     function test_ClaimPrize() public {

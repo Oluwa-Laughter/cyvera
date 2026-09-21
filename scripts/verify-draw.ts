@@ -24,7 +24,7 @@
 
 import { ethers } from "ethers";
 
-const POOL_ADDRESS = process.env.POOL ?? "0xBa47BF8b59BbcAFf42Ca657352CE2F466b1e15dF";
+const POOL_ADDRESS = process.env.POOL ?? "0xdDC923846eb23AbeD5f020C3DF7c897e2bDce2D4";
 const RPC_URL = process.env.RPC_URL ?? "https://ethereum-sepolia-rpc.publicnode.com";
 
 const POOL_ABI = [

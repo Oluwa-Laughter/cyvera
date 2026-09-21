@@ -2,10 +2,10 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import { MockERC20 } from "../contracts/MockERC20.sol";
-import { CyveraPrizePool } from "../contracts/CyveraPrizePool.sol";
-import { CyveraSession } from "../contracts/CyveraSession.sol";
-import { ICyveraSession } from "../contracts/interfaces/ICyveraSession.sol";
+import {MockERC20} from "../contracts/MockERC20.sol";
+import {CyveraPrizePool} from "../contracts/CyveraPrizePool.sol";
+import {CyveraSession} from "../contracts/CyveraSession.sol";
+import {ICyveraSession} from "../contracts/interfaces/ICyveraSession.sol";
 
 contract CyveraSessionTest is Test {
     CyveraSession public sessionManager;
@@ -33,13 +33,11 @@ contract CyveraSessionTest is Test {
         pool.deposit(5_000 * 10 ** 6);
     }
 
-    function _signOpenSession(
-        address sessionOwner,
-        address key,
-        uint48 expiry,
-        uint24 maxTxCount,
-        uint256 privateKey
-    ) internal view returns (bytes memory) {
+    function _signOpenSession(address sessionOwner, address key, uint48 expiry, uint24 maxTxCount, uint256 privateKey)
+        internal
+        view
+        returns (bytes memory)
+    {
         bytes32 digest = sessionManager.openSessionDigest(sessionOwner, key, expiry, maxTxCount);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
         return abi.encodePacked(r, s, v);
@@ -130,8 +128,7 @@ contract CyveraSessionTest is Test {
 
         vm.prank(owner);
         sessionManager.openSession(
-            ICyveraSession.SessionParams(sessionKey, expiry, 0, tokens, budgets, recipients),
-            sig
+            ICyveraSession.SessionParams(sessionKey, expiry, 0, tokens, budgets, recipients), sig
         );
 
         vm.prank(sessionKey);

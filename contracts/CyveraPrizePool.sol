@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { MockERC20 } from "./MockERC20.sol";
-import { FHE, euint64, ebool } from "./fhevm/FHE.sol";
-import { IERC7984 } from "./interfaces/IERC7984.sol";
+import {MockERC20} from "./MockERC20.sol";
+import {FHE, euint64, ebool} from "./fhevm/FHE.sol";
+import {IERC7984} from "./interfaces/IERC7984.sol";
 
 /// @title CyveraPrizePool
 /// @notice Confidential no-loss prize-savings pool powered by Zama fhEVM and ERC-7984.

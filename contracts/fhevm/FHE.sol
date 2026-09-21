@@ -11,8 +11,8 @@ pragma solidity ^0.8.20;
 type euint64 is bytes32;
 type euint32 is bytes32;
 type euint16 is bytes32;
-type euint8  is bytes32;
-type ebool   is bytes32;
+type euint8 is bytes32;
+type ebool is bytes32;
 type inEuint64 is bytes32;
 
 library FHE {
@@ -22,27 +22,27 @@ library FHE {
     address constant FHE_COPROCESSOR = address(0x0000000000000000000000000000000000000100);
 
     // Op codes – see https://docs.zama.org/protocol/solidity-guides/abi
-    uint8 constant OP_ADD  = 0x01;
-    uint8 constant OP_SUB  = 0x02;
-    uint8 constant OP_MUL  = 0x03;
-    uint8 constant OP_DIV  = 0x04;
-    uint8 constant OP_REM  = 0x05;
-    uint8 constant OP_EQ   = 0x10;
-    uint8 constant OP_NE   = 0x11;
-    uint8 constant OP_LT   = 0x12;
-    uint8 constant OP_LE   = 0x13;
-    uint8 constant OP_GT   = 0x14;
-    uint8 constant OP_GE   = 0x15;
-    uint8 constant OP_AND  = 0x20;
-    uint8 constant OP_OR   = 0x21;
-    uint8 constant OP_XOR  = 0x22;
-    uint8 constant OP_NOT  = 0x23;
-    uint8 constant OP_SEL  = 0x30;
+    uint8 constant OP_ADD = 0x01;
+    uint8 constant OP_SUB = 0x02;
+    uint8 constant OP_MUL = 0x03;
+    uint8 constant OP_DIV = 0x04;
+    uint8 constant OP_REM = 0x05;
+    uint8 constant OP_EQ = 0x10;
+    uint8 constant OP_NE = 0x11;
+    uint8 constant OP_LT = 0x12;
+    uint8 constant OP_LE = 0x13;
+    uint8 constant OP_GT = 0x14;
+    uint8 constant OP_GE = 0x15;
+    uint8 constant OP_AND = 0x20;
+    uint8 constant OP_OR = 0x21;
+    uint8 constant OP_XOR = 0x22;
+    uint8 constant OP_NOT = 0x23;
+    uint8 constant OP_SEL = 0x30;
     uint8 constant OP_RAND = 0x40;
-    uint8 constant OP_RANDB= 0x41;
-    uint8 constant OP_ALLOW= 0x50;
+    uint8 constant OP_RANDB = 0x41;
+    uint8 constant OP_ALLOW = 0x50;
     uint8 constant OP_ALLOW_TRANSIENT = 0x51;
-    uint8 constant OP_ALLOW_THIS      = 0x52;
+    uint8 constant OP_ALLOW_THIS = 0x52;
 
     // ---------------------------------------------------------------------
     // Casts
@@ -58,29 +58,71 @@ library FHE {
     // ---------------------------------------------------------------------
     // Arithmetic (euint64, euint64) -> euint64
     // ---------------------------------------------------------------------
-    function add(euint64 a, euint64 b) internal view returns (euint64) { return _bin64(a, b, OP_ADD); }
-    function sub(euint64 a, euint64 b) internal view returns (euint64) { return _bin64(a, b, OP_SUB); }
-    function mul(euint64 a, euint64 b) internal view returns (euint64) { return _bin64(a, b, OP_MUL); }
-    function div(euint64 a, euint64 b) internal view returns (euint64) { return _bin64(a, b, OP_DIV); }
-    function rem(euint64 a, euint64 b) internal view returns (euint64) { return _bin64(a, b, OP_REM); }
+    function add(euint64 a, euint64 b) internal view returns (euint64) {
+        return _bin64(a, b, OP_ADD);
+    }
+
+    function sub(euint64 a, euint64 b) internal view returns (euint64) {
+        return _bin64(a, b, OP_SUB);
+    }
+
+    function mul(euint64 a, euint64 b) internal view returns (euint64) {
+        return _bin64(a, b, OP_MUL);
+    }
+
+    function div(euint64 a, euint64 b) internal view returns (euint64) {
+        return _bin64(a, b, OP_DIV);
+    }
+
+    function rem(euint64 a, euint64 b) internal view returns (euint64) {
+        return _bin64(a, b, OP_REM);
+    }
 
     // ---------------------------------------------------------------------
     // Comparisons (euint64, euint64) -> ebool
     // ---------------------------------------------------------------------
-    function eq(euint64 a, euint64 b) internal view returns (ebool) { return _cmp64(a, b, OP_EQ); }
-    function ne(euint64 a, euint64 b) internal view returns (ebool) { return _cmp64(a, b, OP_NE); }
-    function lt(euint64 a, euint64 b) internal view returns (ebool) { return _cmp64(a, b, OP_LT); }
-    function le(euint64 a, euint64 b) internal view returns (ebool) { return _cmp64(a, b, OP_LE); }
-    function gt(euint64 a, euint64 b) internal view returns (ebool) { return _cmp64(a, b, OP_GT); }
-    function ge(euint64 a, euint64 b) internal view returns (ebool) { return _cmp64(a, b, OP_GE); }
+    function eq(euint64 a, euint64 b) internal view returns (ebool) {
+        return _cmp64(a, b, OP_EQ);
+    }
+
+    function ne(euint64 a, euint64 b) internal view returns (ebool) {
+        return _cmp64(a, b, OP_NE);
+    }
+
+    function lt(euint64 a, euint64 b) internal view returns (ebool) {
+        return _cmp64(a, b, OP_LT);
+    }
+
+    function le(euint64 a, euint64 b) internal view returns (ebool) {
+        return _cmp64(a, b, OP_LE);
+    }
+
+    function gt(euint64 a, euint64 b) internal view returns (ebool) {
+        return _cmp64(a, b, OP_GT);
+    }
+
+    function ge(euint64 a, euint64 b) internal view returns (ebool) {
+        return _cmp64(a, b, OP_GE);
+    }
 
     // ---------------------------------------------------------------------
     // Boolean logic
     // ---------------------------------------------------------------------
-    function and(ebool a, ebool b) internal view returns (ebool) { return _binB(a, b, OP_AND); }
-    function or(ebool a, ebool b)  internal view returns (ebool) { return _binB(a, b, OP_OR); }
-    function xor(ebool a, ebool b) internal view returns (ebool) { return _binB(a, b, OP_XOR); }
-    function not(ebool a)          internal view returns (ebool) { return _unaB(a,    OP_NOT); }
+    function and(ebool a, ebool b) internal view returns (ebool) {
+        return _binB(a, b, OP_AND);
+    }
+
+    function or(ebool a, ebool b) internal view returns (ebool) {
+        return _binB(a, b, OP_OR);
+    }
+
+    function xor(ebool a, ebool b) internal view returns (ebool) {
+        return _binB(a, b, OP_XOR);
+    }
+
+    function not(ebool a) internal view returns (ebool) {
+        return _unaB(a, OP_NOT);
+    }
 
     function select(ebool cond, euint64 ifTrue, euint64 ifFalse) internal view returns (euint64) {
         return _sel(cond, ifTrue, ifFalse);
@@ -102,7 +144,7 @@ library FHE {
     // ---------------------------------------------------------------------
     function allow(euint64 handle, address account) internal view {
         bytes memory payload = abi.encode(OP_ALLOW, handle, account);
-        (bool ok, ) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
+        (bool ok,) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
         // Allow to fail silently when no coprocessor is present – the
         // off-chain relayer still verifies ownership via the onchain
         // ownership record and the EIP-712 signature it carries.
@@ -111,31 +153,31 @@ library FHE {
 
     function allowTransient(euint64 handle, address account) internal view {
         bytes memory payload = abi.encode(OP_ALLOW_TRANSIENT, handle, account, uint64(block.timestamp + 1 hours));
-        (bool ok, ) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
+        (bool ok,) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
         ok;
     }
 
     function allowThis(euint64 handle) internal view {
         bytes memory payload = abi.encode(OP_ALLOW_THIS, handle, address(this));
-        (bool ok, ) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
+        (bool ok,) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
         ok;
     }
 
     function allow(ebool handle, address account) internal view {
         bytes memory payload = abi.encode(OP_ALLOW, handle, account);
-        (bool ok, ) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
+        (bool ok,) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
         ok;
     }
 
     function allowTransient(ebool handle, address account) internal view {
         bytes memory payload = abi.encode(OP_ALLOW_TRANSIENT, handle, account, uint64(block.timestamp + 1 hours));
-        (bool ok, ) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
+        (bool ok,) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
         ok;
     }
 
     function allowThis(ebool handle) internal view {
         bytes memory payload = abi.encode(OP_ALLOW_THIS, handle, address(this));
-        (bool ok, ) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
+        (bool ok,) = FHE_COPROCESSOR.staticcall{gas: 30_000}(payload);
         ok;
     }
 
@@ -187,7 +229,7 @@ library FHE {
         bool valB = ebool.unwrap(b) != bytes32(0);
         bool res = false;
         if (op == OP_AND) res = (valA && valB);
-        if (op == OP_OR)  res = (valA || valB);
+        if (op == OP_OR) res = (valA || valB);
         if (op == OP_XOR) res = (valA != valB);
         return ebool.wrap(res ? bytes32(uint256(1)) : bytes32(0));
     }
