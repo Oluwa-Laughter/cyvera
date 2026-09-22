@@ -29,7 +29,7 @@ import {
 import { fetchLiveProtocolState, SEPOLIA_CHAIN_ID, ProtocolSnapshot } from "@/lib/web3";
 import { decryptUserBalance } from "@/lib/fhevm";
 import { connectInjectedWallet, disconnectInjectedWallet, getInjectedProvider } from "@/lib/wallet";
-import { useAccount, useDisconnect, useSwitchChain, useChainId } from "wagmi";
+import { useAccount, useDisconnect, useSwitchChain, useChainId, useBalance } from "wagmi";
 import { useConnectModal, useAccountModal, useChainModal } from "@rainbow-me/rainbowkit";
 import {
   getStoredTheme,
@@ -44,6 +44,8 @@ import {
   setStoredWalletBalance,
   getStoredPublicWalletBalance,
   setStoredPublicWalletBalance,
+  getStoredEthBalance,
+  setStoredEthBalance,
   getStoredTVL,
   setStoredTVL,
   getStoredPrizePot,
@@ -132,6 +134,51 @@ export default function Home() {
   const isWalletConnecting =
     isConnecting || wagmiStatus === "connecting" || wagmiStatus === "reconnecting";
 
+  const currentAccount = wagmiAddress || account;
+
+  // Real-time reactive balance hooks via Wagmi with automatic block listening and cache
+  const { data: wagmiUsdtBal, refetch: refetchWagmiUsdt } = useBalance({
+    address: currentAccount ? (currentAccount as `0x${string}`) : undefined,
+    token: ZAMA_SEPOLIA_CONFIG.markets["cUSDT"].underlying as `0x${string}`,
+    chainId: SEPOLIA_CHAIN_ID,
+  });
+
+  const { data: wagmiUsdcBal, refetch: refetchWagmiUsdc } = useBalance({
+    address: currentAccount ? (currentAccount as `0x${string}`) : undefined,
+    token: ZAMA_SEPOLIA_CONFIG.markets["cUSDC"].underlying as `0x${string}`,
+    chainId: SEPOLIA_CHAIN_ID,
+  });
+
+  const { data: wagmiEthBal, refetch: refetchWagmiEth } = useBalance({
+    address: currentAccount ? (currentAccount as `0x${string}`) : undefined,
+    chainId: SEPOLIA_CHAIN_ID,
+  });
+
+  // Sync balances immediately into local store whenever Wagmi resolves
+  useEffect(() => {
+    if (!currentAccount) return;
+    if (wagmiUsdtBal?.formatted !== undefined) {
+      const formatted = parseFloat(wagmiUsdtBal.formatted).toFixed(2);
+      setStoredWalletBalance(currentAccount, formatted, "cUSDT");
+    }
+  }, [currentAccount, wagmiUsdtBal?.formatted]);
+
+  useEffect(() => {
+    if (!currentAccount) return;
+    if (wagmiUsdcBal?.formatted !== undefined) {
+      const formatted = parseFloat(wagmiUsdcBal.formatted).toFixed(2);
+      setStoredWalletBalance(currentAccount, formatted, "cUSDC");
+    }
+  }, [currentAccount, wagmiUsdcBal?.formatted]);
+
+  useEffect(() => {
+    if (!currentAccount) return;
+    if (wagmiEthBal?.formatted !== undefined) {
+      const formatted = parseFloat(wagmiEthBal.formatted).toFixed(4);
+      setStoredEthBalance(currentAccount, formatted);
+    }
+  }, [currentAccount, wagmiEthBal?.formatted]);
+
   // Protocol snapshot
   const [snap, setSnap] = useState<ProtocolSnapshot | null>(null);
   const [isLoadingState, setIsLoadingState] = useState(true);
@@ -159,6 +206,43 @@ export default function Home() {
   const [isClaimingFaucet, setIsClaimingFaucet] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
 
+  const liveUsdtBal =
+    wagmiUsdtBal?.formatted !== undefined
+      ? parseFloat(wagmiUsdtBal.formatted).toFixed(2)
+      : currentAccount
+      ? getStoredWalletBalance(currentAccount, "cUSDT")
+      : "0.00";
+
+  const liveUsdcBal =
+    wagmiUsdcBal?.formatted !== undefined
+      ? parseFloat(wagmiUsdcBal.formatted).toFixed(2)
+      : currentAccount
+      ? getStoredWalletBalance(currentAccount, "cUSDC")
+      : "0.00";
+
+  const activeMarketWalletBal = activeMarket === "cUSDT" ? liveUsdtBal : liveUsdcBal;
+
+  const liveEthBal =
+    wagmiEthBal?.formatted !== undefined
+      ? parseFloat(wagmiEthBal.formatted).toFixed(4)
+      : currentAccount
+      ? getStoredEthBalance(currentAccount)
+      : "0.0000";
+
+  const resolvedWalletBalance =
+    activeMarketWalletBal && parseFloat(activeMarketWalletBal) > 0
+      ? activeMarketWalletBal
+      : snap?.userWalletBalance && parseFloat(snap.userWalletBalance) > 0
+      ? snap.userWalletBalance
+      : activeMarketWalletBal || "0.00";
+
+  const resolvedEthBalance =
+    liveEthBal && parseFloat(liveEthBal) > 0
+      ? liveEthBal
+      : snap?.userNativeEthBalance && parseFloat(snap.userNativeEthBalance) > 0
+      ? snap.userNativeEthBalance
+      : liveEthBal || "0.0000";
+
   const addToast = useCallback(
     (type: "success" | "error" | "info", message: string, txHash?: string) => {
       const id = ++toastId.current;
@@ -179,30 +263,31 @@ export default function Home() {
       ts: Date.now(),
     };
     addStoredActivity(newEntry);
-    if (account) {
-      setActivity(getStoredActivity(account));
+    if (currentAccount) {
+      setActivity(getStoredActivity(currentAccount));
     }
-  }, [account, activeMarket]);
+  }, [currentAccount, activeMarket]);
 
   // Fetch Protocol Snapshot
   const refreshProtocolState = useCallback(async () => {
+    const targetAccount = currentAccount;
     try {
-      const liveSnapshot = await fetchLiveProtocolState(account, activeMarket);
+      const liveSnapshot = await fetchLiveProtocolState(targetAccount, activeMarket, provider);
       setSnap(liveSnapshot);
 
-      if (account) {
-        const saved = getStoredSavings(account, activeMarket);
-        const win = getStoredWinnings(account, activeMarket);
+      if (targetAccount) {
+        const saved = getStoredSavings(targetAccount, activeMarket);
+        const win = getStoredWinnings(targetAccount, activeMarket);
         setDecryptedBalance(saved);
         setDecryptedWinnings(win);
-        setActivity(getStoredActivity(account));
+        setActivity(getStoredActivity(targetAccount));
       }
     } catch (err) {
       console.warn("Snapshot refresh warning:", err);
     } finally {
       setIsLoadingState(false);
     }
-  }, [account, activeMarket]);
+  }, [currentAccount, activeMarket, provider]);
 
   useEffect(() => {
     refreshProtocolState();
@@ -280,6 +365,22 @@ export default function Home() {
 
     const syncWagmiSession = async () => {
       if (wagmiIsConnected && wagmiAddress) {
+        setAccount(wagmiAddress);
+
+        const isNewConnection = prevAccountRef.current !== wagmiAddress;
+        prevAccountRef.current = wagmiAddress;
+
+        if (isNewConnection) {
+          addToast(
+            "success",
+            `Connected wallet ${wagmiAddress.slice(0, 6)}...${wagmiAddress.slice(-4)}`
+          );
+        }
+
+        refetchWagmiUsdt();
+        refetchWagmiUsdc();
+        refetchWagmiEth();
+
         try {
           let rawProvider: any = null;
           if (wagmiConnector) {
@@ -292,28 +393,21 @@ export default function Home() {
           let bp: ethers.BrowserProvider | null = null;
           let signerInstance: ethers.Signer | null = null;
           if (rawProvider) {
-            bp = new ethers.BrowserProvider(rawProvider);
-            signerInstance = await bp.getSigner().catch(() => null);
+            try {
+              bp = new ethers.BrowserProvider(rawProvider as any);
+              signerInstance = await bp.getSigner().catch(() => null);
+            } catch (pErr) {
+              console.warn("BrowserProvider init notice:", pErr);
+            }
           }
 
           if (isCancelled) return;
 
-          const isNewConnection = prevAccountRef.current !== wagmiAddress;
-          prevAccountRef.current = wagmiAddress;
-
-          setAccount(wagmiAddress);
           if (bp) setProvider(bp);
           if (signerInstance) setSigner(signerInstance);
           setChainId(wagmiChainId || SEPOLIA_CHAIN_ID);
 
-          if (isNewConnection) {
-            addToast(
-              "success",
-              `Connected wallet ${wagmiAddress.slice(0, 6)}...${wagmiAddress.slice(-4)}`
-            );
-          }
-
-          const liveSnapshot = await fetchLiveProtocolState(wagmiAddress, activeMarket);
+          const liveSnapshot = await fetchLiveProtocolState(wagmiAddress, activeMarket, bp);
           if (isCancelled) return;
           setSnap(liveSnapshot);
           setDecryptedBalance(getStoredSavings(wagmiAddress, activeMarket));
@@ -347,6 +441,9 @@ export default function Home() {
     wagmiChainId,
     activeMarket,
     addToast,
+    refetchWagmiUsdt,
+    refetchWagmiUsdc,
+    refetchWagmiEth,
   ]);
 
   // Helper to get guaranteed fresh signer directly from active connected wallet
@@ -505,6 +602,9 @@ export default function Home() {
 
       addToast("success", `Minted 1,000 ${marketCfg.symbol} to your Sepolia wallet!`, tx.hash);
       setIsFaucetOpen(false);
+      refetchWagmiUsdt();
+      refetchWagmiUsdc();
+      refetchWagmiEth();
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected") && !err.message?.includes("ACTION_REJECTED")) {
@@ -558,6 +658,8 @@ export default function Home() {
       });
 
       addToast("success", `Shielded $${amount} into confidential ${marketCfg.symbol}!`, txHash);
+      refetchWagmiUsdt();
+      refetchWagmiUsdc();
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected") && !err.message?.includes("ACTION_REJECTED")) {
@@ -602,6 +704,8 @@ export default function Home() {
       });
 
       addToast("success", `Unshielded $${amount} back to public ${marketCfg.publicSymbol}!`);
+      refetchWagmiUsdt();
+      refetchWagmiUsdc();
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected") && !err.message?.includes("ACTION_REJECTED")) {
@@ -717,6 +821,9 @@ export default function Home() {
       });
 
       addToast("success", `Deposited $${amount} ${marketCfg.symbol}! Encrypted onchain on Sepolia.`, txHash);
+      refetchWagmiUsdt();
+      refetchWagmiUsdc();
+      refetchWagmiEth();
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected") && !err.message?.includes("ACTION_REJECTED")) {
@@ -803,6 +910,9 @@ export default function Home() {
       });
 
       addToast("success", `Withdrew $${amount} ${marketCfg.symbol}! 100% principal returned to your wallet.`, txHash);
+      refetchWagmiUsdt();
+      refetchWagmiUsdc();
+      refetchWagmiEth();
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected") && !err.message?.includes("ACTION_REJECTED")) {
@@ -1071,6 +1181,9 @@ export default function Home() {
       });
 
       addToast("success", `Transferred +$${curWin.toFixed(2)} ${activeMarket} prize profit directly to your wallet!`, txHash);
+      refetchWagmiUsdt();
+      refetchWagmiUsdc();
+      refetchWagmiEth();
       refreshProtocolState();
     } catch (err: any) {
       if (!err.message?.includes("rejected") && !err.message?.includes("ACTION_REJECTED")) {
@@ -1224,8 +1337,8 @@ export default function Home() {
           setCurrentView("app");
           setCurrentTab("how-it-works");
         }}
-        account={account}
-        walletBalance={snap?.userWalletBalance ?? "0.00"}
+        account={currentAccount}
+        walletBalance={resolvedWalletBalance}
         activeMarket={activeMarket}
         onConnect={handleConnectWallet}
         onDisconnect={handleDisconnectWallet}
@@ -1254,14 +1367,14 @@ export default function Home() {
           pageTitle={TAB_TITLES[currentTab].title}
           onOpenMobileNav={() => setIsMobileNavOpen((prev) => !prev)}
           isMobileNavOpen={isMobileNavOpen}
-          account={account}
+          account={currentAccount}
           onConnect={handleConnectWallet}
           onDisconnect={handleDisconnectWallet}
           onOpenAccountModal={openAccountModal}
           isConnecting={isWalletConnecting}
           onOpenFaucet={() => setIsFaucetOpen(true)}
-          walletBalance={snap?.userWalletBalance ?? "0.00"}
-          nativeEthBalance={snap?.userNativeEthBalance ?? "0.0000"}
+          walletBalance={resolvedWalletBalance}
+          nativeEthBalance={resolvedEthBalance}
           activeMarket={activeMarket}
           isWrongNetwork={chainId !== null && chainId !== SEPOLIA_CHAIN_ID}
           onSwitchNetwork={openChainModal || ensureSepolia}
@@ -1284,15 +1397,15 @@ export default function Home() {
 
           {currentTab === "dashboard" && (
             <DashboardView
-              account={account}
+              account={currentAccount}
               activeMarket={activeMarket}
               onChangeMarket={setActiveMarket}
               drawPhase={snap?.drawPhase ?? "OPEN"}
               liquidityHuntPoints={snap?.liquidityHuntPoints ?? 0}
-              walletBalance={snap?.userWalletBalance ?? "0.00"}
+              walletBalance={resolvedWalletBalance}
               decryptedBalance={decryptedBalance}
               decryptedWinnings={decryptedWinnings}
-              totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
+              totalDeposits={snap?.totalDeposits ?? (currentAccount && decryptedBalance ? decryptedBalance : "0.00")}
               totalPrizeReserve={snap?.totalPrizeReserve ?? "0.00"}
               totalPrizesAwarded={snap?.totalPrizesAwarded ?? "0.00"}
               depositorsCount={snap?.depositorsCount ?? 0}
@@ -1313,10 +1426,10 @@ export default function Home() {
 
           {currentTab === "vault" && (
             <VaultView
-              account={account}
+              account={currentAccount}
               activeMarket={activeMarket}
               onChangeMarket={setActiveMarket}
-              walletBalance={snap?.userWalletBalance ?? "0.00"}
+              walletBalance={resolvedWalletBalance}
               publicWalletBalance={snap?.userPublicWalletBalance ?? "0.00"}
               shieldedBalance={snap?.userShieldedBalance ?? "0.00"}
               decryptedBalance={decryptedBalance}
@@ -1331,14 +1444,14 @@ export default function Home() {
               onConnect={handleConnectWallet}
               isLoadingAction={isLoadingAction}
               initialDepositAmount={initialDepositAmount}
-              totalDeposits={snap?.totalDeposits ?? (account && decryptedBalance ? decryptedBalance : "0.00")}
+              totalDeposits={snap?.totalDeposits ?? (currentAccount && decryptedBalance ? decryptedBalance : "0.00")}
               totalPrizeReserve={snap?.totalPrizeReserve ?? "0.00"}
             />
           )}
 
           {currentTab === "draws" && (
             <DrawsView
-              account={account}
+              account={currentAccount}
               activeMarket={activeMarket}
               onChangeMarket={setActiveMarket}
               drawPhase={snap?.drawPhase ?? "OPEN"}
@@ -1367,7 +1480,7 @@ export default function Home() {
 
           {currentTab === "earn" && (
             <EarnView
-              account={account}
+              account={currentAccount}
               activeMarket={activeMarket}
               onChangeMarket={setActiveMarket}
               userSavings={decryptedBalance || "0.00"}
@@ -1379,7 +1492,7 @@ export default function Home() {
 
           {currentTab === "rewards" && (
             <RewardsView
-              account={account}
+              account={currentAccount}
               activeMarket={activeMarket}
               onChangeMarket={setActiveMarket}
               decryptedWinnings={decryptedWinnings}
@@ -1397,7 +1510,7 @@ export default function Home() {
               activity={activity}
               history={[]}
               isLoadingHistory={false}
-              account={account}
+              account={currentAccount}
             />
           )}
 
@@ -1413,10 +1526,10 @@ export default function Home() {
         onClose={() => setIsFaucetOpen(false)}
         onClaimFaucet={handleClaimFaucet}
         isClaiming={isClaimingFaucet}
-        walletBalance={snap?.userWalletBalance ?? "0.00"}
-        usdtBalance={account ? getStoredWalletBalance(account, "cUSDT") : "0.00"}
-        usdcBalance={account ? getStoredWalletBalance(account, "cUSDC") : "0.00"}
-        account={account}
+        walletBalance={resolvedWalletBalance}
+        usdtBalance={liveUsdtBal}
+        usdcBalance={liveUsdcBal}
+        account={currentAccount}
         onConnect={handleConnectWallet}
         activeMarket={activeMarket}
       />

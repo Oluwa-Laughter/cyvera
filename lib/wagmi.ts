@@ -56,9 +56,11 @@ export const wagmiConfig = createConfig({
   transports: {
     [sepolia.id]: fallback([
       http(
-        process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL ||
+        process.env.NEXT_PUBLIC_RPC_URL ||
+          process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL ||
           "https://ethereum-sepolia-rpc.publicnode.com"
       ),
+      http("https://ethereum-sepolia-rpc.publicnode.com"),
       http("https://gateway.tenderly.co/public/sepolia"),
       http("https://sepolia.gateway.tenderly.co"),
     ]),

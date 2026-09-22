@@ -36,14 +36,18 @@ export const SEPOLIA_CHAIN_ID = 11155111;
 export const SEPOLIA_HEX_CHAIN_ID = "0xaa36a7";
 
 export const SEPOLIA_RPCS = [
+  process.env.NEXT_PUBLIC_RPC_URL,
+  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL,
   "https://ethereum-sepolia-rpc.publicnode.com",
   "https://gateway.tenderly.co/public/sepolia",
   "https://sepolia.gateway.tenderly.co",
-];
+].filter(Boolean) as string[];
 
 export const getPublicProvider = (index = 0): ethers.JsonRpcProvider => {
   const url = SEPOLIA_RPCS[index % SEPOLIA_RPCS.length];
-  return new ethers.JsonRpcProvider(url, undefined, { staticNetwork: true });
+  const req = new ethers.FetchRequest(url);
+  req.timeout = 7000;
+  return new ethers.JsonRpcProvider(req, undefined, { staticNetwork: true });
 };
 
 export interface DrawRecordView {
@@ -91,66 +95,83 @@ export interface ProtocolSnapshot {
 const ZERO = "0x" + "00".repeat(32);
 
 /**
- * Robust onchain reader that tries multiple Sepolia RPCs to guarantee
- * accurate token and native balance queries without relying on wallet extension state.
+ * Robust onchain reader that queries balances with multi-provider fallback.
+ * Checks connected wallet provider first, then browser injection, then high-speed RPCs.
  */
-async function querySepoliaBalances(userAccount: string) {
+async function querySepoliaBalances(
+  userAccount: string,
+  customProvider?: ethers.Provider | null
+): Promise<{ usdt: string; usdc: string; eth: string } | null> {
   const usdtCfg = ZAMA_SEPOLIA_CONFIG.markets["cUSDT"];
   const usdcCfg = ZAMA_SEPOLIA_CONFIG.markets["cUSDC"];
 
-  for (let i = 0; i < SEPOLIA_RPCS.length; i++) {
-    try {
-      const provider = getPublicProvider(i);
-      const usdtContract = new ethers.Contract(usdtCfg.underlying, MOCK_ERC20_ABI, provider);
-      const usdcContract = new ethers.Contract(usdcCfg.underlying, MOCK_ERC20_ABI, provider);
+  const tryQueryWithProvider = async (provider: ethers.Provider) => {
+    const usdtContract = new ethers.Contract(usdtCfg.underlying, MOCK_ERC20_ABI, provider);
+    const usdcContract = new ethers.Contract(usdcCfg.underlying, MOCK_ERC20_ABI, provider);
 
-      const [usdtBal, usdcBal, ethBal] = await Promise.all([
-        usdtContract.balanceOf(userAccount),
-        usdcContract.balanceOf(userAccount),
-        provider.getBalance(userAccount),
-      ]);
+    const [usdtBal, usdcBal, ethBal] = await Promise.all([
+      usdtContract.balanceOf(userAccount).catch(() => null),
+      usdcContract.balanceOf(userAccount).catch(() => null),
+      provider.getBalance(userAccount).catch(() => null),
+    ]);
 
-      const formattedUsdt = parseFloat(ethers.formatUnits(usdtBal, usdtCfg.decimals)).toFixed(2);
-      const formattedUsdc = parseFloat(ethers.formatUnits(usdcBal, usdcCfg.decimals)).toFixed(2);
-      const formattedEth = parseFloat(ethers.formatEther(ethBal)).toFixed(4);
-
-      // Save both market balances to storage immediately
-      setStoredWalletBalance(userAccount, formattedUsdt, "cUSDT");
-      setStoredWalletBalance(userAccount, formattedUsdc, "cUSDC");
-      setStoredEthBalance(userAccount, formattedEth);
-
-      return {
-        usdt: formattedUsdt,
-        usdc: formattedUsdc,
-        eth: formattedEth,
-      };
-    } catch (err) {
-      console.warn(`Sepolia RPC ${SEPOLIA_RPCS[i]} query error:`, err);
+    if (usdtBal === null && usdcBal === null && ethBal === null) {
+      return null;
     }
+
+    const formattedUsdt =
+      usdtBal !== null
+        ? parseFloat(ethers.formatUnits(usdtBal, usdtCfg.decimals)).toFixed(2)
+        : getStoredWalletBalance(userAccount, "cUSDT");
+    const formattedUsdc =
+      usdcBal !== null
+        ? parseFloat(ethers.formatUnits(usdcBal, usdcCfg.decimals)).toFixed(2)
+        : getStoredWalletBalance(userAccount, "cUSDC");
+    const formattedEth =
+      ethBal !== null
+        ? parseFloat(ethers.formatEther(ethBal)).toFixed(4)
+        : getStoredEthBalance(userAccount);
+
+    setStoredWalletBalance(userAccount, formattedUsdt, "cUSDT");
+    setStoredWalletBalance(userAccount, formattedUsdc, "cUSDC");
+    setStoredEthBalance(userAccount, formattedEth);
+
+    return {
+      usdt: formattedUsdt,
+      usdc: formattedUsdc,
+      eth: formattedEth,
+    };
+  };
+
+  // 1. If connected wallet provider was passed in, query it first (fastest, zero CORS)
+  if (customProvider) {
+    try {
+      const res = await tryQueryWithProvider(customProvider);
+      if (res) return res;
+    } catch {}
   }
 
-  // If public RPCs timed out, try Injected browser provider if on Sepolia
+  // 2. Try window.ethereum if on Sepolia
   if (typeof window !== "undefined" && (window as any).ethereum) {
     try {
       const bp = new ethers.BrowserProvider((window as any).ethereum);
       const net = await bp.getNetwork().catch(() => null);
       if (net && Number(net.chainId) === SEPOLIA_CHAIN_ID) {
-        const usdtContract = new ethers.Contract(usdtCfg.underlying, MOCK_ERC20_ABI, bp);
-        const usdcContract = new ethers.Contract(usdcCfg.underlying, MOCK_ERC20_ABI, bp);
-        const [u, c, e] = await Promise.all([
-          usdtContract.balanceOf(userAccount),
-          usdcContract.balanceOf(userAccount),
-          bp.getBalance(userAccount),
-        ]);
-        const formattedUsdt = parseFloat(ethers.formatUnits(u, usdtCfg.decimals)).toFixed(2);
-        const formattedUsdc = parseFloat(ethers.formatUnits(c, usdcCfg.decimals)).toFixed(2);
-        const formattedEth = parseFloat(ethers.formatEther(e)).toFixed(4);
-        setStoredWalletBalance(userAccount, formattedUsdt, "cUSDT");
-        setStoredWalletBalance(userAccount, formattedUsdc, "cUSDC");
-        setStoredEthBalance(userAccount, formattedEth);
-        return { usdt: formattedUsdt, usdc: formattedUsdc, eth: formattedEth };
+        const res = await tryQueryWithProvider(bp);
+        if (res) return res;
       }
     } catch {}
+  }
+
+  // 3. Fallback to configured RPC endpoints
+  for (let i = 0; i < SEPOLIA_RPCS.length; i++) {
+    try {
+      const provider = getPublicProvider(i);
+      const res = await tryQueryWithProvider(provider);
+      if (res) return res;
+    } catch (err) {
+      console.warn(`Sepolia RPC query notice for ${SEPOLIA_RPCS[i]}:`, err);
+    }
   }
 
   return null;
@@ -160,97 +181,113 @@ async function querySepoliaBalances(userAccount: string) {
  * Queries the live CyveraPrizePool smart contract on Sepolia for
  * real pool summary, draw timing, participant counts, and encrypted user handles.
  */
-async function querySepoliaPoolState(userAccount: string | null, market: ActiveMarketId) {
+async function querySepoliaPoolState(
+  userAccount: string | null,
+  market: ActiveMarketId,
+  customProvider?: ethers.Provider | null
+) {
   const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[market];
+
+  const tryQueryPool = async (provider: ethers.Provider) => {
+    const pool = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, provider);
+
+    const summaryPromise = pool.getPoolSummary().catch(() => null);
+    const userStatePromise = userAccount
+      ? Promise.all([
+          pool.getUserEncryptedBalance(userAccount).catch(() => ZERO),
+          pool.getUserEncryptedWinnings(userAccount).catch(() => ZERO),
+          pool.getUnclaimedWinnings(userAccount).catch(() => 0n),
+          pool.isUserDepositor(userAccount).catch(() => false),
+        ])
+      : Promise.resolve([ZERO, ZERO, 0n, false] as const);
+
+    const [summary, userState] = await Promise.all([summaryPromise, userStatePromise]);
+    if (!summary) return null;
+
+    const [
+      totalDep,
+      prizeRes,
+      prizesAw,
+      totalWith,
+      lastDraw,
+      interval,
+      curDrawId,
+      winCount,
+      depCount,
+    ] = summary;
+
+    const onchainDep = parseFloat(ethers.formatUnits(totalDep, marketCfg.decimals)).toFixed(2);
+    const onchainPot = parseFloat(ethers.formatUnits(prizeRes, marketCfg.decimals)).toFixed(2);
+
+    let onchainWinnings = "0.00";
+    const winningsHandleHex = (userState[1] as string) || ZERO;
+    if (winningsHandleHex && winningsHandleHex !== ZERO) {
+      try {
+        const rawVal = BigInt(winningsHandleHex);
+        if (rawVal > 0n && rawVal < 1000000000000n) {
+          onchainWinnings = parseFloat(ethers.formatUnits(rawVal, marketCfg.decimals)).toFixed(2);
+        }
+      } catch {}
+    }
+
+    // Query live onchain draw history
+    const onchainDraws: any[] = [];
+    const maxDrawId = Number(curDrawId);
+    if (maxDrawId > 0) {
+      const startDraw = Math.max(1, maxDrawId - 9);
+      const historyPromises = [];
+      for (let d = maxDrawId; d >= startDraw; d--) {
+        historyPromises.push(pool.drawHistory(d).catch(() => null));
+      }
+      const rawRecords = await Promise.all(historyPromises);
+      for (const rec of rawRecords) {
+        if (rec && rec.executed) {
+          const winAddr = rec.winner as string;
+          onchainDraws.push({
+            drawId: Number(rec.drawId),
+            market,
+            phase: "CLAIMING",
+            timestamp: Number(rec.timestamp),
+            totalParticipants: Number(rec.totalParticipants),
+            prizeAmount: parseFloat(ethers.formatUnits(rec.prizeAmount, marketCfg.decimals)).toFixed(2),
+            winner: winAddr,
+            executed: true,
+            isMyWin: userAccount ? winAddr.toLowerCase() === userAccount.toLowerCase() : false,
+          });
+        }
+      }
+    }
+
+    return {
+      totalDeposits: onchainDep,
+      totalPrizeReserve: onchainPot,
+      totalPrizesAwarded: parseFloat(ethers.formatUnits(prizesAw, marketCfg.decimals)).toFixed(2),
+      totalWithdrawn: parseFloat(ethers.formatUnits(totalWith, marketCfg.decimals)).toFixed(2),
+      lastDrawTime: Number(lastDraw),
+      drawInterval: Number(interval),
+      currentDrawId: Number(curDrawId),
+      winnersPerDraw: Number(winCount),
+      depositorCount: Number(depCount),
+      userBalanceHandle: (userState[0] as string) || ZERO,
+      userWinningsHandle: (userState[1] as string) || ZERO,
+      userUnclaimedWinnings: onchainWinnings,
+      userIsDepositor: Boolean(userState[3]),
+      onchainDraws,
+    };
+  };
+
+  if (customProvider) {
+    try {
+      const res = await tryQueryPool(customProvider);
+      if (res) return res;
+    } catch {}
+  }
+
   for (let i = 0; i < SEPOLIA_RPCS.length; i++) {
     try {
       const provider = getPublicProvider(i);
-      const pool = new ethers.Contract(marketCfg.vault, CYVERA_PRIZE_POOL_ABI, provider);
-
-      const summaryPromise = pool.getPoolSummary().catch(() => null);
-      const userStatePromise = userAccount
-        ? Promise.all([
-            pool.getUserEncryptedBalance(userAccount).catch(() => ZERO),
-            pool.getUserEncryptedWinnings(userAccount).catch(() => ZERO),
-            pool.getUnclaimedWinnings(userAccount).catch(() => 0n),
-            pool.isUserDepositor(userAccount).catch(() => false),
-          ])
-        : Promise.resolve([ZERO, ZERO, 0n, false] as const);
-
-      const [summary, userState] = await Promise.all([summaryPromise, userStatePromise]);
-
-      if (summary) {
-        const [
-          totalDep,
-          prizeRes,
-          prizesAw,
-          totalWith,
-          lastDraw,
-          interval,
-          curDrawId,
-          winCount,
-          depCount,
-        ] = summary;
-
-        const onchainDep = parseFloat(ethers.formatUnits(totalDep, marketCfg.decimals)).toFixed(2);
-        const onchainPot = parseFloat(ethers.formatUnits(prizeRes, marketCfg.decimals)).toFixed(2);
-
-        let onchainWinnings = "0.00";
-        const winningsHandleHex = (userState[1] as string) || ZERO;
-        if (winningsHandleHex && winningsHandleHex !== ZERO) {
-          try {
-            const rawVal = BigInt(winningsHandleHex);
-            if (rawVal > 0n && rawVal < 1000000000000n) {
-              onchainWinnings = parseFloat(ethers.formatUnits(rawVal, marketCfg.decimals)).toFixed(2);
-            }
-          } catch {}
-        }
-
-        // Query live onchain draw history
-        const onchainDraws: any[] = [];
-        const maxDrawId = Number(curDrawId);
-        if (maxDrawId > 0) {
-          const startDraw = Math.max(1, maxDrawId - 9);
-          const historyPromises = [];
-          for (let d = maxDrawId; d >= startDraw; d--) {
-            historyPromises.push(pool.drawHistory(d).catch(() => null));
-          }
-          const rawRecords = await Promise.all(historyPromises);
-          for (const rec of rawRecords) {
-            if (rec && rec.executed) {
-              const winAddr = rec.winner as string;
-              onchainDraws.push({
-                drawId: Number(rec.drawId),
-                market,
-                phase: "CLAIMING",
-                timestamp: Number(rec.timestamp),
-                totalParticipants: Number(rec.totalParticipants),
-                prizeAmount: parseFloat(ethers.formatUnits(rec.prizeAmount, marketCfg.decimals)).toFixed(2),
-                winner: winAddr,
-                executed: true,
-                isMyWin: userAccount ? winAddr.toLowerCase() === userAccount.toLowerCase() : false,
-              });
-            }
-          }
-        }
-
-        return {
-          totalDeposits: onchainDep,
-          totalPrizeReserve: onchainPot,
-          totalPrizesAwarded: parseFloat(ethers.formatUnits(prizesAw, marketCfg.decimals)).toFixed(2),
-          totalWithdrawn: parseFloat(ethers.formatUnits(totalWith, marketCfg.decimals)).toFixed(2),
-          lastDrawTime: Number(lastDraw),
-          drawInterval: Number(interval),
-          currentDrawId: Number(curDrawId),
-          winnersPerDraw: Number(winCount),
-          depositorCount: Number(depCount),
-          userBalanceHandle: (userState[0] as string) || ZERO,
-          userWinningsHandle: (userState[1] as string) || ZERO,
-          userUnclaimedWinnings: onchainWinnings,
-          userIsDepositor: Boolean(userState[3]),
-          onchainDraws,
-        };
-      }
+      const res = await tryQueryPool(provider);
+      if (res) return res;
     } catch (err) {
       // Continue to next RPC
     }
@@ -260,17 +297,18 @@ async function querySepoliaPoolState(userAccount: string | null, market: ActiveM
 
 export async function fetchLiveProtocolState(
   userAccount?: string | null,
-  market: ActiveMarketId = "cUSDT"
+  market: ActiveMarketId = "cUSDT",
+  customProvider?: ethers.Provider | null
 ): Promise<ProtocolSnapshot> {
   const marketCfg = ZAMA_SEPOLIA_CONFIG.markets[market];
 
   let liveBalances: { usdt: string; usdc: string; eth: string } | null = null;
   if (userAccount) {
-    liveBalances = await querySepoliaBalances(userAccount);
+    liveBalances = await querySepoliaBalances(userAccount, customProvider);
   }
 
   // Query live pool contract on Sepolia
-  const onchainPool = await querySepoliaPoolState(userAccount || null, market);
+  const onchainPool = await querySepoliaPoolState(userAccount || null, market, customProvider);
 
   const storedSaved = getStoredSavings(userAccount || null, market);
   const storedShielded = getStoredShieldedBalance(userAccount || null, market);
