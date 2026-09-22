@@ -45,7 +45,11 @@ export const PrizeDrawCard: React.FC<PrizeDrawCardProps> = ({
 
   const formatDate = (timestamp: number) => {
     if (!timestamp) return "Just now";
-    return new Date(timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const ms = timestamp < 10_000_000_000 ? timestamp * 1000 : timestamp;
+    const d = new Date(ms);
+    const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const timeStr = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    return `${dateStr} • ${timeStr}`;
   };
 
   return (

@@ -61,13 +61,46 @@ const DEFAULT_META = {
   tone: "bg-amber-500/10 text-amber-500 border-amber-500/20",
 };
 
-function relativeTime(ts?: number) {
-  if (!ts) return "recently";
-  const diff = Date.now() - ts;
-  if (diff < 60_000) return "just now";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function formatActivityDateTime(ts?: number): {
+  formattedDateTime: string;
+  relative: string;
+} {
+  if (!ts) {
+    return { formattedDateTime: "Recently", relative: "" };
+  }
+
+  // Handle both second-based (< 10^10) and millisecond-based timestamps safely
+  const ms = ts < 10_000_000_000 ? ts * 1000 : ts;
+  const date = new Date(ms);
+  if (isNaN(date.getTime())) {
+    return { formattedDateTime: "Recently", relative: "" };
+  }
+
+  const dateStr = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeStr = date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const formattedDateTime = `${dateStr} • ${timeStr}`;
+
+  const diff = Date.now() - ms;
+  let relative = "";
+  if (diff >= 0 && diff < 60_000) {
+    relative = "just now";
+  } else if (diff >= 60_000 && diff < 3_600_000) {
+    relative = `${Math.floor(diff / 60_000)}m ago`;
+  } else if (diff >= 3_600_000 && diff < 86_400_000) {
+    relative = `${Math.floor(diff / 3_600_000)}h ago`;
+  } else if (diff >= 86_400_000 && diff < 86_400_000 * 30) {
+    relative = `${Math.floor(diff / 86_400_000)}d ago`;
+  }
+
+  return { formattedDateTime, relative };
 }
 
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({
@@ -143,14 +176,24 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-[var(--muted)] mt-0.5 font-medium flex items-center gap-2">
-                      <span>{relativeTime(itemTime)}</span>
-                      {entry.account && (
-                        <span className="font-mono text-[10px] opacity-70">
-                          • {entry.account.slice(0, 6)}...{entry.account.slice(-4)}
-                        </span>
-                      )}
-                    </div>
+                    {(() => {
+                      const { formattedDateTime, relative } = formatActivityDateTime(itemTime);
+                      return (
+                        <div className="text-[11px] text-[var(--muted)] mt-0.5 font-medium flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-foreground/80">{formattedDateTime}</span>
+                          {relative && (
+                            <span className="text-[10px] text-amber-500 font-medium font-mono">
+                              ({relative})
+                            </span>
+                          )}
+                          {entry.account && (
+                            <span className="font-mono text-[10px] opacity-70">
+                              • {entry.account.slice(0, 6)}...{entry.account.slice(-4)}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 

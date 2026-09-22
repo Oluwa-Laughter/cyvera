@@ -453,7 +453,13 @@ export const DrawsView: React.FC<DrawsViewProps> = ({
                       )}
                     </div>
                     <span className="text-[11px] text-[var(--muted)]">
-                      {new Date(draw.timestamp * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} • {draw.totalParticipants} Participants
+                      {(() => {
+                        const ms = draw.timestamp < 10_000_000_000 ? draw.timestamp * 1000 : draw.timestamp;
+                        const d = new Date(ms);
+                        const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                        const timeStr = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+                        return `${dateStr} • ${timeStr} • ${draw.totalParticipants} Participants`;
+                      })()}
                     </span>
                   </div>
                 </div>
